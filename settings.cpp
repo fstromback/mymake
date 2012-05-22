@@ -1,12 +1,23 @@
 #include <iostream>
 #include <fstream>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "settings.h"
 
 using namespace std;
 
 Settings::Settings() {
-  loadFile("~/.mymake");
+  char *home = getenv("HOME");
+  if (home != 0) {
+    string h = home;
+    if (h[h.size() - 1] == '/') {
+      loadFile(h + ".mymake");
+    } else {
+      loadFile(h + "/.mymake");
+    }
+  }
   loadFile(".mymake");
 }
 
@@ -23,14 +34,12 @@ void Settings::parseArguments(int argc, char **argv) {
     string arg = argv[i];
 
     if (arg != "") {
-      if (arg[0] == '-') {
-	if (arg == "-o") {
-	  identifier = "out";
-	} else if (arg == "-e") {
-	  executeCompiled = true;
-	} else if (arg == "-ne") {
-	  executeCompiled = false;
-	}
+      if (arg == "-o") {
+	identifier = "out";
+      } else if (arg == "-e") {
+	executeCompiled = true;
+      } else if (arg == "-ne") {
+	executeCompiled = false;
       } else {
 	storeItem(identifier, arg);
 	identifier = "input";
