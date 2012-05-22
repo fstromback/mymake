@@ -35,4 +35,6 @@ private:
   void loadFile(const string &file);
   void parseLine(const string &file);
   void storeItem(const string &identifier, const string &value);
+
+  string replace(const string &in, const string &find, const string &replace) const;
 };

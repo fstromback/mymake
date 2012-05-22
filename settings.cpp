@@ -91,12 +91,22 @@ void Settings::outputUsage() const {
   cout << "-ne    : Do not execute the compiled file on success." << endl;
 }
 
+string Settings::replace(const string &in, const string &find, const string &replace) const {
+  string copy = in;
+  int pos = in.find(find);
+  if (pos == string::npos) return in;
+
+  return copy.replace(pos, find.length(), replace);
+}
+
 string Settings::getCompileCommand(const string &file, const string &output) const {
-  return compile + " " + file + " -c -o " + output;
+  string result = replace(replace(compile, "<file>", file), "<output>", output);
+  return result;
 }
 
 string Settings::getLinkCommand(const string &files) const {
-  return link + " " + files + " -o " + outFile;
+  string result = replace(replace(link, "<output>", outFile), "<files>", files);
+  return result;
 }
 
 bool Settings::enoughForCompilation() const {

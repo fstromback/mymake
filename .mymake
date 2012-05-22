@@ -11,10 +11,10 @@ ext=cc
 out=my-make
 
 #options to use for compilation
-compile=c++
+compile=c++ <file> -c -o <output>
 
 #options to use when linking
-link=c++
+link=c++ <files> -o <output>
 
 #build directory
 build=build/
