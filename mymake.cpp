@@ -2,6 +2,7 @@
 #include <dirent.h>
 
 #include <iostream>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -14,37 +15,6 @@ void listDir();
 
 using namespace std;
 
-bool parseArguments(int argc, char **argv) {
-  if (argc <= 1) return false;
-
-  for (int i = 1; i < argc - 1; i += 2) {
-    string arg = string(argv[i]);
-    
-    if (arg == "-s") {
-      srcPath = argv[i + 1];
-    } else if (arg == "-o") {
-      outputPath = argv[i + 1];
-    } else if (arg == "-e") {
-      executablePath = argv[i + 1];
-    } else if (arg == "-c") {
-      compiler = argv[i + 1];
-    } else {
-      cout << "Unknown command-line argument: " << arg << endl;
-      return false;
-    }
-  }
-  return true;
-}
-
-void printUsage() {
-  cout << "Usage:" << endl;
-  cout << "mymake -s <source path> -o <output path> -e <executable file> [-c <compiler>]" << endl << endl;
-  cout << "source path     : The path where the source files are located." << endl;
-  cout << "output path     : The path where the intermediate output files will be located." << endl;
-  cout << "executable file : The filename of the final executable file." << endl;
-  cout << "compiler        : The name of the compiler to run. The default is g++." << endl;
-}
-
 bool runCommand(const string &commandline) {
   int returnCode = system(commandline.c_str());
   if (returnCode != 0) {
@@ -56,12 +26,13 @@ bool runCommand(const string &commandline) {
 bool compileFiles(Files &files, Files &toLink) {
   for (list<File>::iterator i = files.begin(); i != files.end(); i++) {
     CppFile file(*i);
-    if (addHFiles) {
-      files.append(file.getIncludes().changeFiletypes("cpp"));
+
+    for (list<string>::iterator type = settings.cppExtensions.begin(); type != settings.cppExtensions.end(); type++) {
+      files.append(file.getIncludes().changeFiletypes(*type));
     }
 
     if (file.isValid()) {
-      File output = file.modifyRelative(srcPath, outputPath).modifyType("o");
+      File output = file.modifyRelative(settings.srcPath, settings.buildPath).modifyType("o");
        
       bool needsCompilation = false;
       if (!output.isValid()) {
@@ -75,7 +46,7 @@ bool compileFiles(Files &files, Files &toLink) {
 
 	output.ensurePathExists();
 
-	string compileArgument = compiler + " " + file.getFullPath() + " -c -o " + output.getFullPath();
+	string compileArgument = settings.getCompileCommand(file.getFullPath(), output.getFullPath());
 	if (!runCommand(compileArgument)) {
 	  return false;
 	}
@@ -92,7 +63,7 @@ bool linkOutput(Files &toLink) {
   //Files files(Directory(outputPath), ".o");
   Files &files = toLink;
 
-  File executable(executablePath);
+  File executable(settings.outFile);
   executable.ensurePathExists();
 
   bool link = false;
@@ -105,36 +76,64 @@ bool linkOutput(Files &toLink) {
   }
 
   if (link) {
-    cout << "Linking " << executablePath << "..." << endl;
+    cout << "Linking " << settings.outFile << "..." << endl;
 
-    string linkArgument = compiler;
+    stringstream toLink;
+    bool first = true;
     for (list<File>::iterator i = files.begin(); i != files.end(); i++) {
-      linkArgument = linkArgument + " " + i->getFullPath();
+      if (!first) toLink << " ";
+      toLink << i->getFullPath();
+      first = false;
     }
 
 
-    if (!runCommand(linkArgument + " -o " + executablePath)) return false;
+    if (!runCommand(settings.getLinkCommand(toLink.str()))) return false;
   }
 
   return true;
 }
 
+void addFile(const string &file, Files &to) {
+  File f(file);
+  if (f.isValid()) {
+    for (list<string>::iterator i = settings.cppExtensions.begin(); i != settings.cppExtensions.end(); i++) {
+      if (f.isType(*i)) {
+	to.add(f);
+	break;
+      }
+    }
+  }
+}
+
+void addFileExts(const string &file, Files &to) {
+  addFile(file, to);
+  for (list<string>::iterator i = settings.cppExtensions.begin(); i != settings.cppExtensions.end(); i++) {
+    addFile(file + "." + *i, to);
+  }
+}
+
 int main(int argc, char **argv) {
 
-  if (!parseArguments(argc, argv)) {
-    printUsage();
+  settings.parseArguments(argc, argv);
+
+  if (!settings.enoughForCompilation()) {
+    settings.outputUsage();
     return -1;
   }
 
-  Files files(Directory(srcPath), ".cpp");
-
-
-  File srcPathFile(srcPath);
-  if (!srcPathFile.isDirectory()) {
-    srcPath = srcPathFile.getDirectory();
-    addHFiles = true;
+  Files files;
+  for (list<string>::iterator i = settings.inputFiles.begin(); i != settings.inputFiles.end(); i++) {
+    addFileExts(*i, files);
   }
-  
+
+  if (files.size() == 0) {
+    cout << "Error: File not found." << endl;
+    return -1;
+  }
+
+  list<File>::iterator i = files.begin();
+  settings.srcPath = i->getDirectory();
+
   Files toLink;
   if (compileFiles(files, toLink)) {
     if (linkOutput(toLink)) {
@@ -147,7 +146,10 @@ int main(int argc, char **argv) {
     cout << "Build failed!\n";
     return -1;
   }
- 
+
+  if (settings.executeCompiled) {
+    execl(settings.outFile.c_str(), settings.outFile.c_str(), (char *)0);
+  }
   return 0;
 }
 

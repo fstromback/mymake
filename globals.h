@@ -1,13 +1,13 @@
-#ifndef _GLOBALS_H
-#define _GLOBALS_H
+#pragma once
 
-#include <string>
+#include "settings.h"
 
+extern Settings settings;
+
+/*
 extern bool addHFiles;
 extern std::string srcPath;
 extern std::string outputPath;
 extern std::string executablePath;
-extern std::string compiler;
+extern std::string compiler;*/
 
-
-#endif

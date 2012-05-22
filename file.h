@@ -1,5 +1,4 @@
-#ifndef FILE_H
-#define FILE_H
+#pragma once
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -47,4 +46,3 @@ class File {
 };
 
 
-#endif

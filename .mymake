@@ -1,0 +1,23 @@
+#Example file for mymake.
+
+#Input file(s)
+input=mymake
+
+#File extensions for cpp-files.
+ext=cpp
+ext=cc
+
+#Output
+out=my-make
+
+#options to use for compilation
+compile=c++
+
+#options to use when linking
+link=c++
+
+#build directory
+build=build/
+
+#execute the compiled file after successfull compilation?
+execute=yes
