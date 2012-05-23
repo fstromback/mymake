@@ -9,6 +9,10 @@
 using namespace std;
 
 Settings::Settings() {
+
+  forceRecompilation = false;
+  executeCompiled = false;
+
   char *home = getenv("HOME");
   if (home != 0) {
     string h = home;
@@ -36,10 +40,16 @@ void Settings::parseArguments(int argc, char **argv) {
     if (arg != "") {
       if (arg == "-o") {
 	identifier = "out";
+      } else if (arg == "-f") {
+	forceRecompilation = true;
       } else if (arg == "-e") {
 	executeCompiled = true;
       } else if (arg == "-ne") {
 	executeCompiled = false;
+      } else if (arg == "-a") {
+	executeCompiled = true;
+	addProcessParameters(argc, argv, i + 1);
+	break;
       } else {
 	storeItem(identifier, arg);
 	identifier = "input";
@@ -48,6 +58,27 @@ void Settings::parseArguments(int argc, char **argv) {
   }
 }
 
+void Settings::addProcessParameters(int argc, char **argv, int i) {
+  for (; i < argc; i++) {
+    commandLineParams.push_back(string(argv[i]));
+  }
+}
+
+char **Settings::getExecParams() const {
+  char **arglist = new char*[commandLineParams.size() + 2];
+  
+  arglist[0] = new char[outFile.size() + 1];
+  strcpy(arglist[0], outFile.c_str());
+  int pos = 1;
+  for (list<string>::const_iterator i = commandLineParams.begin(); i != commandLineParams.end(); i++) {
+    arglist[pos] = new char[i->size() + 1];
+    strcpy(arglist[pos], i->c_str());
+    pos++;
+  }
+  arglist[pos] = 0;
+
+  return arglist;
+}
 
 void Settings::loadFile(const string &file) {
   ifstream f(file.c_str());
@@ -93,11 +124,13 @@ void Settings::storeItem(const string &identifier, const string &value) {
 
 void Settings::outputUsage() const {
   cout << "Usage:" << endl;
-  cout << executable << " <file> [-o <output>] [-ne] [-e]" << endl << endl;
+  cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-a <arg1> ... <argn>]" << endl << endl;
   cout << "file   : The root source file to compile (may contain multiple files)." << endl;
   cout << "output : The name of the executable file to be created." << endl;
   cout << "-e     : Execute the compiled file on success." << endl;
   cout << "-ne    : Do not execute the compiled file on success." << endl;
+  cout << "-f     : Force recompilation." << endl;
+  cout << "-a     : Arguments to the started process (sets -e as well)." << endl;
 }
 
 string Settings::replace(const string &in, const string &find, const string &replace) const {

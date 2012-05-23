@@ -35,7 +35,9 @@ bool compileFiles(Files &files, Files &toLink) {
       File output = file.modifyRelative(settings.srcPath, settings.buildPath).modifyType("o");
        
       bool needsCompilation = false;
-      if (!output.isValid()) {
+      if (settings.forceRecompilation) {
+	needsCompilation = true;
+      } else if (!output.isValid()) {
 	needsCompilation = true;
       } else if (file.getLastModified() > output.getLastModified()) {
 	needsCompilation = true;
@@ -148,7 +150,7 @@ int main(int argc, char **argv) {
   }
 
   if (settings.executeCompiled) {
-    execl(settings.outFile.c_str(), settings.outFile.c_str(), (char *)0);
+    execv(settings.outFile.c_str(), settings.getExecParams());
   }
   return 0;
 }

@@ -1,7 +1,6 @@
 TODO:
 
-Se till så att kommandoradsinterfacet kan användas enkelt. T.ex. mymake main.cpp -> kompilerar och kör
-
 Cachning av include-träd
 
-Inställningar för default-behaviour (dels per source-dir och dels per användare).
+Clean-funktion
+

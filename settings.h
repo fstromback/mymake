@@ -23,9 +23,14 @@ public:
   list<string> cppExtensions;
 
   bool executeCompiled;
+  bool forceRecompilation;
+
+  list<string> commandLineParams;
 
   void parseArguments(int argc, char **argv);
   bool enoughForCompilation() const;
+
+  char **getExecParams() const;
 
   void outputUsage() const;
 
@@ -37,4 +42,6 @@ private:
   void storeItem(const string &identifier, const string &value);
 
   string replace(const string &in, const string &find, const string &replace) const;
+
+  void addProcessParameters(int argc, char **argv, int startAt);
 };
