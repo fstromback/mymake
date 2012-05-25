@@ -1,5 +1,4 @@
-#ifndef CPPFILE_H
-#define CPPFILE_H
+#pragma once
 
 #include "file.h"
 #include "files.h"
@@ -14,11 +13,13 @@ class CppFile : public File {
 
   virtual time_t getLastModified() const;
   Files &getIncludes() { return includes; };
+
+  friend class Files;
  protected:
   Files includes;
 
   virtual void output(ostream &to);
   void updateIncludes();
+  void loadIncludes();
 };
 
-#endif

@@ -8,7 +8,7 @@ ext=cpp
 ext=cc
 
 #Output
-out=my-make
+out=mymake
 
 #options to use for compilation
 compile=c++ <file> -c -o <output>
@@ -20,4 +20,7 @@ link=c++ <files> -o <output>
 build=build/
 
 #execute the compiled file after successfull compilation?
-execute=yes
+execute=no
+
+#debug output enabled!
+debugOutput=yes

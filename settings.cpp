@@ -12,6 +12,8 @@ Settings::Settings() {
 
   forceRecompilation = false;
   executeCompiled = false;
+  showHelp = false;
+  debugOutput = false;
 
   char *home = getenv("HOME");
   if (home != 0) {
@@ -38,7 +40,9 @@ void Settings::parseArguments(int argc, char **argv) {
     string arg = argv[i];
 
     if (arg != "") {
-      if (arg == "-o") {
+      if (arg == "-?") {
+	showHelp = true;
+      } else if (arg == "-o") {
 	identifier = "out";
       } else if (arg == "-f") {
 	forceRecompilation = true;
@@ -46,6 +50,8 @@ void Settings::parseArguments(int argc, char **argv) {
 	executeCompiled = true;
       } else if (arg == "-ne") {
 	executeCompiled = false;
+      } else if (arg == "-debug"){
+	debugOutput = true;
       } else if (arg == "-a") {
 	executeCompiled = true;
 	addProcessParameters(argc, argv, i + 1);
@@ -119,6 +125,8 @@ void Settings::storeItem(const string &identifier, const string &value) {
     buildPath = value;
   } else if (identifier == "execute") {
     executeCompiled = (value == "yes");
+  } else if (identifier == "debugOutput") {
+    debugOutput = (value == "yes");
   }
 }
 

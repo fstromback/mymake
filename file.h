@@ -33,6 +33,7 @@ class File {
 
   void ensurePathExists() const;
 
+  void update();
   ifstream* read() const;
  protected:
   struct stat status;

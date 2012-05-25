@@ -118,9 +118,15 @@ int main(int argc, char **argv) {
 
   settings.parseArguments(argc, argv);
 
-  if (!settings.enoughForCompilation()) {
+  if (!settings.enoughForCompilation() || settings.showHelp) {
     settings.outputUsage();
     return -1;
+  }
+
+  if (!settings.forceRecompilation) {
+    if (!settings.cache.load()) { //Ladda cachen
+      cout << "Failed to load the cache!" << endl;
+    }
   }
 
   Files files;
@@ -136,22 +142,28 @@ int main(int argc, char **argv) {
   list<File>::iterator i = files.begin();
   settings.srcPath = i->getDirectory();
 
+  int errorCode = 0;
+
   Files toLink;
   if (compileFiles(files, toLink)) {
     if (linkOutput(toLink)) {
       cout << "Build successful!\n";
     } else {
       cout << "Build failed!\n";
-      return -2;
+      errorCode = -2;
     }
   } else {
     cout << "Build failed!\n";
-    return -1;
+    errorCode = -1;
   }
 
-  if (settings.executeCompiled) {
-    execv(settings.outFile.c_str(), settings.getExecParams());
+  settings.cache.save();
+
+  if (errorCode == 0) {
+    if (settings.executeCompiled) {
+      execv(settings.outFile.c_str(), settings.getExecParams());
+    }
   }
-  return 0;
+  return errorCode;
 }
 

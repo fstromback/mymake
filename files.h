@@ -1,5 +1,4 @@
-#ifndef FILES_H
-#define FILES_H
+#pragma once
 
 #include <fstream>
 #include <vector>
@@ -9,10 +8,11 @@
 
 using namespace std;
 
+class IncludeCache;
+
 class Files {
  public:
   Files(); //Create empty list of  files
-  Files(const File &file); //Load include files from the current c/cpp file.
   Files(const Directory &folder, string type);
   ~Files();
 
@@ -26,13 +26,18 @@ class Files {
   Files changeFiletypes(const string &to);
   void append(const Files &files);
   void add(const File &file);
+
+  bool load(const File &file);
+  void save(const File &file) const;
+
+  static Files loadFromCpp(const File &file);
  protected:
+
   list<File> files;
 
   void addFiles(const Directory &folder, string type);
   virtual void output(ostream &to);
 
-  vector<string> parseLine(const string &line);
+  static vector<string> parseLine(const string &line);
 };
 
-#endif

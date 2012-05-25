@@ -3,6 +3,8 @@
 #include <string>
 #include <list>
 
+#include "includecache.h"
+
 using namespace std;
 
 class Settings {
@@ -24,8 +26,12 @@ public:
 
   bool executeCompiled;
   bool forceRecompilation;
+  bool showHelp;
+  bool debugOutput;
 
   list<string> commandLineParams;
+
+  IncludeCache cache;
 
   void parseArguments(int argc, char **argv);
   bool enoughForCompilation() const;

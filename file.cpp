@@ -137,3 +137,8 @@ File File::modifyRelative(const string &original, const string &newRelative) con
 void File::ensurePathExists() const {
   mkpath(directory.c_str(), 0764);
 }
+
+void File::update() {
+  if (stat((directory + title).c_str(), &status) < 0) valid = false;
+  else valid = true;
+}

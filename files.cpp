@@ -1,5 +1,7 @@
 #include "files.h"
 
+#include "globals.h"
+
 using namespace std;
 
 Files::Files() {}
@@ -8,7 +10,11 @@ Files::Files(const Directory &folder, string type) {
   addFiles(folder, type);
 }
 
-Files::Files(const File &file) {
+Files::~Files() {}
+
+Files Files::loadFromCpp(const File &file) {
+  Files result;
+
   ifstream* f = file.read();
 
   while (!f->eof()) {
@@ -20,16 +26,17 @@ Files::Files(const File &file) {
       string &token = tokens[1];
       if (token[0] == '"') {
 	if (token[token.size() - 1] == '"') {
-	  files.push_back(File(file.getDirectory(), token.substr(1, token.size() - 2)));
+	  result.add(File(file.getDirectory(), token.substr(1, token.size() - 2)));
+	  //files.push_back(File(file.getDirectory(), token.substr(1, token.size() - 2)));
 	}
       }
     }
   }
       
   delete f;
-}
 
-Files::~Files() {}
+  return result;
+}
 
 
 vector<string> Files::parseLine(const string &line) {
@@ -68,7 +75,7 @@ void Files::addFiles(const Directory &folder, string type) {
   //cout << "Adding files to \"" << folder.getPath() << "\"...\n";
   for (list<File>::const_iterator iter = folder.files.begin(); iter != folder.files.end(); iter++) {
     const File *i = &(*iter);
-    if (i->isType(type)) files.push_back(*i);
+    if (i->isType(type)) add(*i); //files.push_back(*i);
   }
 
   //cout << "Done adding files to \"" << folder.getPath() << "\"\n";
@@ -103,7 +110,15 @@ void Files::append(const Files &files) {
 }
 
 void Files::add(const File &file) {
-  files.push_back(file);
+   bool found = false;
+   for (list<File>::iterator j = this->files.begin(); j != this->files.end(); j++) {
+     if (file == *j) {
+       found = true;
+       break;
+     }
+   }
+
+   if (!found) this->files.push_back(file);
 }
 
 time_t Files::getLastModified() const {
@@ -126,4 +141,55 @@ Files Files::changeFiletypes(const string &to) {
   }
 
   return ret;
+}
+
+
+bool Files::load(const File &file) {
+  string f = file.getFullPath();
+
+  if (settings.cache.files.count(f) <= 0) return false;
+
+  IncludeCache::CachedCpp &cpp = settings.cache.files[f];
+
+  if (cpp.modified < file.getLastModified()) {
+    cout << "The file " << file.getTitle().c_str() << 
+          " have been modified from " << cpp.modified << " to " << 
+          file.getLastModified() << ". Renewing cache..." << endl;
+    return false;
+  }
+  
+  bool valid = true;
+  for (list<IncludeCache::CachedFile>::const_iterator i = cpp.includedFiles.begin(); i != cpp.includedFiles.end(); i++) {
+    File incFile = File(i->file);
+    if (i->modified < incFile.getLastModified()) {
+      if (settings.debugOutput) {
+	cout << "The file " << incFile.getTitle().c_str() << 
+          " have been modified from " << i->modified << " to " << 
+          incFile.getLastModified() << ". Renewing cache..." << endl;
+      }
+      valid = false;
+      break;
+    }
+
+    files.push_back(incFile);
+  }
+
+  if (!valid) files.clear();
+
+  return valid;
+}
+
+void Files::save(const File &file) const {
+  IncludeCache::CachedCpp &cpp = settings.cache.files[file.getFullPath()];
+
+  cpp.file = file.getFullPath();
+  cpp.modified = file.getLastModified();
+
+  cpp.includedFiles.clear();
+
+  for (list<File>::const_iterator i = files.begin(); i != files.end(); i++) {
+    File f(*i);
+    if (settings.debugOutput) cout << "Stored file: " << f.getTitle().c_str() << ", time " << f.getLastModified() << endl;
+    cpp.includedFiles.push_back(IncludeCache::CachedFile(f.getFullPath(), f.getLastModified()));
+  }
 }
