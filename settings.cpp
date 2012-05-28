@@ -43,6 +43,12 @@ void Settings::install() const {
   out << "#These are the general settings, which can be overriden in a local .mymake-file" << endl;
   out << "#or as command-line arguments to the executable in some cases." << endl;
   out << "" << endl;
+  out << "#The file-types of the implementation files. Used to match header-files to implementation-files." << endl;
+  out << "ext=cpp" << endl;
+  out << "ext=cc" << endl;
+  out << "ext=cxx" << endl;
+  out << "ext=c++" << endl;
+  out << "" << endl;
   out << "#Input file(s)" << endl;
   out << "#input=<filename>" << endl;
   out << "" << endl;
