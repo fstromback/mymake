@@ -16,6 +16,7 @@ public:
   string link;
   string buildPath;
   string outFile;
+  string executableExt;
 
   string srcPath;
 
@@ -37,7 +38,7 @@ public:
   IncludeCache cache;
 
   void parseArguments(int argc, char **argv);
-  bool enoughForCompilation() const;
+  bool enoughForCompilation();
 
   char **getExecParams() const;
 
@@ -57,4 +58,7 @@ private:
   string getHomeFile(const string &file) const;
 
   void addProcessParameters(int argc, char **argv, int startAt);
+
+  void outputConfig() const;
+  void addExt(const string &ext);
 };

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "settings.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -49,6 +50,9 @@ void Settings::install() const {
   out << "ext=cxx" << endl;
   out << "ext=c++" << endl;
   out << "" << endl;
+  out << "#The extension for executable files on the system." << endl;
+  out << "executableExt=" << endl;
+  out << "" << endl;
   out << "#Input file(s)" << endl;
   out << "#input=<filename>" << endl;
   out << "" << endl;
@@ -73,11 +77,12 @@ void Settings::install() const {
 }
 
 void Settings::parseArguments(int argc, char **argv) {
-  executable = argv[0];
+  executable = File(argv[0]).getTitle();
 
   if (argc <= 1) return;
 
   string identifier = "input";
+  bool showSettings = debugOutput;
 
   for (int i = 1; i < argc; i ++) {
     string arg = argv[i];
@@ -98,8 +103,11 @@ void Settings::parseArguments(int argc, char **argv) {
       } else if (arg == "-config") {
 	doInstall = true;
 	return;
+      } else if (arg == "-s") {
+	showSettings = true;
       } else if (arg == "-debug"){
 	debugOutput = true;
+	showSettings = true;
       } else if (arg == "-a") {
 	executeCompiled = true;
 	addProcessParameters(argc, argv, i + 1);
@@ -110,6 +118,8 @@ void Settings::parseArguments(int argc, char **argv) {
       }
     }
   }
+
+  if (showSettings) outputConfig();
 }
 
 void Settings::addProcessParameters(int argc, char **argv, int i) {
@@ -149,6 +159,7 @@ void Settings::loadFile(const string &file) {
       }
     }
   }
+  cout << file.c_str() << " loaded\n";
 }
 
 void Settings::parseLine(const string &line) {
@@ -162,7 +173,9 @@ void Settings::storeItem(const string &identifier, const string &value) {
   if (identifier == "input") {
     inputFiles.push_back(value);
   } else if (identifier == "ext") {
-    cppExtensions.push_back(value);
+    addExt(value);
+  } else if (identifier == "executableExt") {
+    executableExt = value;
   } else if (identifier == "out") {
     outFile = value;
   } else if (identifier == "compile") {
@@ -178,10 +191,17 @@ void Settings::storeItem(const string &identifier, const string &value) {
   }
 }
 
+void Settings::addExt(const string &ext) {
+  for (list<string>::iterator i = cppExtensions.begin(); i != cppExtensions.end(); i++) {
+    if (*i == ext) return;
+  }
+  cppExtensions.push_back(ext);
+}
+
 void Settings::outputUsage() const {
   cout << "Usage:" << endl;
-  cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-a <arg1> ... <argn>] [-clean]" << endl;
-  cout << executable << " <file> -config" << endl;
+  cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-a <arg1> ... <argn>] [-clean] [-s]" << endl;
+  cout << executable << " -config" << endl;
   cout << endl;
   cout << "file    : The root source file to compile (may contain multiple files)." << endl;
   cout << "output  : The name of the executable file to be created." << endl;
@@ -189,8 +209,8 @@ void Settings::outputUsage() const {
   cout << "-ne     : Do not execute the compiled file on success." << endl;
   cout << "-f      : Force recompilation." << endl;
   cout << "-a      : Arguments to the started process (sets -e as well)." << endl;
+  cout << "-s      : Show settings before compilation." << endl;
   cout << "-clean  : Remove all intermediate files." << endl;
-  cout << endl;
   cout << "-config : Setup the .mymake-file in the home directory." << endl;
 }
 
@@ -212,11 +232,31 @@ string Settings::getLinkCommand(const string &files) const {
   return result;
 }
 
-bool Settings::enoughForCompilation() const {
+bool Settings::enoughForCompilation() {
   if (inputFiles.size() == 0) return false;
   if (cppExtensions.size() == 0) return false;
   if (buildPath.size() == 0) return false;
-  if (outFile.size() == 0) return false;
+
+  if (outFile.size() == 0) {
+    File firstInFile(inputFiles.front());
+    outFile = firstInFile.modifyType(executableExt).getFullPath();
+  }
 
   return true;
+}
+
+void Settings::outputConfig() const {
+  cout << "Parameters used:" << endl;
+  cout << "Input files: " << inputFiles << endl;
+  cout << "Extensions: " << cppExtensions << endl;
+  cout << "Output file: " << outFile.c_str() << endl;
+  cout << "Executable extension: " << executableExt.c_str() << endl;
+  cout << endl;
+  cout << "Build path: " << buildPath.c_str() << endl;
+  cout << "Compile with: " << compile.c_str() << endl;
+  cout << "Link with: " << link.c_str() << endl;
+  cout << endl;
+  cout << "Execute file: " << (executeCompiled ? "yes" : "no") << endl;
+  cout << "Force recompilation: " << (forceRecompilation ? "yes" : "no") << endl;
+  cout << endl;
 }

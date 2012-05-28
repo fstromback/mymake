@@ -124,11 +124,15 @@ time_t File::getLastModified() const {
 
 
 File File::modifyType(const string &type) const {
+  string dottedType;
+  if (type.size() == 0) dottedType = "";
+  else dottedType = "." + type;
+
   int lastDot = title.rfind('.');
   if (lastDot >= 0) {
-    return File(directory, title.substr(0, lastDot + 1) + type);
+    return File(directory, title.substr(0, lastDot) + dottedType);
   } else {
-    return File(directory, title + "." + type);
+    return File(directory, title + dottedType);
   }
 }
 
