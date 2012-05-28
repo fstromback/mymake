@@ -227,7 +227,7 @@ string Settings::getLinkCommand(const string &files) const {
 }
 
 bool Settings::enoughForCompilation() {
-  if (inputFiles.size() == 0) return false;
+  if (!clean) if (inputFiles.size() == 0) return false;
   if (cppExtensions.size() == 0) return false;
   if (active.buildPath.size() == 0) return false;
 

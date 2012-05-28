@@ -124,6 +124,7 @@ int main(int argc, char **argv) {
 
   settings.parseArguments(argc, argv);
 
+
   if (!settings.enoughForCompilation() || settings.showHelp) {
     settings.outputUsage();
     return -1;
