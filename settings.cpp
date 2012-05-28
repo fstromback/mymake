@@ -15,19 +15,56 @@ Settings::Settings() {
   showHelp = false;
   debugOutput = false;
 
-  char *home = getenv("HOME");
-  if (home != 0) {
-    string h = home;
-    if (h[h.size() - 1] == '/') {
-      loadFile(h + ".mymake");
-    } else {
-      loadFile(h + "/.mymake");
-    }
-  }
+  loadFile(getHomeFile(".mymake"));
   loadFile(".mymake");
 }
 
 Settings::~Settings() {}
+
+string Settings::getHomeFile(const string &file) const {
+  char *home = getenv("HOME");
+  if (home != 0) {
+    string h = home;
+    if (h[h.size() - 1] == '/') {
+      return h + file;
+    } else {
+      return h + "/" + file;
+    }
+  }
+}
+
+void Settings::install() const {
+  ofstream out(getHomeFile(".mymake").c_str());
+
+  out << "#Configuration for mymake" << endl;
+  out << "#Lines beginning with a # are treated as comments." << endl;
+  out << "#Lines containing errors are ignored." << endl;
+  out << "" << endl;
+  out << "#These are the general settings, which can be overriden in a local .mymake-file" << endl;
+  out << "#or as command-line arguments to the executable in some cases." << endl;
+  out << "" << endl;
+  out << "#Input file(s)" << endl;
+  out << "#input=<filename>" << endl;
+  out << "" << endl;
+  out << "#Output (defaults to the name of the first input file)" << endl;
+  out << "#out=<filename>" << endl;
+  out << "" << endl;
+  out << "#Command used to compile a single source file into a unlinked file." << endl;
+  out << "#<file> will be replaced by the input file and" << endl;
+  out << "#<output> will be replaced by the output file" << endl;
+  out << "compile=g++ <file> -c -o <output>" << endl;
+  out << "" << endl;
+  out << "#Command to link the intermediate files into an executable." << endl;
+  out << "#<files> is the list of intermediate files and" << endl;
+  out << "#<output> is the name of the final executable to be created." << endl;
+  out << "link=g++ <files> -o <output>" << endl;
+  out << "" << endl;
+  out << "#The directory to be used for intermediate files" << endl;
+  out << "build=build/" << endl;
+  out << "" << endl;
+  out << "#Execute the compiled file after successful compilation?" << endl;
+  out << "execute=yes" << endl;
+}
 
 void Settings::parseArguments(int argc, char **argv) {
   executable = argv[0];
@@ -50,6 +87,9 @@ void Settings::parseArguments(int argc, char **argv) {
 	executeCompiled = true;
       } else if (arg == "-ne") {
 	executeCompiled = false;
+      } else if (arg == "-install") {
+	doInstall = true;
+	return;
       } else if (arg == "-debug"){
 	debugOutput = true;
       } else if (arg == "-a") {
@@ -132,13 +172,17 @@ void Settings::storeItem(const string &identifier, const string &value) {
 
 void Settings::outputUsage() const {
   cout << "Usage:" << endl;
-  cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-a <arg1> ... <argn>]" << endl << endl;
+  cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-a <arg1> ... <argn>]" << endl;
+  cout << executable << " <file> -install" << endl;
+  cout << endl;
   cout << "file   : The root source file to compile (may contain multiple files)." << endl;
   cout << "output : The name of the executable file to be created." << endl;
   cout << "-e     : Execute the compiled file on success." << endl;
   cout << "-ne    : Do not execute the compiled file on success." << endl;
   cout << "-f     : Force recompilation." << endl;
   cout << "-a     : Arguments to the started process (sets -e as well)." << endl;
+  cout << endl;
+  cout << "-install : Setup the .mymake-file in the home directory." << endl;
 }
 
 string Settings::replace(const string &in, const string &find, const string &replace) const {

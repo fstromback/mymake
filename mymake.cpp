@@ -123,6 +123,11 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  if (settings.doInstall) {
+    settings.install();
+    return 0;
+  }
+
   if (!settings.forceRecompilation) {
     if (!settings.cache.load()) { //Ladda cachen
       cout << "Failed to load the cache!" << endl;

@@ -29,6 +29,8 @@ public:
   bool showHelp;
   bool debugOutput;
 
+  bool doInstall;
+
   list<string> commandLineParams;
 
   IncludeCache cache;
@@ -40,6 +42,8 @@ public:
 
   void outputUsage() const;
 
+  void install() const; //Setup the .mymake file in the user's home-directory.
+
   string getCompileCommand(const string &file, const string &output) const;
   string getLinkCommand(const string &files) const;
 private:
@@ -48,6 +52,8 @@ private:
   void storeItem(const string &identifier, const string &value);
 
   string replace(const string &in, const string &find, const string &replace) const;
+  
+  string getHomeFile(const string &file) const;
 
   void addProcessParameters(int argc, char **argv, int startAt);
 };
