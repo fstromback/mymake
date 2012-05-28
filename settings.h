@@ -12,14 +12,8 @@ public:
   Settings();
   virtual ~Settings();
 
-  string compile;
-  string link;
-  string buildPath;
-  string outFile;
   string executableExt;
-
   string srcPath;
-
   string executable;
 
   list<string> inputFiles;
@@ -27,6 +21,7 @@ public:
 
   bool executeCompiled;
   bool forceRecompilation;
+  bool showSettings;
   bool showHelp;
   bool debugOutput;
 
@@ -48,7 +43,20 @@ public:
 
   string getCompileCommand(const string &file, const string &output) const;
   string getLinkCommand(const string &files) const;
+
+  inline string getBuildPath() const { return active.buildPath; };
+  inline string getOutFile() const { return active.outFile; };
 private:
+  class Configuration {
+  public:
+    string compile;
+    string link;
+    string buildPath;
+    string outFile;
+  };
+
+  Configuration active;
+    
   void loadFile(const string &file);
   void parseLine(const string &file);
   void storeItem(const string &identifier, const string &value);
@@ -60,5 +68,4 @@ private:
   void addProcessParameters(int argc, char **argv, int startAt);
 
   void outputConfig() const;
-  void addExt(const string &ext);
 };

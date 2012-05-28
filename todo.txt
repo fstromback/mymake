@@ -1,5 +1,5 @@
 TODO:
 
-Se till att ha " runt filnamnen!
+Stöd för olika konfigurationer.
 
 

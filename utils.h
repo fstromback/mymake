@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <string>
 #include <list>
@@ -11,7 +13,7 @@ void outputItem(const T &item, bool first, ostream &to) {
 }
 
 template <>
-void outputItem(const string &item, bool first, ostream &to) {
+inline void outputItem<string>(const string &item, bool first, ostream &to) {
   if (!first) to << " ";
 
   to << item.c_str();
@@ -31,4 +33,15 @@ ostream &operator <<(ostream &to, const list<T> &output) {
   outputList(output.begin(), output.end(), to);
   return to;
 }
+
+template <class T>
+void addSingle(T &to, const typename T::value_type &toInsert) {
+  for (typename T::const_iterator i = to.begin(); i != to.end(); i++) {
+    if (*i == toInsert) return;
+  }
+
+  to.push_back(toInsert);
+}
+
+string quote(const string &s);
 

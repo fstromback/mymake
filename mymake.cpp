@@ -10,12 +10,12 @@
 #include "files.h"
 #include "cppfile.h"
 #include "globals.h"
-
-void listDir();
+#include "utils.h"
 
 using namespace std;
 
 bool runCommand(const string &commandline) {
+  if (settings.showSettings) cout << commandline.c_str() << endl;
   int returnCode = system(commandline.c_str());
   if (returnCode != 0) {
     cout << "Failed: " << returnCode << endl;
@@ -32,7 +32,7 @@ bool compileFiles(Files &files, Files &toLink) {
     }
 
     if (file.isValid()) {
-      File output = file.modifyRelative(settings.srcPath, settings.buildPath).modifyType("o");
+      File output = file.modifyRelative(settings.srcPath, settings.getBuildPath()).modifyType("o");
        
       bool needsCompilation = false;
       if (settings.forceRecompilation) {
@@ -48,7 +48,7 @@ bool compileFiles(Files &files, Files &toLink) {
 
 	output.ensurePathExists();
 
-	string compileArgument = settings.getCompileCommand(file.getFullPath(), output.getFullPath());
+	string compileArgument = settings.getCompileCommand(quote(file.getFullPath()), quote(output.getFullPath()));
 	if (!runCommand(compileArgument)) {
 	  return false;
 	}
@@ -65,7 +65,7 @@ bool linkOutput(Files &toLink) {
   //Files files(Directory(outputPath), ".o");
   Files &files = toLink;
 
-  File executable(settings.outFile);
+  File executable(settings.getOutFile());
   executable.ensurePathExists();
 
   bool link = false;
@@ -78,13 +78,13 @@ bool linkOutput(Files &toLink) {
   }
 
   if (link) {
-    cout << "Linking " << settings.outFile << "..." << endl;
+    cout << "Linking " << settings.getOutFile() << "..." << endl;
 
     stringstream toLink;
     bool first = true;
     for (list<File>::iterator i = files.begin(); i != files.end(); i++) {
       if (!first) toLink << " ";
-      toLink << i->getFullPath();
+      toLink << quote(i->getFullPath());
       first = false;
     }
 
@@ -116,7 +116,7 @@ void addFileExts(const string &file, Files &to) {
 
 bool clean() {
   //Remove all files in the build directory.
-  File buildDirectory = File(settings.buildPath);
+  File buildDirectory = File(settings.getBuildPath());
   return buildDirectory.remove();
 }
 
@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
 
   if (errorCode == 0) {
     if (settings.executeCompiled) {
-      execv(settings.outFile.c_str(), settings.getExecParams());
+      execv(settings.getOutFile().c_str(), settings.getExecParams());
     }
   }
   return errorCode;

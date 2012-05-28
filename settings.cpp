@@ -13,6 +13,7 @@ Settings::Settings() {
 
   forceRecompilation = false;
   executeCompiled = false;
+  showSettings = false;
   showHelp = false;
   debugOutput = false;
 
@@ -82,7 +83,7 @@ void Settings::parseArguments(int argc, char **argv) {
   if (argc <= 1) return;
 
   string identifier = "input";
-  bool showSettings = debugOutput;
+  showSettings = debugOutput;
 
   for (int i = 1; i < argc; i ++) {
     string arg = argv[i];
@@ -131,8 +132,8 @@ void Settings::addProcessParameters(int argc, char **argv, int i) {
 char **Settings::getExecParams() const {
   char **arglist = new char*[commandLineParams.size() + 2];
   
-  arglist[0] = new char[outFile.size() + 1];
-  strcpy(arglist[0], outFile.c_str());
+  arglist[0] = new char[active.outFile.size() + 1];
+  strcpy(arglist[0], active.outFile.c_str());
   int pos = 1;
   for (list<string>::const_iterator i = commandLineParams.begin(); i != commandLineParams.end(); i++) {
     arglist[pos] = new char[i->size() + 1];
@@ -159,7 +160,6 @@ void Settings::loadFile(const string &file) {
       }
     }
   }
-  cout << file.c_str() << " loaded\n";
 }
 
 void Settings::parseLine(const string &line) {
@@ -171,31 +171,25 @@ void Settings::parseLine(const string &line) {
 
 void Settings::storeItem(const string &identifier, const string &value) {
   if (identifier == "input") {
-    inputFiles.push_back(value);
+    addSingle(inputFiles, value);
   } else if (identifier == "ext") {
-    addExt(value);
+    addSingle(cppExtensions, value);
   } else if (identifier == "executableExt") {
     executableExt = value;
   } else if (identifier == "out") {
-    outFile = value;
+    active.outFile = value;
   } else if (identifier == "compile") {
-    compile = value;
+    active.compile = value;
   } else if (identifier == "link") {
-    link = value;
+    active.link = value;
   } else if (identifier == "build") {
-    buildPath = value;
+    active.buildPath = value;
   } else if (identifier == "execute") {
     executeCompiled = (value == "yes");
   } else if (identifier == "debugOutput") {
     debugOutput = (value == "yes");
+    if (debugOutput) showSettings = true;
   }
-}
-
-void Settings::addExt(const string &ext) {
-  for (list<string>::iterator i = cppExtensions.begin(); i != cppExtensions.end(); i++) {
-    if (*i == ext) return;
-  }
-  cppExtensions.push_back(ext);
 }
 
 void Settings::outputUsage() const {
@@ -223,23 +217,23 @@ string Settings::replace(const string &in, const string &find, const string &rep
 }
 
 string Settings::getCompileCommand(const string &file, const string &output) const {
-  string result = replace(replace(compile, "<file>", file), "<output>", output);
+  string result = replace(replace(active.compile, "<file>", file), "<output>", output);
   return result;
 }
 
 string Settings::getLinkCommand(const string &files) const {
-  string result = replace(replace(link, "<output>", outFile), "<files>", files);
+  string result = replace(replace(active.link, "<output>", quote(active.outFile)), "<files>", files);
   return result;
 }
 
 bool Settings::enoughForCompilation() {
   if (inputFiles.size() == 0) return false;
   if (cppExtensions.size() == 0) return false;
-  if (buildPath.size() == 0) return false;
+  if (active.buildPath.size() == 0) return false;
 
-  if (outFile.size() == 0) {
+  if (active.outFile.size() == 0) {
     File firstInFile(inputFiles.front());
-    outFile = firstInFile.modifyType(executableExt).getFullPath();
+    active.outFile = firstInFile.modifyType(executableExt).getFullPath();
   }
 
   return true;
@@ -249,12 +243,12 @@ void Settings::outputConfig() const {
   cout << "Parameters used:" << endl;
   cout << "Input files: " << inputFiles << endl;
   cout << "Extensions: " << cppExtensions << endl;
-  cout << "Output file: " << outFile.c_str() << endl;
+  cout << "Output file: " << active.outFile.c_str() << endl;
   cout << "Executable extension: " << executableExt.c_str() << endl;
   cout << endl;
-  cout << "Build path: " << buildPath.c_str() << endl;
-  cout << "Compile with: " << compile.c_str() << endl;
-  cout << "Link with: " << link.c_str() << endl;
+  cout << "Build path: " << active.buildPath.c_str() << endl;
+  cout << "Compile with: " << active.compile.c_str() << endl;
+  cout << "Link with: " << active.link.c_str() << endl;
   cout << endl;
   cout << "Execute file: " << (executeCompiled ? "yes" : "no") << endl;
   cout << "Force recompilation: " << (forceRecompilation ? "yes" : "no") << endl;
