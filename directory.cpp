@@ -42,6 +42,23 @@ void Directory::initialize(string path) {
   }
 }
 
+bool Directory::remove() const{
+  bool success = true;
+  for (list<File>::const_iterator i = folders.begin(); i != folders.end(); i++) {
+    if (i->getTitle() == ".") {
+    } else if (i->getTitle() == "..") {
+    } else {
+      success &= i->remove();
+    }
+  }
+
+  for (list<File>::const_iterator i = files.begin(); i != files.end(); i++) {
+    success &= i->remove();
+  }
+
+  return success;
+}
+
 void Directory::output(ostream &to) {
   to << "Content of " << path << ":\n";
 

@@ -87,7 +87,9 @@ void Settings::parseArguments(int argc, char **argv) {
 	executeCompiled = true;
       } else if (arg == "-ne") {
 	executeCompiled = false;
-      } else if (arg == "-install") {
+      } else if (arg == "-clean") {
+	clean = true;
+      } else if (arg == "-config") {
 	doInstall = true;
 	return;
       } else if (arg == "-debug"){
@@ -172,17 +174,18 @@ void Settings::storeItem(const string &identifier, const string &value) {
 
 void Settings::outputUsage() const {
   cout << "Usage:" << endl;
-  cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-a <arg1> ... <argn>]" << endl;
-  cout << executable << " <file> -install" << endl;
+  cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-a <arg1> ... <argn>] [-clean]" << endl;
+  cout << executable << " <file> -config" << endl;
   cout << endl;
-  cout << "file   : The root source file to compile (may contain multiple files)." << endl;
-  cout << "output : The name of the executable file to be created." << endl;
-  cout << "-e     : Execute the compiled file on success." << endl;
-  cout << "-ne    : Do not execute the compiled file on success." << endl;
-  cout << "-f     : Force recompilation." << endl;
-  cout << "-a     : Arguments to the started process (sets -e as well)." << endl;
+  cout << "file    : The root source file to compile (may contain multiple files)." << endl;
+  cout << "output  : The name of the executable file to be created." << endl;
+  cout << "-e      : Execute the compiled file on success." << endl;
+  cout << "-ne     : Do not execute the compiled file on success." << endl;
+  cout << "-f      : Force recompilation." << endl;
+  cout << "-a      : Arguments to the started process (sets -e as well)." << endl;
+  cout << "-clean  : Remove all intermediate files." << endl;
   cout << endl;
-  cout << "-install : Setup the .mymake-file in the home directory." << endl;
+  cout << "-config : Setup the .mymake-file in the home directory." << endl;
 }
 
 string Settings::replace(const string &in, const string &find, const string &replace) const {

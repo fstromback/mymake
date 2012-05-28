@@ -114,6 +114,12 @@ void addFileExts(const string &file, Files &to) {
   }
 }
 
+bool clean() {
+  //Remove all files in the build directory.
+  File buildDirectory = File(settings.buildPath);
+  return buildDirectory.remove();
+}
+
 int main(int argc, char **argv) {
 
   settings.parseArguments(argc, argv);
@@ -126,6 +132,16 @@ int main(int argc, char **argv) {
   if (settings.doInstall) {
     settings.install();
     return 0;
+  }
+
+  if (settings.clean) {
+    if (clean()) {
+      cout << "Cleaned intermediate files." << endl;
+      return 0;
+    } else {
+      cout << "Cleaning failed!" << endl;
+      return -1;
+    }
   }
 
   if (!settings.forceRecompilation) {

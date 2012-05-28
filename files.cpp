@@ -152,9 +152,11 @@ bool Files::load(const File &file) {
   IncludeCache::CachedCpp &cpp = settings.cache.files[f];
 
   if (cpp.modified < file.getLastModified()) {
-    cout << "The file " << file.getTitle().c_str() << 
+    if (settings.debugOutput) {
+      cout << "The file " << file.getTitle().c_str() << 
           " have been modified from " << cpp.modified << " to " << 
           file.getLastModified() << ". Renewing cache..." << endl;
+    }
     return false;
   }
   

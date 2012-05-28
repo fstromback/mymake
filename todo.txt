@@ -1,6 +1,3 @@
 TODO:
 
-Cachning av include-träd
-
-Clean-funktion
 

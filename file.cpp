@@ -1,5 +1,8 @@
 #include "file.h"
 #include "mkpath.h"
+#include "directory.h"
+#include "globals.h"
+
 #include <fstream>
 
 using namespace std;
@@ -141,4 +144,20 @@ void File::ensurePathExists() const {
 void File::update() {
   if (stat((directory + title).c_str(), &status) < 0) valid = false;
   else valid = true;
+}
+
+bool File::remove() const {
+  if (isDirectory()) {
+    Directory dir(*this);
+    if (settings.debugOutput) cout << "Removing " << getFullPath().c_str() << endl;
+    bool ok = dir.remove();
+    ok &= (rmdir(getFullPath().c_str()) == 0);
+    if (!ok) cout << "Failed to remove " << getFullPath().c_str() << endl;
+    return ok;
+  } else {
+    if (settings.debugOutput) cout << "Removing " << getFullPath().c_str() << endl;
+    bool ok = (unlink(getFullPath().c_str()) == 0);
+    if (!ok) cout << "Failed to remove " << getFullPath().c_str() << endl;
+    return ok;
+  }
 }

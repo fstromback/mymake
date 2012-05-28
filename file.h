@@ -33,6 +33,8 @@ class File {
 
   void ensurePathExists() const;
 
+  bool remove() const;
+
   void update();
   ifstream* read() const;
  protected:

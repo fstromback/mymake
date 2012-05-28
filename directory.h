@@ -26,6 +26,8 @@ class Directory {
   list<File> folders;
 
   string getPath() const { return path; };
+
+  bool remove() const;
  private:
   string path;
 

@@ -29,6 +29,7 @@ public:
   bool showHelp;
   bool debugOutput;
 
+  bool clean;
   bool doInstall;
 
   list<string> commandLineParams;
