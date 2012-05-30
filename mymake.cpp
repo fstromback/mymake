@@ -26,13 +26,13 @@ bool runCommand(const string &commandline) {
 
 bool compileFiles(Files &files, Files &toLink) {
   for (list<File>::iterator i = files.begin(); i != files.end(); i++) {
-    if (settings.debugOutput) cout << "Loading file " << i->getFullPath() << endl;
     CppFile file(*i);
 
-    if (settings.debugOutput) cout << "Adding files to compile..." << endl;
     for (list<string>::iterator type = settings.cppExtensions.begin(); type != settings.cppExtensions.end(); type++) {
       files.append(file.getIncludes().changeFiletypes(*type));
     }
+
+    if (settings.debugOutput) cout << "File list: " << endl << files << endl;
 
     if (file.isValid()) {
       if (settings.debugOutput) cout << "Checking for need of compilation..." << endl;

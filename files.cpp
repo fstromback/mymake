@@ -31,7 +31,7 @@ Files Files::loadFromCpp(const File &file) {
     getline(*f, line);
 
     vector<string> tokens = parseLine(line);
-    if (tokens.size() > 2) {
+    if (tokens.size() > 1) {
       if (tokens[0] == "#include") {
 	string &token = tokens[1];
 	if (token[0] == '"') {
