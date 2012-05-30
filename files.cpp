@@ -21,21 +21,27 @@ Files Files::loadFromCpp(const File &file) {
   }
 
   ifstream* f = file.read();
+  if (f == 0) {
+    cout << "Error: Failed to open the file " << file.getFullPath() << "." << endl;
+    return result;
+  }
 
   while (!f->eof()) {
     string line;
     getline(*f, line);
 
     vector<string> tokens = parseLine(line);
-    if (tokens[0] == "#include") {
-      string &token = tokens[1];
-      if (token[0] == '"') {
-	if (token[token.size() - 1] == '"') {
-	  File toAdd(file.getDirectory(), token.substr(1, token.size() - 2));
-	  if (toAdd.isValid()) {
-	    result.add(File(file.getDirectory(), token.substr(1, token.size() - 2)));
-	  } else {
-	    cout << "In " << file.getFullPath().c_str() << ": The included file " << toAdd.getFullPath().c_str() << " does not exist." << endl;
+    if (tokens.size() > 2) {
+      if (tokens[0] == "#include") {
+	string &token = tokens[1];
+	if (token[0] == '"') {
+	  if (token[token.size() - 1] == '"') {
+	    File toAdd(file.getDirectory(), token.substr(1, token.size() - 2));
+	    if (toAdd.isValid()) {
+	      result.add(File(file.getDirectory(), token.substr(1, token.size() - 2)));
+	    } else {
+	      cout << "In " << file.getFullPath().c_str() << ": The included file " << toAdd.getFullPath().c_str() << " does not exist." << endl;
+	    }
 	  }
 	}
       }

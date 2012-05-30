@@ -2,4 +2,6 @@ TODO:
 
 Stöd för olika konfigurationer.
 
+Fixa så att File::readFromCpp kastar en exception om något går fel!
+
 

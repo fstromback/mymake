@@ -25,15 +25,18 @@ void CppFile::updateIncludes() {
 }
 
 void CppFile::loadIncludes() {
+  if (settings.debugOutput) cout << "Generating includes..." << endl;
   Files rootIncludes = Files::loadFromCpp(*this);
   
   includes.append(rootIncludes);
 
   for (list<File>::iterator i = includes.begin(); i != includes.end(); i++) {
+    if (settings.debugOutput) cout << "Generating includes for " << i->getTitle() << endl;
     Files now = Files::loadFromCpp(*i);
     includes.append(now);
   }
 
+  if (settings.debugOutput) cout << "Saving result..." << endl;
   includes.save(getFullPath());
 }
 

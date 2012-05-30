@@ -89,7 +89,7 @@ ostream &operator <<(ostream &outputTo, File &output) {
 }
 
 ifstream *File::read() const {
-  return new ifstream((directory + title).c_str());
+  return new ifstream(getFullPath().c_str(), ifstream::in);
 }
 
 string File::trimPath(string path) const {
