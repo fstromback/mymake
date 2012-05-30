@@ -9,13 +9,14 @@
 using namespace std;
 
 File::File(const string &path, const string &title) {
-  this->directory = trimPath(path);
-  this->title = title;
-  if (stat((path + title).c_str(), &status) < 0) valid = false;
+  this->directory = trimPath(fixDelimiters(path));
+  this->title = fixDelimiters(title);
+  if (stat(fixDelimiters(path + title).c_str(), &status) < 0) valid = false;
   else valid = true;
 }
 
-File::File(const string &filename) {
+File::File(const string &f) {
+  string filename = fixDelimiters(f);
   int lastPath = filename.rfind(PATH_DELIM);
   if (lastPath < 0) {
     this->directory = string(".") + PATH_DELIM;
@@ -168,4 +169,16 @@ bool File::remove() const {
     if (!ok) cout << "Failed to remove " << getFullPath().c_str() << endl;
     return ok;
   }
+}
+
+string File::fixDelimiters(const string &path) const {
+	string result = path;
+	for (int i = 0; i < result.size(); i++) {
+		if (result[i] == '/') {
+			result[i] = PATH_DELIM;
+		} else if (result[i] == '\\') {
+			result[i] = PATH_DELIM;
+		}
+	}
+	return result;
 }

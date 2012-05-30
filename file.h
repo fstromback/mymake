@@ -46,6 +46,7 @@ class File {
 
   virtual void output(ostream &to);
   string trimPath(string path) const;
+  string fixDelimiters(const string &path) const;
 };
 
 

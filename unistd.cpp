@@ -74,6 +74,8 @@ int execvW(const char *file, const char *const *argv) {
 	CloseHandle( pi.hThread );
 
 	delete []cmdline;
+
+	return 0;
 }
 
 #endif
