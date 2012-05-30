@@ -4,6 +4,7 @@
 #include "globals.h"
 
 #include <fstream>
+#include <unistd.h>
 
 using namespace std;
 
