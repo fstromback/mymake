@@ -2,9 +2,9 @@
 #include "mkpath.h"
 #include "directory.h"
 #include "globals.h"
+#include "unistd.h"
 
 #include <fstream>
-#include <unistd.h>
 
 using namespace std;
 
@@ -16,9 +16,9 @@ File::File(const string &path, const string &title) {
 }
 
 File::File(const string &filename) {
-  int lastPath = filename.rfind('/');
+  int lastPath = filename.rfind(PATH_DELIM);
   if (lastPath < 0) {
-    this->directory = "./";
+    this->directory = string(".") + PATH_DELIM;
     this->title = filename;
   } else {
     this->directory = trimPath(filename.substr(0, lastPath + 1));
@@ -41,6 +41,7 @@ File &File::operator =(const File &other) {
   this->status = other.status;
   this->directory = other.directory;
   this->title = other.title;
+  return *this;
 }
 
 bool File::operator ==(const File &other) const {
@@ -93,29 +94,31 @@ ifstream *File::read() const {
 }
 
 string File::trimPath(string path) const {
-  int pos = path.find("./");
+  string dotSlash = string(".") + PATH_DELIM;
+  int pos = path.find(dotSlash.c_str());
   while (pos >= 0) {
     if (pos == 0) {
       path = path.substr(pos + 2);
     } else if (path[pos - 1] != '.') {
       path = path.substr(0, pos) + path.substr(pos + 2);
     }
-    pos = path.find("./", pos + 1);
+    pos = path.find(dotSlash.c_str(), pos + 1);
   }
 
-  pos = path.find("/..");
+  string slashDotDot = PATH_DELIM + string("..");
+  pos = path.find(slashDotDot);
   while (pos >= 0) {
-    int last = path.rfind("/", pos - 1);
+    int last = path.rfind(PATH_DELIM, pos - 1);
     if (last >= 0) {
       path = path.substr(0, last) + path.substr(pos + 3);
     } else {
       path = path.substr(pos + 4);
     }
 
-    pos = path.find("/..", pos + 1);
+    pos = path.find(slashDotDot, pos + 1);
   }
 
-  return "./" + path;
+  return dotSlash + path;
 }
 
 

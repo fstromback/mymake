@@ -1,7 +1,3 @@
-#include <sys/types.h>
-#include <dirent.h>
-#include <unistd.h>
-
 #include <iostream>
 #include <sstream>
 #include <stdio.h>
@@ -12,6 +8,8 @@
 #include "cppfile.h"
 #include "globals.h"
 #include "utils.h"
+
+#include "unistd.h"
 
 using namespace std;
 

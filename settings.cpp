@@ -24,20 +24,41 @@ Settings::Settings() {
 
 Settings::~Settings() {}
 
+#ifdef _WIN32
+string Settings::getHomeFile(const string &file) const {
+	char *home = getenv("HOMEPATH");
+	char *drive = getenv("HOMEDRIVE");
+	if ((home != 0) && (drive != 0)) {
+		string h = string(drive) + string(home);
+		if (h[h.size() - 1] == PATH_DELIM) {
+			return h + file;
+		} else {
+			return h + PATH_DELIM + file;
+		}
+	}
+	return "";
+}
+#else
 string Settings::getHomeFile(const string &file) const {
   char *home = getenv("HOME");
   if (home != 0) {
     string h = home;
-    if (h[h.size() - 1] == '/') {
+    if (h[h.size() - 1] == PATH_DELIM) {
       return h + file;
     } else {
-      return h + "/" + file;
+      return h + PATH_DELIM + file;
     }
   }
+  return "";
 }
+#endif
 
 void Settings::install() const {
   ofstream out(getHomeFile(".mymake").c_str());
+  bool windows = false;
+#ifdef _WIN32
+  windows = true;
+#endif
 
   out << "#Configuration for mymake" << endl;
   out << "#Lines beginning with a # are treated as comments." << endl;
@@ -53,7 +74,8 @@ void Settings::install() const {
   out << "ext=c++" << endl;
   out << "" << endl;
   out << "#The extension for executable files on the system." << endl;
-  out << "executableExt=" << endl;
+  if (windows) out << "executableExt=exe" << endl;
+  else out << "executableExt=" << endl;
   out << "" << endl;
   out << "#Input file(s)" << endl;
   out << "#input=<filename>" << endl;
@@ -72,7 +94,7 @@ void Settings::install() const {
   out << "link=g++ <files> -o <output>" << endl;
   out << "" << endl;
   out << "#The directory to be used for intermediate files" << endl;
-  out << "build=build/" << endl;
+  out << "build=build" << PATH_DELIM << endl;
   out << "" << endl;
   out << "#Execute the compiled file after successful compilation?" << endl;
   out << "execute=yes" << endl;

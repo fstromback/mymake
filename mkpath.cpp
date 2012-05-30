@@ -16,6 +16,8 @@
 
 #include <string.h>
 #include <sys/stat.h>    /* Fix up for Windows - inc mode_t */
+#include "dirent.h"
+#include "unistd.h"
 
 typedef struct stat Stat;
 
@@ -23,6 +25,7 @@ static int do_mkdir(const char *path, mode_t mode)
 {
     Stat            st;
     int             status = 0;
+
 
     if (stat(path, &st) != 0)
     {
@@ -54,14 +57,14 @@ int mkpath(const char *path, mode_t mode)
 
     status = 0;
     pp = copypath;
-    while (status == 0 && (sp = strchr(pp, '/')) != 0)
+    while (status == 0 && (sp = strchr(pp, PATH_DELIM)) != 0)
     {
         if (sp != pp)
         {
             /* Neither root nor double slash in path */
             *sp = '\0';
             status = do_mkdir(copypath, mode);
-            *sp = '/';
+            *sp = PATH_DELIM;
         }
         pp = sp + 1;
     }
