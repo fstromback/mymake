@@ -6,3 +6,4 @@ build-t/
 mymake
 my-make
 
+*.exe

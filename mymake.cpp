@@ -34,7 +34,7 @@ bool compileFiles(Files &files, Files &toLink) {
 
     if (file.isValid()) {
       if (settings.debugOutput) cout << "Checking for need of compilation..." << endl;
-      File output = file.modifyRelative(settings.srcPath, settings.getBuildPath()).modifyType("o");
+      File output = file.modifyRelative(settings.srcPath, settings.getBuildPath()).modifyType(settings.intermediateExt);
        
       bool needsCompilation = false;
       if (settings.forceRecompilation) {

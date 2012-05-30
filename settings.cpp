@@ -11,6 +11,11 @@
 using namespace std;
 
 Settings::Settings() {
+#ifdef _WIN32
+	intermediateExt = "obj";
+#else
+	intermediateExt = "o";
+#endif
 
   forceRecompilation = false;
   executeCompiled = false;
@@ -77,6 +82,10 @@ void Settings::install() const {
   if (windows) out << "executableExt=exe" << endl;
   else out << "executableExt=" << endl;
   out << "" << endl;
+  out << "#The extension for intermediate files on the system." << endl;
+  if (windows) out << "intermediate=obj" << endl;
+  else out << "intermediate=o" << endl;
+  out << "" << endl;
   out << "#Input file(s)" << endl;
   out << "#input=<filename>" << endl;
   out << "" << endl;
@@ -86,12 +95,14 @@ void Settings::install() const {
   out << "#Command used to compile a single source file into a unlinked file." << endl;
   out << "#<file> will be replaced by the input file and" << endl;
   out << "#<output> will be replaced by the output file" << endl;
-  out << "compile=g++ <file> -c -o <output>" << endl;
+  if (windows) out << "compile=cl <file> /nologo /c /EHsc /Fo<output>" << endl;
+  else out << "compile=g++ <file> -c -o <output>" << endl;
   out << "" << endl;
   out << "#Command to link the intermediate files into an executable." << endl;
   out << "#<files> is the list of intermediate files and" << endl;
   out << "#<output> is the name of the final executable to be created." << endl;
-  out << "link=g++ <files> -o <output>" << endl;
+  if (windows) out << "link=cl <files> /nologo /Fe<output>" << endl;
+  else out << "link=g++ <files> -o <output>" << endl;
   out << "" << endl;
   out << "#The directory to be used for intermediate files" << endl;
   out << "build=build" << PATH_DELIM << endl;
@@ -113,7 +124,7 @@ void Settings::parseArguments(int argc, char **argv) {
 
     if (arg != "") {
       if (arg == "-?") {
-	showHelp = true;
+        showHelp = true;
       } else if (arg == "-o") {
 	identifier = "out";
       } else if (arg == "-f") {
@@ -205,6 +216,8 @@ void Settings::storeItem(const string &identifier, const string &value) {
     active.compile = value;
   } else if (identifier == "link") {
     active.link = value;
+  } else if (identifier == "intermediate") {
+    intermediateExt = value;
   } else if (identifier == "build") {
     active.buildPath = value;
   } else if (identifier == "execute") {

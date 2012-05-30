@@ -4,4 +4,4 @@ Stöd för olika konfigurationer.
 
 Fixa så att File::readFromCpp kastar en exception om något går fel!
 
-
+Se till så att includes med \ eller / görs om till rätt för det nuvarane os:et.

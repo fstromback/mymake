@@ -23,7 +23,7 @@ void Directory::initialize(string path) {
 		this->path = path;
 
 		WIN32_FIND_DATA file;
-		HANDLE h = FindFirstFile(path.c_str(), &file);
+		HANDLE h = FindFirstFile((path + PATH_DELIM + string("*")).c_str(), &file);
 
 		string directory = path + PATH_DELIM;
 

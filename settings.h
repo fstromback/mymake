@@ -12,6 +12,7 @@ public:
   Settings();
   virtual ~Settings();
 
+  string intermediateExt;
   string executableExt;
   string srcPath;
   string executable;
