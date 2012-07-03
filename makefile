@@ -1,3 +1,3 @@
 all:
-	c++ *.cpp -o mymake
+	g++ *.cpp -o mymake
 	./mymake
