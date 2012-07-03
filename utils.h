@@ -45,3 +45,7 @@ void addSingle(T &to, const typename T::value_type &toInsert) {
 
 string quote(const string &s);
 
+extern const string defaultIntermediateExt;
+extern const bool windows;
+
+string getHomeFile(const string &file);

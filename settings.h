@@ -64,8 +64,6 @@ private:
 
   string replace(const string &in, const string &find, const string &replace) const;
   
-  string getHomeFile(const string &file) const;
-
   void addProcessParameters(int argc, char **argv, int startAt);
 
   void outputConfig() const;
