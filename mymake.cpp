@@ -43,7 +43,7 @@ bool compileFiles(Files &files, Files &toLink) {
 
     if (settings.debugOutput) cout << "File list: " << endl << files << endl;
 
-    if (file.isValid()) {
+    if (file.isValid() && !settings.ignoreFile(file)) {
       if (settings.debugOutput) cout << "Checking for need of compilation..." << endl;
       File output = file.modifyRelative(settings.srcPath, settings.getBuildPath()).modifyType(settings.intermediateExt);
        

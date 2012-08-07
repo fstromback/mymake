@@ -29,6 +29,7 @@ int main() {
   test("a*", "abcd");
   test("ac*", "abc");
   test("ab*a", "abcd");
+  test("*.template.*", "stack.template.cc");
 
   return 0;
 }

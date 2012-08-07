@@ -1,7 +1,7 @@
 #Example file for mymake.
 
 #Input file(s)
-input=mymake
+#input=mymake
 
 #File extensions for cpp-files.
 ext=cpp

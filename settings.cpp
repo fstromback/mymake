@@ -66,7 +66,7 @@ void Settings::install() const {
   out << "" << endl;
   out << "#Command used to compile a single source file into a unlinked file." << endl;
   out << "#<file> will be replaced by the input file and" << endl;
-  out << "#<output> will be replaced by the output file" << endl;
+  out << "#<output> will be replaced by the outputn file" << endl;
   if (windows) out << "compile=cl <file> /nologo /c /EHsc /Fo<output>" << endl;
   else out << "compile=g++ <file> -c -o <output>" << endl;
   out << "" << endl;
@@ -262,6 +262,7 @@ bool Settings::enoughForCompilation() {
 void Settings::outputConfig() const {
   cout << "Parameters used:" << endl;
   cout << "Input files: " << inputFiles << endl;
+  cout << "Ignore: " << ignoreFiles << endl;
   cout << "Extensions: " << cppExtensions << endl;
   cout << "Output file: " << active.outFile.c_str() << endl;
   cout << "Executable extension: " << executableExt.c_str() << endl;

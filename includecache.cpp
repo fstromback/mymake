@@ -26,7 +26,7 @@ bool IncludeCache::load() {
     while (!file.eof() && !atEnd) {
       CachedCpp cfile(file, atEnd);
       File cFile(cfile.file);
-      if (cFile.isValid() && !settings.ignoreFile(cFile)) {
+      if (cFile.isValid()) {
 	//the file has been removed or is not accessable. don't include it in the cache
 	files[cfile.file] = cfile;
       } else if (settings.debugOutput) {
@@ -88,7 +88,10 @@ IncludeCache::CachedCpp::CachedCpp(ifstream &from, bool &atEnd) : CachedFile(fro
     from >> type;
     switch (type) {
     case '-':
-      includedFiles.push_back(CachedFile(from, atEnd));
+      {
+	CachedFile file(from, atEnd);
+	includedFiles.push_back(file);
+      }
       break;
     case 'E':
       atEnd = true;

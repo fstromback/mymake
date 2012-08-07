@@ -25,7 +25,7 @@ void CppFile::updateIncludes() {
 }
 
 void CppFile::loadIncludes() {
-  if (settings.debugOutput) cout << "Generating includes..." << endl;
+  if (settings.debugOutput) cout << "Generating includes for " << *this << "..." << endl;
   Files rootIncludes = Files::loadFromCpp(*this);
   
   includes.append(rootIncludes);

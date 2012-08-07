@@ -38,7 +38,7 @@ Files Files::loadFromCpp(const File &file) {
 	  if (token[token.size() - 1] == '"') {
 	    File toAdd(file.getDirectory(), token.substr(1, token.size() - 2));
 	    if (toAdd.isValid()) {
-	      if (!settings.ignoreFile(file)) result.add(toAdd);
+	      result.add(toAdd);
 	    } else {
 	      cout << "In " << file.getFullPath().c_str() << ": The included file " << toAdd.getFullPath().c_str() << " does not exist." << endl;
 	    }
