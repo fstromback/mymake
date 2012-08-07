@@ -25,7 +25,13 @@ bool IncludeCache::load() {
     bool atEnd = false;
     while (!file.eof() && !atEnd) {
       CachedCpp cfile(file, atEnd);
-      files[cfile.file] = cfile;
+      File cFile(cfile.file);
+      if (cFile.isValid() && !settings.ignoreFile(cFile)) {
+	//the file has been removed or is not accessable. don't include it in the cache
+	files[cfile.file] = cfile;
+      } else if (settings.debugOutput) {
+	cout << "Ignored removed file " << cfile.file << endl;
+      }
     }
   } catch (FileError &e) {
     files.clear();

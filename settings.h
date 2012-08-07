@@ -4,6 +4,7 @@
 #include <list>
 
 #include "includecache.h"
+#include "wildcard.h"
 
 using namespace std;
 
@@ -25,6 +26,7 @@ public:
   bool showSettings;
   bool showHelp;
   bool debugOutput;
+  bool showTime;
 
   bool clean;
   bool doInstall;
@@ -32,6 +34,8 @@ public:
   list<string> commandLineParams;
 
   IncludeCache cache;
+
+  bool ignoreFile(const File &f) const;
 
   void parseArguments(int argc, char **argv);
   bool enoughForCompilation();
@@ -48,6 +52,8 @@ public:
   inline string getBuildPath() const { return active.buildPath; };
   inline string getOutFile() const { return active.outFile; };
 private:
+  list<Wildcard> ignoreFiles;
+
   class Configuration {
   public:
     string compile;
@@ -57,6 +63,8 @@ private:
   };
 
   Configuration active;
+
+  bool ignoreFile(const string &title) const;
     
   void loadFile(const string &file);
   void parseLine(const string &file);

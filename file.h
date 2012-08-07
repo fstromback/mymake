@@ -18,7 +18,7 @@ class File {
 
   File &operator =(const File &other);
   bool operator ==(const File &other) const;
-  friend ostream &operator <<(ostream &outputTo, File &output);
+  friend ostream &operator <<(ostream &outputTo, const File &output);
 
   string getTitle() const;
   string getFullPath() const;
@@ -44,7 +44,7 @@ class File {
   string directory;
   string title;
 
-  virtual void output(ostream &to);
+  virtual void output(ostream &to) const;
   string trimPath(string path) const;
   string fixDelimiters(const string &path) const;
 };

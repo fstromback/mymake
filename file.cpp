@@ -76,7 +76,7 @@ string File::getDirectory() const {
   else return directory + title;
 }
 
-void File::output(ostream &to) {
+void File::output(ostream &to) const {
   if (isDirectory()) {
     to << "[" << directory << title << "]";
   } else {
@@ -84,7 +84,7 @@ void File::output(ostream &to) {
   }
 }
 
-ostream &operator <<(ostream &outputTo, File &output) {
+ostream &operator <<(ostream &outputTo, const File &output) {
   output.output(outputTo);
 
   return outputTo;

@@ -8,14 +8,25 @@
 #include "cppfile.h"
 #include "globals.h"
 #include "utils.h"
+#include "time.h"
 
 #include "unistd.h"
 
+//for testing of cache and ignore features.
+#include "dummy.h"
+
 using namespace std;
+
+//total compilation time.
+Interval compilationTime(0);
 
 bool runCommand(const string &commandline) {
   if (settings.showSettings) cout << commandline.c_str() << endl;
+
+  Time start;
   int returnCode = system(commandline.c_str());
+  compilationTime = compilationTime + (Time() - start);
+
   if (returnCode != 0) {
     cout << "Failed: " << returnCode << endl;
   }
@@ -123,6 +134,7 @@ bool clean() {
 }
 
 int main(int argc, char **argv) {
+  Time startTime;
 
   settings.parseArguments(argc, argv);
 
@@ -181,6 +193,14 @@ int main(int argc, char **argv) {
   }
 
   settings.cache.save();
+
+  Interval totalTime = Time() - startTime;
+
+  if (settings.showTime) {
+    cout << "Total time : " << totalTime << endl;
+    cout << "   compiler: " << compilationTime << endl;
+    cout << "   mymake  : " << (totalTime - compilationTime) << endl;
+  }
 
   if (errorCode == 0) {
     if (settings.executeCompiled) {

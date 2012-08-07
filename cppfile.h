@@ -18,7 +18,7 @@ class CppFile : public File {
  protected:
   Files includes;
 
-  virtual void output(ostream &to);
+  virtual void output(ostream &to) const;
   void updateIncludes();
   void loadIncludes();
 };

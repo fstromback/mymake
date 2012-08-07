@@ -8,7 +8,7 @@ ext=cpp
 ext=cc
 
 #Output
-out=mymake
+#out=mymake
 
 #options to use for compilation
 compile=c++ <file> -c -o <output>
@@ -23,4 +23,8 @@ build=build/
 execute=no
 
 #debug output enabled!
-debugOutput=yes
+#debugOutput=yes
+
+ignore=dummy.cpp
+
+showTime=yes

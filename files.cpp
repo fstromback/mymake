@@ -38,7 +38,7 @@ Files Files::loadFromCpp(const File &file) {
 	  if (token[token.size() - 1] == '"') {
 	    File toAdd(file.getDirectory(), token.substr(1, token.size() - 2));
 	    if (toAdd.isValid()) {
-	      result.add(File(file.getDirectory(), token.substr(1, token.size() - 2)));
+	      if (!settings.ignoreFile(file)) result.add(toAdd);
 	    } else {
 	      cout << "In " << file.getFullPath().c_str() << ": The included file " << toAdd.getFullPath().c_str() << " does not exist." << endl;
 	    }
@@ -96,15 +96,15 @@ void Files::addFiles(const Directory &folder, string type) {
   //cout << "Done adding files to \"" << folder.getPath() << "\"\n";
 }
 
-void Files::output(ostream &to) {
-  for (list<File>::iterator i = files.begin(); i != files.end(); i++) {
-    File *f = &(*i);
+void Files::output(ostream &to) const {
+  for (list<File>::const_iterator i = files.begin(); i != files.end(); i++) {
+    const File *f = &(*i);
     to << *f;
     to << endl;
   }
 }
 
-ostream &operator <<(ostream &to, Files &o) {
+ostream &operator <<(ostream &to, const Files &o) {
   o.output(to);
   return to;
 }

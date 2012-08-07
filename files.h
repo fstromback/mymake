@@ -16,7 +16,7 @@ class Files {
   Files(const Directory &folder, string type);
   ~Files();
 
-  friend ostream &operator <<(ostream &outputTo, Files &output);
+  friend ostream &operator <<(ostream &outputTo, const Files &output);
 
   inline list<File>::iterator begin() { return files.begin(); };
   inline list<File>::iterator end() { return files.end(); };
@@ -36,7 +36,7 @@ class Files {
   list<File> files;
 
   void addFiles(const Directory &folder, string type);
-  virtual void output(ostream &to);
+  virtual void output(ostream &to) const;
 
   static vector<string> parseLine(const string &line);
 };

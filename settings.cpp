@@ -7,14 +7,15 @@
 
 #include "settings.h"
 #include "utils.h"
+#include "file.h"
 
 using namespace std;
 
 Settings::Settings() {
 #ifdef _WIN32
-	intermediateExt = "obj";
+  intermediateExt = "obj";
 #else
-	intermediateExt = "o";
+  intermediateExt = "o";
 #endif
 
   forceRecompilation = false;
@@ -22,6 +23,7 @@ Settings::Settings() {
   showSettings = false;
   showHelp = false;
   debugOutput = false;
+  showTime = false;
 
   loadFile(getHomeFile(".mymake"));
   loadFile(".mymake");
@@ -56,6 +58,9 @@ void Settings::install() const {
   out << "#Input file(s)" << endl;
   out << "#input=<filename>" << endl;
   out << "" << endl;
+  out << "#Ignore specific files (wildcards supported)." << endl;
+  out << "#ignore=*.template.*" << endl;
+  out << "" << endl;
   out << "#Output (defaults to the name of the first input file)" << endl;
   out << "#out=<filename>" << endl;
   out << "" << endl;
@@ -76,6 +81,9 @@ void Settings::install() const {
   out << "" << endl;
   out << "#Execute the compiled file after successful compilation?" << endl;
   out << "execute=yes" << endl;
+  out << "" << endl;
+  out << "#Show compilation time" << endl;
+  out << "showTime=no" << endl;
 }
 
 void Settings::parseArguments(int argc, char **argv) {
@@ -110,6 +118,9 @@ void Settings::parseArguments(int argc, char **argv) {
       } else if (arg == "-debug"){
 	debugOutput = true;
 	showSettings = true;
+	showTime = true;
+      } else if (arg == "-t") {
+	showTime = true;
       } else if (arg == "-a") {
 	executeCompiled = true;
 	addProcessParameters(argc, argv, i + 1);
@@ -179,6 +190,8 @@ void Settings::storeItem(const string &identifier, const string &value) {
     executableExt = value;
   } else if (identifier == "out") {
     active.outFile = value;
+  } else if (identifier == "ignore") {
+    ignoreFiles.push_back(value);
   } else if (identifier == "compile") {
     active.compile = value;
   } else if (identifier == "link") {
@@ -192,12 +205,15 @@ void Settings::storeItem(const string &identifier, const string &value) {
   } else if (identifier == "debugOutput") {
     debugOutput = (value == "yes");
     if (debugOutput) showSettings = true;
+    if (debugOutput) showTime = true;
+  } else if (identifier == "showTime") {
+    showTime = (value == "yes");
   }
 }
 
 void Settings::outputUsage() const {
   cout << "Usage:" << endl;
-  cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-a <arg1> ... <argn>] [-clean] [-s]" << endl;
+  cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-clean] [-s] [-t] [-a <arg1> ... <argn>]" << endl;
   cout << executable << " -config" << endl;
   cout << endl;
   cout << "file    : The root source file to compile (may contain multiple files)." << endl;
@@ -207,6 +223,7 @@ void Settings::outputUsage() const {
   cout << "-f      : Force recompilation." << endl;
   cout << "-a      : Arguments to the started process (sets -e as well)." << endl;
   cout << "-s      : Show settings before compilation." << endl;
+  cout << "-t      : Show execution time at end." << endl;
   cout << "-clean  : Remove all intermediate files." << endl;
   cout << "-config : Setup the .mymake-file in the home directory." << endl;
 }
@@ -256,4 +273,20 @@ void Settings::outputConfig() const {
   cout << "Execute file: " << (executeCompiled ? "yes" : "no") << endl;
   cout << "Force recompilation: " << (forceRecompilation ? "yes" : "no") << endl;
   cout << endl;
+}
+
+bool Settings::ignoreFile(const File &file) const {
+  if (ignoreFile(file.getTitle())) {
+    if (debugOutput) cout << "Ignored file " << file << endl;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool Settings::ignoreFile(const string &title) const {
+  for (list<Wildcard>::const_iterator i = ignoreFiles.begin(); i != ignoreFiles.end(); i++) {
+    if (i->matches(title)) return true;
+  }
+  return false;
 }

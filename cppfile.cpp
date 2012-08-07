@@ -40,7 +40,7 @@ void CppFile::loadIncludes() {
   includes.save(getFullPath());
 }
 
-void CppFile::output(ostream &to) {
+void CppFile::output(ostream &to) const {
   File::output(to);
   to << ":" << endl << includes;
 }
