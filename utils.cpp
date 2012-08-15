@@ -1,5 +1,6 @@
 #include "utils.h"
 #include "dirent.h"
+#include <stdlib.h>
 
 using namespace std;
 
