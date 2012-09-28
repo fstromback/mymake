@@ -138,14 +138,19 @@ int main(int argc, char **argv) {
 
   settings.parseArguments(argc, argv);
 
-  if (!settings.enoughForCompilation() || settings.showHelp) {
-    settings.outputUsage();
-    return -1;
-  }
-
   if (settings.doInstall) {
     settings.install();
     return 0;
+  } else if (settings.doCopySettings) {
+    if (!settings.copySettings()) {
+      cout << "Failed to copy settings." << endl;
+    }
+    return 0;
+  }
+
+  if (!settings.enoughForCompilation() || settings.showHelp) {
+    settings.outputUsage();
+    return -1;
   }
 
   if (settings.clean) {

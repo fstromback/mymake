@@ -30,6 +30,7 @@ public:
 
   bool clean;
   bool doInstall;
+  bool doCopySettings;
 
   list<string> commandLineParams;
 
@@ -45,6 +46,7 @@ public:
   void outputUsage() const;
 
   void install() const; //Setup the .mymake file in the user's home-directory.
+  bool copySettings() const; //Copt the global .mymake to the current directory.
 
   string getCompileCommand(const string &file, const string &output) const;
   string getLinkCommand(const string &files) const;

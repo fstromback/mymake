@@ -31,6 +31,15 @@ Settings::Settings() {
 
 Settings::~Settings() {}
 
+bool Settings::copySettings() const {
+  ifstream in(getHomeFile(".mymake").c_str());
+  if (!in) return false;
+  ofstream out(".mymake");
+
+  out << in.rdbuf();
+  return true;
+}
+
 void Settings::install() const {
   ofstream out(getHomeFile(".mymake").c_str());
 
@@ -112,6 +121,9 @@ void Settings::parseArguments(int argc, char **argv) {
 	clean = true;
       } else if (arg == "-config") {
 	doInstall = true;
+	return;
+      } else if (arg == "-cp") {
+	doCopySettings = true;
 	return;
       } else if (arg == "-s") {
 	showSettings = true;
@@ -215,6 +227,7 @@ void Settings::outputUsage() const {
   cout << "Usage:" << endl;
   cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-clean] [-s] [-t] [-a <arg1> ... <argn>]" << endl;
   cout << executable << " -config" << endl;
+  cout << executable << " -cp" << endl;
   cout << endl;
   cout << "file    : The root source file to compile (may contain multiple files)." << endl;
   cout << "output  : The name of the executable file to be created." << endl;
@@ -226,6 +239,7 @@ void Settings::outputUsage() const {
   cout << "-t      : Show execution time at end." << endl;
   cout << "-clean  : Remove all intermediate files." << endl;
   cout << "-config : Setup the .mymake-file in the home directory." << endl;
+  cout << "-cp     : Copy the system wide .mymake-file to the current directory." << endl;
 }
 
 string Settings::replace(const string &in, const string &find, const string &replace) const {
