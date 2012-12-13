@@ -44,9 +44,11 @@ class File {
   string directory;
   string title;
 
+  void initialize(const string &filename);
+
   virtual void output(ostream &to) const;
-  string trimPath(string path) const;
-  string fixDelimiters(const string &path) const;
+  static string trimPath(string path);
+  static string fixDelimiters(const string &path);
 };
 
 

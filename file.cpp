@@ -9,13 +9,14 @@
 using namespace std;
 
 File::File(const string &path, const string &title) {
-  this->directory = trimPath(fixDelimiters(path));
-  this->title = fixDelimiters(title);
-  if (stat(fixDelimiters(path + title).c_str(), &status) < 0) valid = false;
-  else valid = true;
+  initialize(path + title);
 }
 
 File::File(const string &f) {
+  initialize(f);
+}
+
+void File::initialize(const string &f) {
   string filename = fixDelimiters(f);
   int lastPath = filename.rfind(PATH_DELIM);
   if (lastPath < 0) {
@@ -77,10 +78,18 @@ string File::getDirectory() const {
 }
 
 void File::output(ostream &to) const {
-  if (isDirectory()) {
-    to << "[" << directory << title << "]";
+  if (settings.debugOutput) {
+    if (isDirectory()) {
+      to << "[" << directory << ", " << title << "]";
+    } else {
+      to << directory << ", " << title;
+    }
   } else {
-    to << directory << title;
+    if (isDirectory()) {
+      to << "[" << directory << title << "]";
+    } else {
+      to << directory << title;
+    }
   }
 }
 
@@ -94,7 +103,7 @@ ifstream *File::read() const {
   return new ifstream(getFullPath().c_str(), ifstream::in);
 }
 
-string File::trimPath(string path) const {
+string File::trimPath(string path) {
   string dotSlash = string(".") + PATH_DELIM;
   int pos = path.find(dotSlash.c_str());
   while (pos >= 0) {
@@ -171,7 +180,7 @@ bool File::remove() const {
   }
 }
 
-string File::fixDelimiters(const string &path) const {
+string File::fixDelimiters(const string &path) {
 	string result = path;
 	for (int i = 0; i < result.size(); i++) {
 		if (result[i] == '/') {

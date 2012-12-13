@@ -36,7 +36,9 @@ Files Files::loadFromCpp(const File &file) {
 	string &token = tokens[1];
 	if (token[0] == '"') {
 	  if (token[token.size() - 1] == '"') {
-	    File toAdd(file.getDirectory(), token.substr(1, token.size() - 2));
+	    string name = token.substr(1, token.size() - 2);
+	    if (settings.debugOutput) cout << "Adding: " << file.getDirectory() << ", file: " << name << endl;
+	    File toAdd(file.getDirectory(), name);
 	    if (toAdd.isValid()) {
 	      result.add(toAdd);
 	    } else {
