@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sstream>
 
 #include "settings.h"
 #include "utils.h"
@@ -70,6 +71,12 @@ void Settings::install() const {
   out << "#Ignore specific files (wildcards supported)." << endl;
   out << "#ignore=*.template.*" << endl;
   out << "" << endl;
+  out << "#Include paths:" << endl;
+  out << "#include=./" << endl;
+  out << "" << endl;
+  out << "#Include paths command line to compiler" << endl;
+  out << "#includeCl=-iquote " << endl;
+  out << "" << endl;
   out << "#Output (defaults to the name of the first input file)" << endl;
   out << "#out=<filename>" << endl;
   out << "" << endl;
@@ -77,7 +84,7 @@ void Settings::install() const {
   out << "#<file> will be replaced by the input file and" << endl;
   out << "#<output> will be replaced by the outputn file" << endl;
   if (windows) out << "compile=cl <file> /nologo /c /EHsc /Fo<output>" << endl;
-  else out << "compile=g++ <file> -c -o <output>" << endl;
+  else out << "compile=g++ <file> -c <includes> -o <output>" << endl;
   out << "" << endl;
   out << "#Command to link the intermediate files into an executable." << endl;
   out << "#<files> is the list of intermediate files and" << endl;
@@ -93,6 +100,7 @@ void Settings::install() const {
   out << "" << endl;
   out << "#Show compilation time" << endl;
   out << "showTime=no" << endl;
+  out << "" << endl;
 }
 
 void Settings::parseArguments(int argc, char **argv) {
@@ -220,7 +228,29 @@ void Settings::storeItem(const string &identifier, const string &value) {
     if (debugOutput) showTime = true;
   } else if (identifier == "showTime") {
     showTime = (value == "yes");
+  } else if (identifier == "include") {
+    includePaths = parseCommaList(value);
+  } else if (identifier == "includeCl") {
+    includeCommandLine = value;
   }
+}
+
+list<string> Settings::parseCommaList(const string &value) {
+  list<string> strs;
+
+  size_t pos = 0;
+  while (pos < value.size()) {
+    size_t comma = value.find(',', pos);
+    if (comma == string::npos) {
+      comma = value.size();
+    }
+
+    string str = value.substr(pos, comma - pos);
+    strs.push_back(str);
+    pos = comma + 1;
+  }
+
+  return strs;
 }
 
 void Settings::outputUsage() const {
@@ -250,8 +280,23 @@ string Settings::replace(const string &in, const string &find, const string &rep
   return copy.replace(pos, find.length(), replace);
 }
 
+string Settings::getIncludeString() const {
+  ostringstream ss;
+  bool first = true;
+
+  for (list<string>::const_iterator i = includePaths.begin(); i != includePaths.end(); i++) {
+    if (!first) ss << " ";
+    ss << includeCommandLine << *i;
+  }
+
+  return ss.str();
+}
+
 string Settings::getCompileCommand(const string &file, const string &output) const {
-  string result = replace(replace(active.compile, "<file>", file), "<output>", output);
+  string result = replace(active.compile, "<file>", file);
+  result = replace(result, "<output>", output);
+  result = replace(result, "<includes>", getIncludeString());
+  //string result = replace(replace(active.compile, "<file>", file), "<output>", output);
   return result;
 }
 
@@ -287,6 +332,11 @@ void Settings::outputConfig() const {
   cout << endl;
   cout << "Execute file: " << (executeCompiled ? "yes" : "no") << endl;
   cout << "Force recompilation: " << (forceRecompilation ? "yes" : "no") << endl;
+  cout << "Includes command: " << includeCommandLine << endl;
+  cout << "Include paths: ";
+  for (list<string>::const_iterator i = includePaths.begin(); i != includePaths.end(); i++) {
+    cout << *i << " ";
+  }
   cout << endl;
 }
 

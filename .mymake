@@ -10,8 +10,14 @@ ext=cc
 #Output
 #out=mymake
 
+#Include path
+include=./
+
+includeCl=-iquote 
+
 #options to use for compilation
-compile=c++ <file> -c -o <output>
+compile=c++ <file> <includes> -c -o <output>
+#compile=c++ <file>  -c -o <output>
 
 #options to use when linking
 link=c++ <files> -o <output>

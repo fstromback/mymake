@@ -36,6 +36,8 @@ class Files {
   list<File> files;
 
   void addFiles(const Directory &folder, string type);
+  bool addCppHeader(const string &directory, const string &name);
+  bool addCppHeader(const string &name);
   virtual void output(ostream &to) const;
 
   static vector<string> parseLine(const string &line);

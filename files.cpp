@@ -38,11 +38,11 @@ Files Files::loadFromCpp(const File &file) {
 	  if (token[token.size() - 1] == '"') {
 	    string name = token.substr(1, token.size() - 2);
 	    if (settings.debugOutput) cout << "Adding: " << file.getDirectory() << ", file: " << name << endl;
-	    File toAdd(file.getDirectory(), name);
-	    if (toAdd.isValid()) {
-	      result.add(toAdd);
+	    if (result.addCppHeader(file.getDirectory(), name)) {
+	    } else if (result.addCppHeader(name)) {
 	    } else {
-	      cout << "In " << file.getFullPath().c_str() << ": The included file " << toAdd.getFullPath().c_str() << " does not exist." << endl;
+	      cout << "In " << file.getFullPath().c_str() << ": The included file " <<
+		name << " does not exist." << endl;
 	    }
 	  }
 	}
@@ -53,6 +53,23 @@ Files Files::loadFromCpp(const File &file) {
   delete f;
 
   return result;
+}
+
+bool Files::addCppHeader(const string &path, const string &name) {
+  File toAdd(path, name);
+  if (toAdd.isValid()) {
+    add(toAdd);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool Files::addCppHeader(const string &name) {
+  for (list<string>::iterator i = settings.includePaths.begin(); i != settings.includePaths.end(); i++) {
+    if (addCppHeader(*i, name)) return true;
+  }
+  return false;
 }
 
 
