@@ -1,6 +1,6 @@
 #include "time.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <Windows.h>
 #else
 #include <sys/time.h>
@@ -8,7 +8,7 @@
 #endif
 
 uint64 GetTimeMs64() {
-#ifdef WIN32
+#ifdef _WIN32
  /* Windows */
  FILETIME ft;
  LARGE_INTEGER li;

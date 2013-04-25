@@ -207,6 +207,8 @@ int main(int argc, char **argv) {
     cout << "   mymake  : " << (totalTime - compilationTime) << endl;
   }
 
+  cout.flush();
+
   if (errorCode == 0) {
     if (settings.executeCompiled) {
       execv(settings.getOutFile().c_str(), settings.getExecParams());
