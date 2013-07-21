@@ -56,6 +56,7 @@ void Settings::install() const {
   out << "ext=cc" << endl;
   out << "ext=cxx" << endl;
   out << "ext=c++" << endl;
+  out << "ext=c" << endl;
   out << "" << endl;
   out << "#The extension for executable files on the system." << endl;
   if (windows) out << "executableExt=exe" << endl;
