@@ -35,6 +35,9 @@ public:
   list<string> includePaths;
   string includeCommandLine;
 
+  list<string> libraries;
+  string libraryCommandLine;
+
   list<string> commandLineParams;
 
   IncludeCache cache;
@@ -52,6 +55,7 @@ public:
   bool copySettings() const; //Copt the global .mymake to the current directory.
 
   string getIncludeString() const;
+  string getLibString() const;
   string getCompileCommand(const string &file, const string &output) const;
   string getLinkCommand(const string &files) const;
 
@@ -59,6 +63,8 @@ public:
   inline string getOutFile() const { return active.outFile; };
 private:
   list<Wildcard> ignoreFiles;
+
+  string platform;
 
   class Configuration {
   public:
@@ -77,7 +83,7 @@ private:
   void storeItem(const string &identifier, const string &value);
 
   string replace(const string &in, const string &find, const string &replace) const;
-  
+
   void addProcessParameters(int argc, char **argv, int startAt);
 
   void outputConfig() const;

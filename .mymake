@@ -1,36 +1,68 @@
-#Example file for mymake.
+#Configuration for mymake
+#Lines beginning with a # are treated as comments.
+#Lines containing errors are ignored.
+#Lines starting with win. or unix. will only be considered during windows and unix compilation.
 
-#Input file(s)
-#input=mymake
+#These are the general settings, which can be overriden in a local .mymake-file
+#or as command-line arguments to the executable in some cases.
 
-#File extensions for cpp-files.
+#The file-types of the implementation files. Used to match header-files to implementation-files.
 ext=cpp
 ext=cc
+ext=cxx
+ext=c++
+ext=c
 
-#Output
-#out=mymake
+#The extension for executable files on the system.
+executableExt=
+win.executableExt=exe
 
-#Include path
-include=./
+#The extension for intermediate files on the system.
+intermediate=o
+win.intermediate=obj
 
+#Input file(s)
+#input=<filename>
+
+#Ignore specific files (wildcards supported).
+#ignore=*.template.*
+
+#Include paths:
+#include=./
+
+#Include paths command line to compiler
 includeCl=-iquote 
+win.includeCl=/I 
 
-#options to use for compilation
-compile=c++ <file> <includes> -c -o <output>
-#compile=c++ <file>  -c -o <output>
+#Command line option to add library
+libraryCl=-L
+win.libraryCl=
 
-#options to use when linking
-link=c++ <files> -o <output>
+#Required libraries
+#libs=
 
-#build directory
-build=build/
+#Output (defaults to the name of the first input file)
+#out=<filename>
 
-#execute the compiled file after successfull compilation?
-execute=no
+#Command used to compile a single source file into a unlinked file.
+#<file> will be replaced by the input file and
+#<output> will be replaced by the outputn file
+compile=g++ <file> -c <includes> -o <output>
+win.compile=cl <file> /nologo /c /EHsc /Fo<output>
 
-#debug output enabled!
-#debugOutput=yes
+#Command to link the intermediate files into an executable.
+#<files> is the list of intermediate files and
+#<output> is the name of the final executable to be created.
+#<libs> is the list of library includes generated.
+link=g++ <libs> <files> -o <output>
+win.link=link <libs> <files> /nologo /OUT:<output>
 
-ignore=dummy.cpp
+#The directory to be used for intermediate files
+build=build\
 
-showTime=yes
+#Execute the compiled file after successful compilation?
+execute=yes
+
+#Show compilation time
+showTime=no
+

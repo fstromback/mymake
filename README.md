@@ -36,6 +36,8 @@ Configuration
 
 To create your global configuration file `~/.mymake`, you just need to run `mm -config` to create the global configuration file. This will later serve as a base file to your specific projects, so it might be worth spending a few moments to custumize it, even though everything will work perfectly fine without editing it.
 
+The configuration file now supports platform specific properties. If a flag is preceeded by XXX., it means that mymake will ignore that line unless we are currently compiling for the platform XXX. For example, in the default generated compilation file, you will see `win.includeCl=...`. This means that this line will override the default `includeCl` used on linux, since it comes after that line in the file. There are currently two platforms supported, `win` and `unix` for windows and unix-like systems respectively.
+
 Now we have a global configuration file. This is the file used for all settings not present in the local configuration file. Settings in the local file will override the global one as well. In new projects, if you need to specialize the global file, you can easily copy it to the current working directory using `mm -cp`.
 
 Below is a description of the most important settings in the `.mymake` file:
@@ -54,6 +56,12 @@ Additional include paths, automatically tells the compiler about these as well. 
 
 `includeCl=`
 The flag used to tell the compiler about additional include paths. `-iquote ` for gcc (pay attention to trailing spaces here!)
+
+`libraryCl=`
+The flag used to tell the compiler about additional libraries (static).
+
+`libs=`
+Tells mymake that the project needs additional libraries using the libraryCl flag.
 
 `out=`
 If you want a specific name of the executable file, specify it here. Otherwise mymake will generate a name from the first source file specified.

@@ -13,11 +13,13 @@
 using namespace std;
 
 Settings::Settings() {
-#ifdef _WIN32
-  intermediateExt = "obj";
-#else
-  intermediateExt = "o";
-#endif
+  if (windows) {
+    intermediateExt = "obj";
+    platform = "win";
+  } else {
+    platform = "unix";
+    intermediateExt = "o";
+  }
 
   forceRecompilation = false;
   executeCompiled = false;
@@ -47,6 +49,7 @@ void Settings::install() const {
   out << "#Configuration for mymake" << endl;
   out << "#Lines beginning with a # are treated as comments." << endl;
   out << "#Lines containing errors are ignored." << endl;
+  out << "#Lines starting with win. or unix. will only be considered during windows and unix compilation." << endl;
   out << "" << endl;
   out << "#These are the general settings, which can be overriden in a local .mymake-file" << endl;
   out << "#or as command-line arguments to the executable in some cases." << endl;
@@ -59,12 +62,12 @@ void Settings::install() const {
   out << "ext=c" << endl;
   out << "" << endl;
   out << "#The extension for executable files on the system." << endl;
-  if (windows) out << "executableExt=exe" << endl;
-  else out << "executableExt=" << endl;
+  out << "executableExt=" << endl;
+  out << "win.executableExt=exe" << endl;
   out << "" << endl;
   out << "#The extension for intermediate files on the system." << endl;
-  if (windows) out << "intermediate=obj" << endl;
-  else out << "intermediate=o" << endl;
+  out << "intermediate=o" << endl;
+  out << "win.intermediate=obj" << endl;
   out << "" << endl;
   out << "#Input file(s)" << endl;
   out << "#input=<filename>" << endl;
@@ -76,7 +79,15 @@ void Settings::install() const {
   out << "#include=./" << endl;
   out << "" << endl;
   out << "#Include paths command line to compiler" << endl;
-  out << "#includeCl=-iquote " << endl;
+  out << "includeCl=-iquote " << endl;
+  out << "win.includeCl=/I " << endl;
+  out << "" << endl;
+  out << "#Command line option to add library" << endl;
+  out << "libraryCl=-L" << endl;
+  out << "win.libraryCl=" << endl;
+  out << "" << endl;
+  out << "#Required libraries" << endl;
+  out << "#libs=" << endl;
   out << "" << endl;
   out << "#Output (defaults to the name of the first input file)" << endl;
   out << "#out=<filename>" << endl;
@@ -84,14 +95,15 @@ void Settings::install() const {
   out << "#Command used to compile a single source file into a unlinked file." << endl;
   out << "#<file> will be replaced by the input file and" << endl;
   out << "#<output> will be replaced by the outputn file" << endl;
-  if (windows) out << "compile=cl <file> /nologo /c /EHsc /Fo<output>" << endl;
-  else out << "compile=g++ <file> -c <includes> -o <output>" << endl;
+  out << "compile=g++ <file> -c <includes> -o <output>" << endl;
+  out << "win.compile=cl <file> /nologo /c /EHsc /Fo<output>" << endl;
   out << "" << endl;
   out << "#Command to link the intermediate files into an executable." << endl;
   out << "#<files> is the list of intermediate files and" << endl;
   out << "#<output> is the name of the final executable to be created." << endl;
-  if (windows) out << "link=cl <files> /nologo /Fe<output>" << endl;
-  else out << "link=g++ <files> -o <output>" << endl;
+  out << "#<libs> is the list of library includes generated." << endl;
+  out << "link=g++ <libs> <files> -o <output>" << endl;
+  out << "win.link=link <libs> <files> /nologo /OUT:<output>" << endl;
   out << "" << endl;
   out << "#The directory to be used for intermediate files" << endl;
   out << "build=build" << PATH_DELIM << endl;
@@ -196,10 +208,21 @@ void Settings::loadFile(const string &file) {
 }
 
 void Settings::parseLine(const string &line) {
-  int eq = line.find('=');
+  size_t eq = line.find('=');
   if (eq == string::npos) return;
 
-  storeItem(line.substr(0, eq), line.substr(eq + 1));
+  string key = line.substr(0, eq);
+  string value = line.substr(eq + 1);
+
+  size_t dot = key.find('.');
+  if (dot != string::npos) {
+    string arch = key.substr(0, dot);
+    key = key.substr(dot + 1);
+
+    if (arch != platform) return;
+  }
+
+  storeItem(key, value);
 }
 
 void Settings::storeItem(const string &identifier, const string &value) {
@@ -233,6 +256,10 @@ void Settings::storeItem(const string &identifier, const string &value) {
     includePaths = parseCommaList(value);
   } else if (identifier == "includeCl") {
     includeCommandLine = value;
+  } else if (identifier == "libraryCl") {
+    libraryCommandLine = value;
+  } else if (identifier == "libs") {
+    libraries = parseCommaList(value);
   }
 }
 
@@ -288,6 +315,20 @@ string Settings::getIncludeString() const {
   for (list<string>::const_iterator i = includePaths.begin(); i != includePaths.end(); i++) {
     if (!first) ss << " ";
     ss << includeCommandLine << *i;
+    first = false;
+  }
+
+  return ss.str();
+}
+
+string Settings::getLibString() const {
+  ostringstream ss;
+  bool first = true;
+
+  for (list<string>::const_iterator i = libraries.begin(); i != libraries.end(); i++) {
+    if (!first) ss << " ";
+    ss << libraryCommandLine << *i;
+    first = false;
   }
 
   return ss.str();
@@ -302,7 +343,10 @@ string Settings::getCompileCommand(const string &file, const string &output) con
 }
 
 string Settings::getLinkCommand(const string &files) const {
-  string result = replace(replace(active.link, "<output>", quote(active.outFile)), "<files>", files);
+  string result = replace(active.link, "<output>", quote(active.outFile));
+  result = replace(result, "<files>", files);
+  result = replace(result, "<libs>", getLibString());
+  // string result = replace(replace(active.link, "<output>", quote(active.outFile)), "<files>", files);
   return result;
 }
 
@@ -336,6 +380,11 @@ void Settings::outputConfig() const {
   cout << "Includes command: " << includeCommandLine << endl;
   cout << "Include paths: ";
   for (list<string>::const_iterator i = includePaths.begin(); i != includePaths.end(); i++) {
+    cout << *i << " ";
+  }
+  cout << endl;
+  cout << "Library command: " << libraryCommandLine << endl;
+  for (list<string>::const_iterator i = libraries.begin(); i != libraries.end(); i++) {
     cout << *i << " ";
   }
   cout << endl;
