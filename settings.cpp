@@ -83,7 +83,7 @@ void Settings::install() const {
   out << "win.includeCl=/I " << endl;
   out << "" << endl;
   out << "#Command line option to add library" << endl;
-  out << "libraryCl=-L" << endl;
+  out << "libraryCl=-l" << endl;
   out << "win.libraryCl=" << endl;
   out << "" << endl;
   out << "#Required libraries" << endl;
