@@ -1,12 +1,18 @@
 #!/bin/sh
 
 echo "Compiling mymake..."
-if g++ *.cpp -o mymake
+rm mymake
+
+g++ *.cpp -o mymake
+
+if [ -e mymake ]
 then
-    echo "Compilation failed!"
+    echo "Done compiling!"
+else
+    echo "Compilation error!"
     exit 1
 fi
-echo "Done compiling!"
+
 
 # set up aliases in shells?
 while true
