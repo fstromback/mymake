@@ -40,10 +40,11 @@ void Settings::loadSettings() {
 bool Settings::copySettings() const {
   ifstream in(getHomeFile(".mymake").c_str());
   if (!in) return false;
-  ofstream out(".mymake");
+ 
+ ofstream out(".mymake");
 
   string line;
-  while (getline(cin, line)) {
+  while (getline(in, line)) {
     out << "#" << line << endl;
   }
 
@@ -228,23 +229,20 @@ void Settings::parseLine(const string &line) {
   string key = line.substr(0, eq);
   string value = line.substr(eq + 1);
 
-  bool found = false;
-  bool first = true;
+  bool add = false;
   while (true) {
     size_t dot = key.find('.');
     if (dot == string::npos) break;
 
-    first = false;
-
     string arch = key.substr(0, dot);
     key = key.substr(dot + 1);
 
-    if (std::find(platforms.begin(), platforms.end(), arch) != platforms.end()) {
-      found = true;
+    if (std::find(platforms.begin(), platforms.end(), arch) == platforms.end()) {
+      add = false;
     }
   }
 
-  if (found || first) {
+  if (add) {
     storeItem(key, value);
   }
 }

@@ -38,9 +38,9 @@ To create your global configuration file `~/.mymake`, you just need to run `mm -
 
 The configuration file now supports platform specific properties. If a flag is preceeded by XXX., it means that mymake will ignore that line unless we are currently compiling for the platform XXX. For example, in the default generated compilation file, you will see `win.includeCl=...`. This means that this line will override the default `includeCl` used on linux, since it comes after that line in the file. There are currently two platforms supported, `win` and `unix` for windows and unix-like systems respectively.
 
-These are also extended to generic command line parameters. If you enter the command line `mymake foo bar`, then all entries in the configuration file containing `foo` and `bar` will be applied. A setting can contain more than one dot, for example `win.foo.input=bar.cpp`.
+These are also extended to generic command line parameters. If you enter the command line `mymake foo bar`, then all entries in the configuration file containing `foo` and `bar` will be applied. A setting can contain more than one dot, for example `win.foo.input=bar.cpp`. In that case it will only be added if all the configurations are specified.
 
-Now we have a global configuration file. This is the file used for all settings not present in the local configuration file. Settings in the local file will override the global one as well. In new projects, if you need to specialize the global file, you can easily copy it to the current working directory using `mm -cp`.
+Now we have a global configuration file. This is the file used for all settings not present in the local configuration file. Settings in the local file will override the global one as well. In new projects, if you need to specialize the global file, you can easily copy it to the current working directory using `mm -cp`. This copies it into the working directory and adding comments to all lines, so that relevant lines can easily be uncommented.
 
 Below is a description of the most important settings in the `.mymake` file:
 
