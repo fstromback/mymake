@@ -13,6 +13,8 @@ public:
   Settings();
   virtual ~Settings();
 
+  void loadSettings();
+
   string intermediateExt;
   string executableExt;
   string srcPath;
@@ -40,6 +42,8 @@ public:
 
   list<string> commandLineParams;
 
+  list<string> platforms;
+
   IncludeCache cache;
 
   bool ignoreFile(const File &f) const;
@@ -64,8 +68,6 @@ public:
 private:
   list<Wildcard> ignoreFiles;
 
-  string platform;
-
   class Configuration {
   public:
     string compile;
@@ -87,6 +89,8 @@ private:
   void addProcessParameters(int argc, char **argv, int startAt);
 
   void outputConfig() const;
+
+  void parseArguments(int argc, char **argv, const string &def);
 
   static list<string> parseCommaList(const string &str);
 };

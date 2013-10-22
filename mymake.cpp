@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
   }
 
   if (files.size() == 0) {
-    cout << "Error: File not found." << endl;
+    cout << "Error: No files to compile." << endl;
     return -1;
   }
 

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sstream>
+#include <algorithm>
 
 #include "settings.h"
 #include "utils.h"
@@ -15,9 +16,9 @@ using namespace std;
 Settings::Settings() {
   if (windows) {
     intermediateExt = "obj";
-    platform = "win";
+    platforms.push_back("win");
   } else {
-    platform = "unix";
+    platforms.push_back("unix");
     intermediateExt = "o";
   }
 
@@ -27,19 +28,25 @@ Settings::Settings() {
   showHelp = false;
   debugOutput = false;
   showTime = false;
-
-  loadFile(getHomeFile(".mymake"));
-  loadFile(".mymake");
 }
 
 Settings::~Settings() {}
+
+void Settings::loadSettings() {
+  loadFile(getHomeFile(".mymake"));
+  loadFile(".mymake");
+}
 
 bool Settings::copySettings() const {
   ifstream in(getHomeFile(".mymake").c_str());
   if (!in) return false;
   ofstream out(".mymake");
 
-  out << in.rdbuf();
+  string line;
+  while (getline(cin, line)) {
+    out << "#" << line << endl;
+  }
+
   return true;
 }
 
@@ -119,9 +126,15 @@ void Settings::install() const {
 void Settings::parseArguments(int argc, char **argv) {
   executable = File(argv[0]).getTitle();
 
+  parseArguments(argc, argv, "config");
+  loadSettings();
+  parseArguments(argc, argv, "input");
+}
+
+void Settings::parseArguments(int argc, char **argv, const string &def) {
   if (argc <= 1) return;
 
-  string identifier = "input";
+  string identifier = def;
   showSettings = debugOutput;
 
   for (int i = 1; i < argc; i ++) {
@@ -160,7 +173,7 @@ void Settings::parseArguments(int argc, char **argv) {
 	break;
       } else {
 	storeItem(identifier, arg);
-	identifier = "input";
+	identifier = def;
       }
     }
   }
@@ -169,6 +182,7 @@ void Settings::parseArguments(int argc, char **argv) {
 }
 
 void Settings::addProcessParameters(int argc, char **argv, int i) {
+  commandLineParams.clear();
   for (; i < argc; i++) {
     commandLineParams.push_back(string(argv[i]));
   }
@@ -214,20 +228,32 @@ void Settings::parseLine(const string &line) {
   string key = line.substr(0, eq);
   string value = line.substr(eq + 1);
 
-  size_t dot = key.find('.');
-  if (dot != string::npos) {
+  bool found = false;
+  bool first = true;
+  while (true) {
+    size_t dot = key.find('.');
+    if (dot == string::npos) break;
+
+    first = false;
+
     string arch = key.substr(0, dot);
     key = key.substr(dot + 1);
 
-    if (arch != platform) return;
+    if (std::find(platforms.begin(), platforms.end(), arch) != platforms.end()) {
+      found = true;
+    }
   }
 
-  storeItem(key, value);
+  if (found || first) {
+    storeItem(key, value);
+  }
 }
 
 void Settings::storeItem(const string &identifier, const string &value) {
   if (identifier == "input") {
     addSingle(inputFiles, value);
+  } else if (identifier == "config") {
+    platforms.push_back(value);
   } else if (identifier == "ext") {
     addSingle(cppExtensions, value);
   } else if (identifier == "executableExt") {
@@ -378,6 +404,11 @@ void Settings::outputConfig() const {
   cout << "Execute file: " << (executeCompiled ? "yes" : "no") << endl;
   cout << "Force recompilation: " << (forceRecompilation ? "yes" : "no") << endl;
   cout << "Includes command: " << includeCommandLine << endl;
+  cout << "Configuration: ";
+  for (list<string>::const_iterator i = platforms.begin(); i != platforms.end(); i++) {
+    cout << *i << " ";
+  }
+  cout << endl;
   cout << "Include paths: ";
   for (list<string>::const_iterator i = includePaths.begin(); i != includePaths.end(); i++) {
     cout << *i << " ";
