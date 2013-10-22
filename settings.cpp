@@ -130,6 +130,8 @@ void Settings::parseArguments(int argc, char **argv) {
   parseArguments(argc, argv, "config");
   loadSettings();
   parseArguments(argc, argv, "input");
+
+  if (showSettings) outputConfig();
 }
 
 void Settings::parseArguments(int argc, char **argv, const string &def) {
@@ -179,7 +181,6 @@ void Settings::parseArguments(int argc, char **argv, const string &def) {
     }
   }
 
-  if (showSettings) outputConfig();
 }
 
 void Settings::addProcessParameters(int argc, char **argv, int i) {
@@ -229,7 +230,7 @@ void Settings::parseLine(const string &line) {
   string key = line.substr(0, eq);
   string value = line.substr(eq + 1);
 
-  bool add = false;
+  bool add = true;
   while (true) {
     size_t dot = key.find('.');
     if (dot == string::npos) break;
@@ -394,26 +395,26 @@ void Settings::outputConfig() const {
   cout << "Extensions: " << cppExtensions << endl;
   cout << "Output file: " << active.outFile.c_str() << endl;
   cout << "Executable extension: " << executableExt.c_str() << endl;
-  cout << endl;
   cout << "Build path: " << active.buildPath.c_str() << endl;
   cout << "Compile with: " << active.compile.c_str() << endl;
   cout << "Link with: " << active.link.c_str() << endl;
-  cout << endl;
   cout << "Execute file: " << (executeCompiled ? "yes" : "no") << endl;
   cout << "Force recompilation: " << (forceRecompilation ? "yes" : "no") << endl;
   cout << "Includes command: " << includeCommandLine << endl;
-  cout << "Configuration: ";
-  for (list<string>::const_iterator i = platforms.begin(); i != platforms.end(); i++) {
-    cout << *i << " ";
-  }
-  cout << endl;
   cout << "Include paths: ";
   for (list<string>::const_iterator i = includePaths.begin(); i != includePaths.end(); i++) {
     cout << *i << " ";
   }
   cout << endl;
   cout << "Library command: " << libraryCommandLine << endl;
+  cout << "Libraries: ";
   for (list<string>::const_iterator i = libraries.begin(); i != libraries.end(); i++) {
+    cout << *i << " ";
+  }
+  cout << endl;
+
+  cout << "Configuration: ";
+  for (list<string>::const_iterator i = platforms.begin(); i != platforms.end(); i++) {
     cout << *i << " ";
   }
   cout << endl;
