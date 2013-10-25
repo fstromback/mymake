@@ -16,29 +16,29 @@ Directory::~Directory() {
 #ifdef _WIN32
 
 void Directory::initialize(string path) {
-	File f(path);
-	if (f.verifyDir()) {
-		if (path[path.size() - 1] == PATH_DELIM) path = path.substr(0, path.size() - 1);
+  File f(path);
+  if (f.verifyDir()) {
+    if (path[path.size() - 1] == PATH_DELIM) path = path.substr(0, path.size() - 1);
 
-		this->path = File(path);
+    this->path = File(path);
 
-		WIN32_FIND_DATA file;
-		HANDLE h = FindFirstFile((path + PATH_DELIM + string("*")).c_str(), &file);
+    WIN32_FIND_DATA file;
+    HANDLE h = FindFirstFile((path + PATH_DELIM + string("*")).c_str(), &file);
 
-		File directory = File(path);
+    File directory = File(path);
 
-		while (h) {
-			File f = directory + file.cFileName;
-			if (f.verifyDir()) folders.push_back(f);
-			else files.push_back(f);
-		}
-		if (!h) FindClose(h);
-	} else if (f.exists()) {
-		this->path = f.parent();
-		files.push_back(f);
-	} else {
-		cout << "Warning: The file " << path << " does not exist." << endl;
-	}
+    while (h) {
+      File f = directory + file.cFileName;
+      if (f.verifyDir()) folders.push_back(f);
+      else files.push_back(f);
+    }
+    if (!h) FindClose(h);
+  } else if (f.exists()) {
+    this->path = f.parent();
+    files.push_back(f);
+  } else {
+    cout << "Warning: The file " << path << " does not exist." << endl;
+  }
 }
 
 #else

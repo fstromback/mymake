@@ -110,8 +110,7 @@ Path Path::operator +(const string &name) const {
 }
 
 Path &Path::operator +=(const string &name) {
-  parts.push_back(name);
-  isDirectory = false;
+  *this += Path(name);
   return *this;
 }
 
@@ -211,7 +210,7 @@ void Path::setType(const string &type) {
 }
 
 void Path::ensurePathExists() const {
-  mkpath(toString().c_str(), 0764);
+  mkpath(parent().toString().c_str(), 0764);
 }
 
 bool Path::isType(const string &ext) const {
@@ -231,11 +230,11 @@ ifstream *Path::read() const {
 }
 
 void File::output(ostream &to) const {
+  for (int i = 0; i < parts.size(); i++) to << ", " << parts[i];
   if (verifyDir()) {
     to << "[" << *this << "]";
   } else {
     to << *this;
   }
 }
-
 
