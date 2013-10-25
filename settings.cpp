@@ -125,7 +125,7 @@ void Settings::install() const {
 }
 
 void Settings::parseArguments(int argc, char **argv) {
-  executable = File(argv[0]).getTitle();
+  executable = File(argv[0]).title();
 
   parseArguments(argc, argv, "config");
   loadSettings();
@@ -382,7 +382,8 @@ bool Settings::enoughForCompilation() {
 
   if (active.outFile.size() == 0) {
     File firstInFile(inputFiles.front());
-    active.outFile = firstInFile.modifyType(executableExt).getFullPath();
+    firstInFile.setType(executableExt);
+    active.outFile = firstInFile.toString();
   }
 
   return true;
@@ -421,7 +422,7 @@ void Settings::outputConfig() const {
 }
 
 bool Settings::ignoreFile(const File &file) const {
-  if (ignoreFile(file.getTitle())) {
+  if (ignoreFile(file.title())) {
     if (debugOutput) cout << "Ignored file " << file << endl;
     return true;
   } else {

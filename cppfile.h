@@ -7,7 +7,7 @@ using namespace std;
 
 class CppFile : public File {
  public:
-  CppFile(string directory, string title);
+  // CppFile(string directory, string title);
   CppFile(const File &file);
   virtual ~CppFile();
 

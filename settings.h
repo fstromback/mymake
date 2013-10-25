@@ -17,7 +17,6 @@ public:
 
   string intermediateExt;
   string executableExt;
-  string srcPath;
   string executable;
 
   list<string> inputFiles;

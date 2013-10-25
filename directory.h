@@ -25,11 +25,11 @@ class Directory {
   list<File> files;
   list<File> folders;
 
-  string getPath() const { return path; };
+  File getPath() const { return path; };
 
   bool remove() const;
  private:
-  string path;
+  File path;
 
   void initialize(string path);
   void output(ostream &to);

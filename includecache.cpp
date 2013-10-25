@@ -11,7 +11,7 @@ IncludeCache::IncludeCache() {}
 IncludeCache::~IncludeCache() {}
 
 bool IncludeCache::load() {
-  ifstream file(File(settings.getBuildPath(), "includes").getFullPath().c_str());
+  ifstream file((File(settings.getBuildPath()) + "includes").toString().c_str());
   if (!file) return true; //Filen finns inte, men detta räknas inte som ett fel!
   
   char firstChar;
@@ -26,7 +26,7 @@ bool IncludeCache::load() {
     while (!file.eof() && !atEnd) {
       CachedCpp cfile(file, atEnd);
       File cFile(cfile.file);
-      if (cFile.isValid()) {
+      if (cFile.exists()) {
 	//the file has been removed or is not accessable. don't include it in the cache
 	files[cfile.file] = cfile;
       } else if (settings.debugOutput) {
@@ -41,7 +41,7 @@ bool IncludeCache::load() {
 }
 
 void IncludeCache::save() const {
-  ofstream file(File(settings.getBuildPath(), "includes").getFullPath().c_str());
+  ofstream file((File(settings.getBuildPath()) + "includes").toString().c_str());
 
   for (map<string, CachedCpp>::const_iterator i = files.begin(); i != files.end(); i++) {
     i->second.write(file);

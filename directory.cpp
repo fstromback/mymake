@@ -7,7 +7,7 @@ Directory::Directory(string path) {
 }
 
 Directory::Directory(const File &f) {
-  initialize(f.getFullPath());
+  initialize(f.toString());
 }
 
 Directory::~Directory() {
@@ -17,24 +17,24 @@ Directory::~Directory() {
 
 void Directory::initialize(string path) {
 	File f(path);
-	if (f.isDirectory()) {
+	if (f.verifyDir()) {
 		if (path[path.size() - 1] == PATH_DELIM) path = path.substr(0, path.size() - 1);
 
-		this->path = path;
+		this->path = File(path);
 
 		WIN32_FIND_DATA file;
 		HANDLE h = FindFirstFile((path + PATH_DELIM + string("*")).c_str(), &file);
 
-		string directory = path + PATH_DELIM;
+		File directory = File(path);
 
 		while (h) {
-			File f(directory, file.cFileName);
-			if (f.isDirectory()) folders.push_back(f);
+			File f = directory + file.cFileName;
+			if (f.verifyDir()) folders.push_back(f);
 			else files.push_back(f);
 		}
 		if (!h) FindClose(h);
-	} else if (f.isValid()) {
-		this->path = f.getDirectory();
+	} else if (f.exists()) {
+		this->path = f.parent();
 		files.push_back(f);
 	} else {
 		cout << "Warning: The file " << path << " does not exist." << endl;
@@ -44,7 +44,7 @@ void Directory::initialize(string path) {
 #else
 void Directory::initialize(string path) {
   File f(path);
-  if (f.isDirectory()) {
+  if (f.verifyDir()) {
 
     if (path[path.size() - 1] == PATH_DELIM) path = path.substr(0, path.size() - 1);
     
@@ -75,14 +75,14 @@ void Directory::initialize(string path) {
 bool Directory::remove() const{
   bool success = true;
   for (list<File>::const_iterator i = folders.begin(); i != folders.end(); i++) {
-	if (i->isPrevious()) {
+    if (i->isPrevious()) {
     } else {
-      success &= i->remove();
+      success &= i->deleteFile();
     }
   }
 
   for (list<File>::const_iterator i = files.begin(); i != files.end(); i++) {
-    success &= i->remove();
+    success &= i->deleteFile();
   }
 
   return success;

@@ -4,6 +4,8 @@
 #include "globals.h"
 #include "unistd.h"
 
+#if 0
+
 #include <fstream>
 
 using namespace std;
@@ -191,3 +193,5 @@ string File::fixDelimiters(const string &path) {
 	}
 	return result;
 }
+
+#endif

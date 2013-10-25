@@ -34,6 +34,7 @@ bool runCommand(const string &commandline) {
 }
 
 bool compileFiles(Files &files, Files &toLink) {
+  File srcPath = File();
   for (list<File>::iterator i = files.begin(); i != files.end(); i++) {
     CppFile file(*i);
 
@@ -43,14 +44,17 @@ bool compileFiles(Files &files, Files &toLink) {
 
     if (settings.debugOutput) cout << "File list: " << endl << files << endl;
 
-    if (file.isValid() && !settings.ignoreFile(file)) {
+    if (file.exists() && !settings.ignoreFile(file)) {
       if (settings.debugOutput) cout << "Checking for need of compilation..." << endl;
-      File output = file.modifyRelative(settings.srcPath, settings.getBuildPath()).modifyType(settings.intermediateExt);
+
+      File relative = file.makeRelative(srcPath);
+      File output = File(settings.getBuildPath()) + relative;
+      output.setType(settings.intermediateExt);
        
       bool needsCompilation = false;
       if (settings.forceRecompilation) {
 	needsCompilation = true;
-      } else if (!output.isValid()) {
+      } else if (!output.exists()) {
 	needsCompilation = true;
       } else if (file.getLastModified() > output.getLastModified()) {
 	needsCompilation = true;
@@ -61,7 +65,7 @@ bool compileFiles(Files &files, Files &toLink) {
 
 	output.ensurePathExists();
 
-	string compileArgument = settings.getCompileCommand(quote(file.getFullPath()), quote(output.getFullPath()));
+	string compileArgument = settings.getCompileCommand(quote(file.toString()), quote(output.toString()));
 	if (!runCommand(compileArgument)) {
 	  return false;
 	}
@@ -82,7 +86,7 @@ bool linkOutput(Files &toLink) {
   executable.ensurePathExists();
 
   bool link = false;
-  if (!executable.isValid()) {
+  if (!executable.exists()) {
     link = true;
   } else if (executable.getLastModified() < files.getLastModified()) {
     link = true;
@@ -97,7 +101,7 @@ bool linkOutput(Files &toLink) {
     bool first = true;
     for (list<File>::iterator i = files.begin(); i != files.end(); i++) {
       if (!first) toLink << " ";
-      toLink << quote(i->getFullPath());
+      toLink << quote(i->toString());
       first = false;
     }
 
@@ -110,7 +114,7 @@ bool linkOutput(Files &toLink) {
 
 void addFile(const string &file, Files &to) {
   File f(file);
-  if (f.isValid()) {
+  if (f.exists()) {
     for (list<string>::iterator i = settings.cppExtensions.begin(); i != settings.cppExtensions.end(); i++) {
       if (f.isType(*i)) {
 	to.add(f);
@@ -130,7 +134,7 @@ void addFileExts(const string &file, Files &to) {
 bool clean() {
   //Remove all files in the build directory.
   File buildDirectory = File(settings.getBuildPath());
-  return buildDirectory.remove();
+  return buildDirectory.deleteFile();
 }
 
 int main(int argc, char **argv) {
@@ -180,7 +184,6 @@ int main(int argc, char **argv) {
   }
 
   list<File>::iterator i = files.begin();
-  settings.srcPath = "./"; // i->getDirectory();
 
   int errorCode = 0;
 
@@ -214,6 +217,7 @@ int main(int argc, char **argv) {
       execv(settings.getOutFile().c_str(), settings.getExecParams());
     }
   }
+
   return errorCode;
 }
 

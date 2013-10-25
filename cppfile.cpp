@@ -5,9 +5,9 @@
 
 using namespace std;
 
-CppFile::CppFile(string directory, string title) : File(directory, title) {
-  updateIncludes();
-}
+// CppFile::CppFile(string directory, string title) : File(directory, title) {
+//   updateIncludes();
+// }
 
 CppFile::CppFile(const File &file) : File(file) {
   updateIncludes();
@@ -16,11 +16,11 @@ CppFile::CppFile(const File &file) : File(file) {
 CppFile::~CppFile() {}
 
 void CppFile::updateIncludes() {
-  if (!includes.load(getFullPath())) {
+  if (!includes.load(*this)) {
     loadIncludes();
-    if (settings.debugOutput) cout << "Loaded includes for: " << getTitle().c_str() << endl;
+    if (settings.debugOutput) cout << "Loaded includes for: " << title().c_str() << endl;
   } else {
-    if (settings.debugOutput) cout << "Loaded cached includes for: " << getTitle().c_str() << endl;
+    if (settings.debugOutput) cout << "Loaded cached includes for: " << title().c_str() << endl;
   }
 }
 
@@ -31,13 +31,13 @@ void CppFile::loadIncludes() {
   includes.append(rootIncludes);
 
   for (list<File>::iterator i = includes.begin(); i != includes.end(); i++) {
-    if (settings.debugOutput) cout << "Generating includes for " << i->getTitle() << endl;
+    if (settings.debugOutput) cout << "Generating includes for " << i->title() << endl;
     Files now = Files::loadFromCpp(*i);
     includes.append(now);
   }
 
   if (settings.debugOutput) cout << "Saving result..." << endl;
-  includes.save(getFullPath());
+  includes.save(*this);
 }
 
 void CppFile::output(ostream &to) const {

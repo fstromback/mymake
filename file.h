@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+#if 0
+
 using namespace std;
 
 class File {
@@ -52,3 +54,7 @@ class File {
 };
 
 
+#endif
+
+#include "path.h"
+typedef Path File;
