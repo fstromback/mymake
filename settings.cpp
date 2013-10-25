@@ -110,7 +110,7 @@ void Settings::install() const {
   out << "#<files> is the list of intermediate files and" << endl;
   out << "#<output> is the name of the final executable to be created." << endl;
   out << "#<libs> is the list of library includes generated." << endl;
-  out << "link=g++ <libs> <files> -o <output>" << endl;
+  out << "link=g++ <files> <libs> -o <output>" << endl;
   out << "win.link=link <libs> <files> /nologo /OUT:<output>" << endl;
   out << "" << endl;
   out << "#The directory to be used for intermediate files" << endl;
