@@ -50,7 +50,6 @@ bool compileFiles(Files &files, Files &toLink) {
       File relative = file.makeRelative(srcPath);
       File output = File(settings.getBuildPath()) + relative;
       output.setType(settings.intermediateExt);
-      cout << "Output file: " << output << endl;
        
       bool needsCompilation = false;
       if (settings.forceRecompilation) {
