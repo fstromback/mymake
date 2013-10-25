@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
   }
 
   list<File>::iterator i = files.begin();
-  settings.srcPath = i->getDirectory();
+  settings.srcPath = "./"; // i->getDirectory();
 
   int errorCode = 0;
 
