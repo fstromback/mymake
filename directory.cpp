@@ -48,23 +48,23 @@ void Directory::initialize(string path) {
 
     if (path[path.size() - 1] == PATH_DELIM) path = path.substr(0, path.size() - 1);
     
-    this->path = path;
+    this->path = f;
     
     struct dirent *de = NULL;
     DIR *d = opendir(path.c_str());
     if (d == NULL) return;
 
-    string directory = path + PATH_DELIM;
+    File directory(path);
 
     while (de = readdir(d)) {
-      File f(directory, de->d_name);
-      if (f.isDirectory()) folders.push_back(f);
+      File f = directory + de->d_name;
+      if (f.verifyDir()) folders.push_back(f);
       else files.push_back(f);
     }
 
     closedir(d);
-  } else if (f.isValid()) {
-    this->path = f.getDirectory();
+  } else if (f.exists()) {
+    this->path = f.parent();
     files.push_back(f);
   } else {
     cout << "Warning: The file " << path << " does not exist." << endl;

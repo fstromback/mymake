@@ -1,11 +1,10 @@
 #include "path.h"
 #include "mkpath.h"
+#include "unistd.h"
 #include "directory.h"
 #include "globals.h"
 #include <algorithm>
 #include <sstream>
-#include <fstream>
-#include <Shlwapi.h>
 
 typedef unsigned int nat;
 
@@ -204,9 +203,7 @@ Path Path::modifyRelative(const Path &old, const Path &n) const {
 }
 
 bool Path::deleteFile() const {
-  DeleteFile(toString().c_str());
-
-  return true;
+  return (unlink(toString().c_str()) == 0);
 }
 
 void Path::setType(const string &type) {
