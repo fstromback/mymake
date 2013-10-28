@@ -50,7 +50,6 @@ bool compileFiles(Files &files, Files &toLink) {
       File relative = file.makeRelative(srcPath);
       File output = File(settings.getBuildPath()) + relative;
       output.setType(settings.intermediateExt);
-      cout << "Output file: " << output << endl;
        
       bool needsCompilation = false;
       if (settings.forceRecompilation) {
@@ -183,8 +182,6 @@ int main(int argc, char **argv) {
     cout << "Error: No files to compile." << endl;
     return -1;
   }
-
-  list<File>::iterator i = files.begin();
 
   int errorCode = 0;
 
