@@ -23,6 +23,11 @@ Worth to notice is that mymake does not take any other preprocessor macros into 
 
 One thing worth to think about here is that one can have multiple files containing an `int main()`, as long as these files do not include each others. If you have one file `main.cpp`, which is the regular entry-point for your application, you can also have a file `run_tests.cpp`, which runs your tests instead. Then you can simply run them with `mm main` and `mm run_tests` respectively. The two main files will even share intermediate object files, which also reduces compilation times. Another use is if you have a networked application, and want to have a server and a client with a lot of shared code, then you can have your `server.cpp` and `client.cpp` side-by-side without any problems.
 
+Updating
+---------
+
+Updating mymake is from now on easy, assuming you used the install script. Just run the update.sh in the repo, and mymake will get the latest changes and re-install mymake.
+
 Installation
 -------------
 

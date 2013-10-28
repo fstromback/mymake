@@ -1,7 +1,10 @@
 #!/bin/sh
 
 echo "Compiling mymake..."
-rm mymake
+if [ -e mymake ]
+then
+    rm mymake
+fi
 
 g++ *.cpp -o mymake
 
