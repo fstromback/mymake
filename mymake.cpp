@@ -183,8 +183,6 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  list<File>::iterator i = files.begin();
-
   int errorCode = 0;
 
   Files toLink;

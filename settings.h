@@ -5,6 +5,7 @@
 
 #include "includecache.h"
 #include "wildcard.h"
+#include "file.h"
 
 using namespace std;
 
@@ -18,6 +19,7 @@ public:
   string intermediateExt;
   string executableExt;
   string executable;
+  File executablePath;
 
   list<string> inputFiles;
   list<string> cppExtensions;

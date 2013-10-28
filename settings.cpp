@@ -100,6 +100,9 @@ void Settings::install() const {
   out << "#Output (defaults to the name of the first input file)" << endl;
   out << "#out=<filename>" << endl;
   out << "" << endl;
+  out << "#Set the output path for executable files." << endl;
+  out << "executablePath=./" << endl;
+  out << "" << endl;
   out << "#Command used to compile a single source file into a unlinked file." << endl;
   out << "#<file> will be replaced by the input file and" << endl;
   out << "#<output> will be replaced by the outputn file" << endl;
@@ -259,6 +262,8 @@ void Settings::storeItem(const string &identifier, const string &value) {
     executableExt = value;
   } else if (identifier == "out") {
     active.outFile = value;
+  } else if (identifier == "executablePath") {
+    executablePath = File(value);
   } else if (identifier == "ignore") {
     ignoreFiles.push_back(value);
   } else if (identifier == "compile") {
@@ -381,9 +386,11 @@ bool Settings::enoughForCompilation() {
   if (active.buildPath.size() == 0) return false;
 
   if (active.outFile.size() == 0) {
-    File firstInFile(inputFiles.front());
-    firstInFile.setType(executableExt);
-    active.outFile = firstInFile.toString();
+    File inFile(inputFiles.front());
+    File outFile(executablePath);
+    outFile += inFile.title();
+    outFile.setType(executableExt);
+    active.outFile = outFile.toString();
   }
 
   return true;

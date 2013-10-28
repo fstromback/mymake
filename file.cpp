@@ -1,197 +1,244 @@
 #include "file.h"
 #include "mkpath.h"
+#include "unistd.h"
 #include "directory.h"
 #include "globals.h"
-#include "unistd.h"
+#include <algorithm>
+#include <sstream>
 
-#if 0
+typedef unsigned int nat;
 
-#include <fstream>
-
-using namespace std;
-
-File::File(const string &path, const string &title) {
-  initialize(path + title);
+string join(const std::vector<string> &data, const string &between) {
+  if (data.size() == 0) return "";
+  
+  std::ostringstream oss;
+  oss << data[0];
+  for (nat i = 1; i < data.size(); i++) {
+    oss << between << data[i];
+  }
+  return oss.str();
 }
 
-File::File(const string &f) {
-  initialize(f);
+
+File::File(const string &path) {
+  parseStr(path);
+  simplify();
 }
 
-void File::initialize(const string &f) {
-  string filename = fixDelimiters(f);
-  int lastPath = filename.rfind(PATH_DELIM);
-  if (lastPath < 0) {
-    this->directory = string(".") + PATH_DELIM;
-    this->title = filename;
-  } else {
-    this->directory = trimPath(filename.substr(0, lastPath + 1));
-    this->title = filename.substr(lastPath + 1);
+File::File() : isDirectory(true) {}
+
+void File::parseStr(const string &str) {
+  nat numPaths = std::count(str.begin(), str.end(), '\\');
+  numPaths += std::count(str.begin(), str.end(), '/');
+  parts.reserve(numPaths + 1);
+
+  nat startAt = 0;
+  for (nat i = 0; i < str.size(); i++) {
+    if (str[i] == '\\' || str[i] == '/') {
+      if (i > startAt) {
+	parts.push_back(str.substr(startAt, i - startAt));
+      }
+      startAt = i + 1;
+    }
   }
 
-  if (stat((directory + title).c_str(), &status) < 0) valid = false;
-  else valid = true;
+  if (str.size() > startAt) {
+    parts.push_back(str.substr(startAt));
+    isDirectory = false;
+  } else {
+    isDirectory = true;
+  }
 }
 
-File::File(const File &other) {
-  *this = other;
-  if (stat((directory + title).c_str(), &status) < 0) valid = false;
-  else valid = true;
+void File::simplify() {
+  std::vector<string>::iterator i = parts.begin();
+  while (i != parts.end()) {
+    if (*i == ".") {
+      // Safely removed.
+      i = parts.erase(i);
+    } else if (*i == ".." && i != parts.begin() && *(i - 1) != "..") {
+      // Remove previous path.
+      i = parts.erase(--i);
+      i = parts.erase(i);
+    } else {
+      // Nothing to do, continue.
+      ++i;
+    }
+  }
 }
 
-File::~File() {}
+string File::toString() const {
+  string result = join(parts, string(1, PATH_DELIM));
+  if (isDirectory && parts.size() > 0) result += PATH_DELIM;
+  if (!isAbsolute()) result = string(".") + string(1, PATH_DELIM) + result;
+  return result;
 
-File &File::operator =(const File &other) {
-  this->status = other.status;
-  this->directory = other.directory;
-  this->title = other.title;
+}
+
+std::ostream &operator <<(std::ostream &to, const File &path) {
+  cout << path.toString();
+  return to;
+}
+
+
+bool File::operator ==(const File &o) const {
+  if (isDirectory != o.isDirectory) return false;
+  if (parts.size() != o.parts.size()) return false;
+  for (nat i = 0; i < parts.size(); i++) {
+    if (parts[i] != o.parts[i]) return false;
+  }
+  return true;
+}
+
+File File::operator +(const File &other) const {
+  File result(*this);
+  result += other;
+  return result;
+}
+
+File &File::operator +=(const File &other) {
+  isDirectory = other.isDirectory;
+  parts.insert(parts.end(), other.parts.begin(), other.parts.end());
+  simplify();
   return *this;
 }
 
-bool File::operator ==(const File &other) const {
-  return (directory == other.directory) && (title == other.title);
+File File::operator +(const string &name) const {
+  File result(*this);
+  result += name;
+  return result;
 }
 
-bool File::isDirectory() const {
-  return S_ISDIR(status.st_mode);
+File &File::operator +=(const string &name) {
+  *this += File(name);
+  return *this;
 }
 
-bool File::isPrevious() const {
-  if (title == "..") return true;
-  if (title == ".") return true;
-  return false;
+File File::parent() const {
+  File result(*this);
+  result.parts.pop_back();
+  result.isDirectory = true;
+  return result;
 }
 
-bool File::isType(const std::string &type) const {
-  return (title.substr(title.size() - type.size()) == type);
+string File::title() const {
+  return parts.back();
 }
 
-string File::getTitle() const {
-  return title;
+string File::titleNoExt() const {
+  string t = title();
+  nat last = t.rfind('.');
+  return t.substr(0, last);
 }
 
-string File::getFullPath() const {
-  return directory + title;
+bool File::isDir() const {
+  return isDirectory;
 }
 
-string File::getDirectory() const {
-  if (!isDirectory()) return directory;
-  else return directory + title;
+bool File::isAbsolute() const {
+  if (parts.size() == 0) return false;
+  const string &first = parts.front();
+#ifdef _WIN32
+  if (first.size() < 2) return false;
+  return first[1] == L':';
+#else
+  return (first == "");
+#endif
 }
 
-void File::output(ostream &to) const {
-  if (settings.debugOutput) {
-    if (isDirectory()) {
-      to << "[" << directory << ", " << title << "]";
-    } else {
-      to << directory << ", " << title;
-    }
-  } else {
-    if (isDirectory()) {
-      to << "[" << directory << title << "]";
-    } else {
-      to << directory << title;
-    }
-  }
+bool File::isEmpty() const {
+  return parts.size() == 0;
 }
 
-ostream &operator <<(ostream &outputTo, const File &output) {
-  output.output(outputTo);
-
-  return outputTo;
+bool File::exists() const {
+  struct stat status;
+  if (stat(toString().c_str(), &status) < 0) return false;
+  return true;
 }
-
-ifstream *File::read() const {
-  return new ifstream(getFullPath().c_str(), ifstream::in);
-}
-
-string File::trimPath(string path) {
-  string dotSlash = string(".") + PATH_DELIM;
-  int pos = path.find(dotSlash.c_str());
-  while (pos >= 0) {
-    if (pos == 0) {
-      path = path.substr(pos + 2);
-    } else if (path[pos - 1] != '.') {
-      path = path.substr(0, pos) + path.substr(pos + 2);
-    }
-    pos = path.find(dotSlash.c_str(), pos + 1);
-  }
-
-  string slashDotDot = PATH_DELIM + string("..");
-  pos = path.find(slashDotDot);
-  while (pos >= 0) {
-    int last = path.rfind(PATH_DELIM, pos - 1);
-    if (last >= 0) {
-      path = path.substr(0, last) + path.substr(pos + 3);
-    } else {
-      path = path.substr(pos + 4);
-    }
-
-    pos = path.find(slashDotDot, pos + 1);
-  }
-
-  return dotSlash + path;
-}
-
 
 time_t File::getLastModified() const {
+  struct stat status;
+  if (stat(toString().c_str(), &status) < 0) return 0;
   return status.st_mtime;
 }
 
+bool File::verifyDir() const {
+  struct stat status;
+  if (stat(toString().c_str(), &status) < 0) return false;
+  return S_ISDIR(status.st_mode);
+}
 
-File File::modifyType(const string &type) const {
-  string dottedType;
-  if (type.size() == 0) dottedType = "";
-  else dottedType = "." + type;
+File File::makeRelative(const File &to) const {
+  File result;
+  result.isDirectory = isDirectory;
 
-  int lastDot = title.rfind('.');
-  if (lastDot >= 0) {
-    return File(directory, title.substr(0, lastDot) + dottedType);
+  bool equal = true;
+  nat consumed = 0;
+
+  for (nat i = 0; i < to.parts.size(); i++) {
+    if (!equal) {
+      result.parts.push_back("..");
+    } else if (i >= parts.size()) {
+      result.parts.push_back("..");
+      equal = false;
+    } else if (to.parts[i] != parts[i]) {
+      result.parts.push_back("..");
+      equal = false;
+    } else {
+      consumed++;
+    }
+  }
+
+  for (nat i = consumed; i < parts.size(); i++) {
+    result.parts.push_back(parts[i]);
+  }
+
+  return result;
+}
+
+File File::modifyRelative(const File &old, const File &n) const {
+  File rel = makeRelative(old);
+  return n + rel;
+}
+
+bool File::deleteFile() const {
+  return (unlink(toString().c_str()) == 0);
+}
+
+void File::setType(const string &type) {
+  if (type == "") {
+    parts.back() = titleNoExt();
   } else {
-    return File(directory, title + dottedType);
+    parts.back() = titleNoExt() + "." + type;
   }
 }
-
-File File::modifyRelative(const string &original, const string &newRelative) const {
-  return File(newRelative + directory.substr(trimPath(original).size()), title);
-}
-
 
 void File::ensurePathExists() const {
-  mkpath(directory.c_str(), 0764);
+  mkpath(parent().toString().c_str(), 0764);
 }
 
-void File::update() {
-  if (stat((directory + title).c_str(), &status) < 0) valid = false;
-  else valid = true;
+bool File::isType(const string &ext) const {
+  string last = parts.back();
+  size_t dot = last.rfind('.');
+  if (dot == string::npos) return false;
+
+  return (last.substr(dot + 1) == ext);
 }
 
-bool File::remove() const {
-  if (isDirectory()) {
-    Directory dir(*this);
-    if (settings.debugOutput) cout << "Removing " << getFullPath().c_str() << endl;
-    bool ok = dir.remove();
-    ok &= (rmdir(getFullPath().c_str()) == 0);
-    if (!ok) cout << "Failed to remove " << getFullPath().c_str() << endl;
-    return ok;
+bool File::isPrevious() const {
+  return title() == "." || title() == "..";
+}
+
+ifstream *File::read() const {
+  return new ifstream(toString().c_str());
+}
+
+void File::output(ostream &to) const {
+  for (int i = 0; i < parts.size(); i++) to << ", " << parts[i];
+  if (verifyDir()) {
+    to << "[" << *this << "]";
   } else {
-    if (settings.debugOutput) cout << "Removing " << getFullPath().c_str() << endl;
-    bool ok = (unlink(getFullPath().c_str()) == 0);
-    if (!ok) cout << "Failed to remove " << getFullPath().c_str() << endl;
-    return ok;
+    to << *this;
   }
 }
 
-string File::fixDelimiters(const string &path) {
-	string result = path;
-	for (int i = 0; i < result.size(); i++) {
-		if (result[i] == '/') {
-			result[i] = PATH_DELIM;
-		} else if (result[i] == '\\') {
-			result[i] = PATH_DELIM;
-		}
-	}
-	return result;
-}
-
-#endif
