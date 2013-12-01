@@ -13,10 +13,10 @@
 enum DebugLevel {
   NONE = 0, // No debug output.
   DEFAULT = 1, // Default output of compilation progress.
-  SETTINGS = 1, // Rough summary of settings, shall not be considerably larger than no output.
-  COMPILATION = 2, // Show the command lines run when compiling.
-  INCLUDES = 3, // Show searching for includes.
-  VERBOSE = 4, // Show output about internal details, such as cache.
+  SETTINGS = 2, // Rough summary of settings, shall not be considerably larger than no output.
+  COMPILATION = 3, // Show the command lines run when compiling.
+  INCLUDES = 4, // Show searching for includes.
+  VERBOSE = 5, // Show output about internal details, such as cache.
 };
 
 // Output a line if the debug level is high enough.

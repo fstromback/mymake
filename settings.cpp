@@ -332,8 +332,9 @@ void Settings::outputUsage() const {
   PLN("0 - No output.");
   PLN("1 - Show files that are being compiled (default).");
   PLN("2 - Output settings as well as ignored files.");
-  PLN("3 - Show the process of searching for includes.");
-  PLN("4 - Verbose. Output a lot of internal messages.");
+  PLN("3 - Show command lines executed when compiling.");
+  PLN("4 - Show the process of searching for includes.");
+  PLN("5 - Verbose. Output a lot of internal messages.");
 }
 
 string Settings::replace(const string &in, const string &find, const string &replace) const {
