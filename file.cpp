@@ -242,3 +242,15 @@ void File::output(ostream &to) const {
   }
 }
 
+File File::cwd() {
+  const int bufferSize = 256;
+  char buffer[bufferSize];
+  if (getcwd(buffer, bufferSize)) {
+    File result(buffer);
+    result.makeDir();
+    return result;
+  } else {
+    cout << "Error getting the cwd!" << endl;
+    return File();
+  }
+}

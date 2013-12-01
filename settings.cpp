@@ -384,14 +384,7 @@ bool Settings::enoughForCompilation() {
   if (!clean) if (inputFiles.size() == 0) return false;
   if (cppExtensions.size() == 0) return false;
   if (active.buildPath.size() == 0) return false;
-
-  if (active.outFile.size() == 0) {
-    File inFile(inputFiles.front());
-    File outFile(executablePath);
-    outFile += inFile.title();
-    outFile.setType(executableExt);
-    active.outFile = outFile.toString();
-  }
+  if (active.outFile.size() == 0) return false;
 
   return true;
 }

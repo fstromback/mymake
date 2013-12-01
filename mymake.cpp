@@ -114,6 +114,11 @@ bool linkOutput(Files &toLink) {
 
 void addFile(const string &file, Files &to) {
   File f(file);
+
+  if (f.isAbsolute()) {
+    f = f.makeRelative(File::cwd());
+  }
+
   if (f.exists()) {
     for (list<string>::iterator i = settings.cppExtensions.begin(); i != settings.cppExtensions.end(); i++) {
       if (f.isType(*i)) {
@@ -152,6 +157,21 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  // Generate the input files so that we can supply an output file if it is missing.
+  Files files;
+  for (list<string>::iterator i = settings.inputFiles.begin(); i != settings.inputFiles.end(); i++) {
+    addFileExts(*i, files);
+  }
+
+  if (settings.getOutFile() == "" && files.size() > 0) {
+    // Set the output file to the first found input file with modified extention.
+    File inFile = *files.begin();
+    File outFile(settings.executablePath);
+    outFile += inFile.title();
+    outFile.setType(settings.executableExt);
+    settings.setOutFile(outFile.toString());
+  }
+
   if (!settings.enoughForCompilation() || settings.showHelp) {
     settings.outputUsage();
     return -1;
@@ -168,14 +188,9 @@ int main(int argc, char **argv) {
   }
 
   if (!settings.forceRecompilation) {
-    if (!settings.cache.load()) { //Ladda cachen
+    if (!settings.cache.load()) { // Load the cache
       cout << "Failed to load the cache!" << endl;
     }
-  }
-
-  Files files;
-  for (list<string>::iterator i = settings.inputFiles.begin(); i != settings.inputFiles.end(); i++) {
-    addFileExts(*i, files);
   }
 
   if (files.size() == 0) {

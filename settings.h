@@ -64,8 +64,9 @@ public:
   string getCompileCommand(const string &file, const string &output) const;
   string getLinkCommand(const string &files) const;
 
-  inline string getBuildPath() const { return active.buildPath; };
-  inline string getOutFile() const { return active.outFile; };
+  inline string getBuildPath() const { return active.buildPath; }
+  inline string getOutFile() const { return active.outFile; }
+  inline void setOutFile(const string &f) { active.outFile = f; }
 private:
   list<Wildcard> ignoreFiles;
 

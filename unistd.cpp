@@ -6,11 +6,6 @@
 
 using namespace std;
 
-int rmdir(const char *dir) {
-  if (RemoveDirectory(dir) == TRUE) return 0;
-  else return -1;
-}
-
 int mkdir(const char *dir, unsigned short mode) {
   if (CreateDirectory(dir, NULL)) return 0;
   else return -1;

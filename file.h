@@ -18,6 +18,9 @@ public:
   // Create an empty path.
   File();
 
+  // Get the current working directory.
+  static File cwd();
+
   // Create a path object from a string.
   explicit File(const string &path);
 
