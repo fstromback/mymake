@@ -59,7 +59,7 @@ bool compileFiles(Files &files, Files &toLink) {
       }
 
       if (needsCompilation) {
-	DEBUG(DEFAULT, "Compiling " << *i << "..." << endl);
+	DEBUG(DEFAULT, "Compiling " << *i << "...");
 
 	output.ensurePathExists();
 
@@ -116,7 +116,9 @@ void addFile(const string &file, Files &to) {
   File f(file);
 
   if (f.isAbsolute()) {
+    DEBUG(VERBOSE, "Translating " << f);
     f = f.makeRelative(File::cwd());
+    DEBUG(VERBOSE, "Into " << f);
   }
 
   if (f.exists()) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "utils.h"
 
 using namespace std;
 
@@ -14,7 +15,7 @@ public:
   friend ostream &operator <<(ostream &to, const Wildcard &from);
 private:
   string pattern;
-  bool matches(int strAt, const string &str, int patternAt) const;
-  bool matchesStar(int strAt, const string &str, int patternAt) const;
+  bool matches(nat strAt, const string &str, nat patternAt) const;
+  bool matchesStar(nat strAt, const string &str, nat patternAt) const;
 };
 

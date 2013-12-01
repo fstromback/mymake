@@ -1,4 +1,5 @@
 #include "file.h"
+#include "utils.h"
 #include "mkpath.h"
 #include "unistd.h"
 #include "directory.h"
@@ -35,9 +36,7 @@ void File::parseStr(const string &str) {
   nat startAt = 0;
   for (nat i = 0; i < str.size(); i++) {
     if (str[i] == '\\' || str[i] == '/') {
-      if (i > startAt) {
-	parts.push_back(str.substr(startAt, i - startAt));
-      }
+      parts.push_back(str.substr(startAt, i - startAt));
       startAt = i + 1;
     }
   }
@@ -234,7 +233,7 @@ ifstream *File::read() const {
 }
 
 void File::output(ostream &to) const {
-  for (int i = 0; i < parts.size(); i++) to << ", " << parts[i];
+  for (nat i = 0; i < parts.size(); i++) to << ", " << parts[i];
   if (verifyDir()) {
     to << "[" << *this << "]";
   } else {

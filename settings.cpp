@@ -26,7 +26,7 @@ Settings::Settings() {
   forceRecompilation = false;
   executeCompiled = false;
   showHelp = false;
-  debugLevel = NONE;
+  debugLevel = DEFAULT;
   showTime = false;
 }
 
@@ -338,7 +338,7 @@ void Settings::outputUsage() const {
 
 string Settings::replace(const string &in, const string &find, const string &replace) const {
   string copy = in;
-  int pos = in.find(find);
+  size_t pos = in.find(find);
   if (pos == string::npos) return in;
 
   return copy.replace(pos, find.length(), replace);

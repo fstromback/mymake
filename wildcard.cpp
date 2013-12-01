@@ -8,7 +8,7 @@ bool Wildcard::matches(const string &str) const {
   return matches(0, str, 0);
 }
 
-bool Wildcard::matches(int strAt, const string &str, int patternAt) const {
+bool Wildcard::matches(nat strAt, const string &str, nat patternAt) const {
   for (; patternAt < pattern.length(); patternAt++) {
     if (strAt == str.length()) return false; //premature ending
     
@@ -29,7 +29,7 @@ bool Wildcard::matches(int strAt, const string &str, int patternAt) const {
   return strAt == str.length();
 }
 
-bool Wildcard::matchesStar(int strAt, const string &str, int patternAt) const {
+bool Wildcard::matchesStar(nat strAt, const string &str, nat patternAt) const {
   for (; strAt <= str.length(); strAt++) {
     if (matches(strAt, str, patternAt)) return true;
   }

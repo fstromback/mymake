@@ -1,5 +1,5 @@
 #include "files.h"
-
+#include "utils.h"
 #include "globals.h"
 
 using namespace std;
@@ -82,7 +82,7 @@ vector<string> Files::parseLine(const string &line) {
   list<string> tokens;
   bool inString = false;
   string current = "";
-  for (int i = 0; i < line.size(); i++) {
+  for (nat i = 0; i < line.size(); i++) {
     if (inString) {
       current = current + string(1, line[i]);
       if (line[i] == '"') inString = false;

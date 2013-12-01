@@ -56,7 +56,7 @@ void Directory::initialize(string path) {
 
     File directory(path);
 
-    while (de = readdir(d)) {
+    while ((de = readdir(d))) {
       File f = directory + de->d_name;
       if (f.verifyDir()) folders.push_back(f);
       else files.push_back(f);

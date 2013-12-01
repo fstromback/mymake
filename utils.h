@@ -50,3 +50,4 @@ extern const bool windows;
 
 string getHomeFile(const string &file);
 
+typedef unsigned int nat;

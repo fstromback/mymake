@@ -57,7 +57,7 @@ void IncludeCache::save() const {
 
 IncludeCache::CachedFile::CachedFile() {}
 
-IncludeCache::CachedFile::CachedFile(ifstream &from, bool &atEnd) {
+IncludeCache::CachedFile::CachedFile(ifstream &from, bool &) {
   from >> modified;
   if (from.get() != ' ') throw FileError();
   getline(from, file);
