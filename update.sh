@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Downloading latest version using git..."
-git fetch origin master
+git fetch
 git checkout master -f
 git merge origin/master
 
