@@ -21,7 +21,7 @@ using namespace std;
 Interval compilationTime(0);
 
 bool runCommand(const string &commandline) {
-  if (settings.showSettings) cout << commandline.c_str() << endl;
+  DEBUG(COMPILATION, "Running: " << commandline);
 
   Time start;
   int returnCode = system(commandline.c_str());
@@ -42,11 +42,9 @@ bool compileFiles(Files &files, Files &toLink) {
       files.append(file.getIncludes().changeFiletypes(*type));
     }
 
-    if (settings.debugOutput) cout << "File list: " << endl << files << endl;
+    DEBUG(VERBOSE, "Files: " << endl << files);
 
     if (file.exists() && !settings.ignoreFile(file)) {
-      if (settings.debugOutput) cout << "Checking for need of compilation..." << endl;
-
       File relative = file.makeRelative(srcPath);
       File output = File(settings.getBuildPath()) + relative;
       output.setType(settings.intermediateExt);
@@ -61,7 +59,7 @@ bool compileFiles(Files &files, Files &toLink) {
       }
 
       if (needsCompilation) {
-	cout << "Compiling " << *i << "..." << endl;
+	DEBUG(DEFAULT, "Compiling " << *i << "..." << endl);
 
 	output.ensurePathExists();
 
@@ -69,6 +67,8 @@ bool compileFiles(Files &files, Files &toLink) {
 	if (!runCommand(compileArgument)) {
 	  return false;
 	}
+      } else {
+	DEBUG(VERBOSE, file << " did not need to be compiled.");
       }
 
       toLink.add(File(output));
@@ -91,11 +91,11 @@ bool linkOutput(Files &toLink) {
   } else if (executable.getLastModified() < files.getLastModified()) {
     link = true;
   } else {
-    cout << "Executable up to date!\n";
+    DEBUG(DEFAULT, "Executable up to date!");
   }
 
   if (link) {
-    cout << "Linking " << settings.getOutFile() << "..." << endl;
+    DEBUG(DEFAULT, "Linking " << settings.getOutFile() << "...");
 
     stringstream toLink;
     bool first = true;
@@ -177,6 +177,10 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  if (settings.debugLevel >= SETTINGS) {
+    settings.outputConfig();
+  }
+
   if (settings.clean) {
     if (clean()) {
       cout << "Cleaned intermediate files." << endl;
@@ -203,13 +207,13 @@ int main(int argc, char **argv) {
   Files toLink;
   if (compileFiles(files, toLink)) {
     if (linkOutput(toLink)) {
-      cout << "Build successful!\n";
+      DEBUG(DEFAULT, "Build successful!");
     } else {
-      cout << "Build failed!\n";
+      PLN("Build failed!");
       errorCode = -2;
     }
   } else {
-    cout << "Build failed!\n";
+    PLN("Build failed!");
     errorCode = -1;
   }
 

@@ -49,3 +49,4 @@ extern const string defaultIntermediateExt;
 extern const bool windows;
 
 string getHomeFile(const string &file);
+

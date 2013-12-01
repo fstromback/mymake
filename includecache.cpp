@@ -29,8 +29,8 @@ bool IncludeCache::load() {
       if (cFile.exists()) {
 	//the file has been removed or is not accessable. don't include it in the cache
 	files[cfile.file] = cfile;
-      } else if (settings.debugOutput) {
-	cout << "Ignored removed file " << cfile.file << endl;
+      } else {
+	DEBUG(INCLUDES, "Ignored removed file " << cfile.file);
       }
     }
   } catch (FileError &e) {

@@ -6,6 +6,7 @@
 #include "includecache.h"
 #include "wildcard.h"
 #include "file.h"
+#include "debug.h"
 
 using namespace std;
 
@@ -26,9 +27,8 @@ public:
 
   bool executeCompiled;
   bool forceRecompilation;
-  bool showSettings;
   bool showHelp;
-  bool debugOutput;
+  DebugLevel debugLevel;
   bool showTime;
 
   bool clean;
@@ -67,6 +67,8 @@ public:
   inline string getBuildPath() const { return active.buildPath; }
   inline string getOutFile() const { return active.outFile; }
   inline void setOutFile(const string &f) { active.outFile = f; }
+
+  void outputConfig() const;
 private:
   list<Wildcard> ignoreFiles;
 
@@ -89,8 +91,6 @@ private:
   string replace(const string &in, const string &find, const string &replace) const;
 
   void addProcessParameters(int argc, char **argv, int startAt);
-
-  void outputConfig() const;
 
   void parseArguments(int argc, char **argv, const string &def);
 

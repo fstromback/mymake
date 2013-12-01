@@ -10,6 +10,7 @@
 #include "settings.h"
 #include "utils.h"
 #include "file.h"
+#include "globals.h"
 
 using namespace std;
 
@@ -24,9 +25,8 @@ Settings::Settings() {
 
   forceRecompilation = false;
   executeCompiled = false;
-  showSettings = false;
   showHelp = false;
-  debugOutput = false;
+  debugLevel = NONE;
   showTime = false;
 }
 
@@ -125,6 +125,9 @@ void Settings::install() const {
   out << "#Show compilation time" << endl;
   out << "showTime=no" << endl;
   out << "" << endl;
+  out << "#Debug level" << endl;
+  out << "#debugLevel=1" << endl;
+  out << "" << endl;
 }
 
 void Settings::parseArguments(int argc, char **argv) {
@@ -133,15 +136,12 @@ void Settings::parseArguments(int argc, char **argv) {
   parseArguments(argc, argv, "config");
   loadSettings();
   parseArguments(argc, argv, "input");
-
-  if (showSettings) outputConfig();
 }
 
 void Settings::parseArguments(int argc, char **argv, const string &def) {
   if (argc <= 1) return;
 
   string identifier = def;
-  showSettings = debugOutput;
 
   for (int i = 1; i < argc; i ++) {
     string arg = argv[i];
@@ -166,11 +166,9 @@ void Settings::parseArguments(int argc, char **argv, const string &def) {
 	doCopySettings = true;
 	return;
       } else if (arg == "-s") {
-	showSettings = true;
-      } else if (arg == "-debug"){
-	debugOutput = true;
-	showSettings = true;
-	showTime = true;
+	debugLevel = SETTINGS;
+      } else if (arg == "-d"){
+	identifier = "debugLevel";
       } else if (arg == "-t") {
 	showTime = true;
       } else if (arg == "-a") {
@@ -276,10 +274,8 @@ void Settings::storeItem(const string &identifier, const string &value) {
     active.buildPath = value;
   } else if (identifier == "execute") {
     executeCompiled = (value == "yes");
-  } else if (identifier == "debugOutput") {
-    debugOutput = (value == "yes");
-    if (debugOutput) showSettings = true;
-    if (debugOutput) showTime = true;
+  } else if (identifier == "debugLevel") {
+    debugLevel = (DebugLevel)atoi(value.c_str());
   } else if (identifier == "showTime") {
     showTime = (value == "yes");
   } else if (identifier == "include") {
@@ -290,6 +286,8 @@ void Settings::storeItem(const string &identifier, const string &value) {
     libraryCommandLine = value;
   } else if (identifier == "libs") {
     libraries = parseCommaList(value);
+  } else {
+    PLN("Unknown identifier: " << identifier);
   }
 }
 
@@ -312,22 +310,30 @@ list<string> Settings::parseCommaList(const string &value) {
 }
 
 void Settings::outputUsage() const {
-  cout << "Usage:" << endl;
-  cout << executable << " <file> [-o <output>] [-ne] [-e] [-f] [-clean] [-s] [-t] [-a <arg1> ... <argn>]" << endl;
-  cout << executable << " -config" << endl;
-  cout << executable << " -cp" << endl;
-  cout << endl;
-  cout << "file    : The root source file to compile (may contain multiple files)." << endl;
-  cout << "output  : The name of the executable file to be created." << endl;
-  cout << "-e      : Execute the compiled file on success." << endl;
-  cout << "-ne     : Do not execute the compiled file on success." << endl;
-  cout << "-f      : Force recompilation." << endl;
-  cout << "-a      : Arguments to the started process (sets -e as well)." << endl;
-  cout << "-s      : Show settings before compilation." << endl;
-  cout << "-t      : Show execution time at end." << endl;
-  cout << "-clean  : Remove all intermediate files." << endl;
-  cout << "-config : Setup the .mymake-file in the home directory." << endl;
-  cout << "-cp     : Copy the system wide .mymake-file to the current directory." << endl;
+  PLN("Usage:");
+  PLN(executable << " <file> [-o <output>] [-ne] [-e] [-f] [-clean] [-s] [-t] [-d level] [-a <arg1> ... <argn>]");
+  PLN(executable << " -config");
+  PLN(executable << " -cp");
+  PLN("");
+  PLN("file    : The root source file to compile (may contain multiple files).");
+  PLN("output  : The name of the executable file to be created.");
+  PLN("-e      : Execute the compiled file on success.");
+  PLN("-ne     : Do not execute the compiled file on success.");
+  PLN("-f      : Force recompilation.");
+  PLN("-a      : Arguments to the started process (sets -e as well).");
+  PLN("-s      : Show settings before compilation Equivalent to -d 1.");
+  PLN("-t      : Show execution time at end.");
+  PLN("-clean  : Remove all intermediate files.");
+  PLN("-config : Setup the .mymake-file in the home directory.");
+  PLN("-cp     : Copy the system wide .mymake-file to the current directory.");
+  PLN("-d level: Set the debug output level to <level>.");
+  PLN("");
+  PLN("Debug levels (higher numbers include the lower ones):");
+  PLN("0 - No output.");
+  PLN("1 - Show files that are being compiled (default).");
+  PLN("2 - Output settings as well as ignored files.");
+  PLN("3 - Show the process of searching for includes.");
+  PLN("4 - Verbose. Output a lot of internal messages.");
 }
 
 string Settings::replace(const string &in, const string &find, const string &replace) const {
@@ -419,11 +425,13 @@ void Settings::outputConfig() const {
     cout << *i << " ";
   }
   cout << endl;
+
+  cout << "Debug level: " << (int)debugLevel << endl;
 }
 
 bool Settings::ignoreFile(const File &file) const {
   if (ignoreFile(file.title())) {
-    if (debugOutput) cout << "Ignored file " << file << endl;
+    DEBUG(SETTINGS, "Ignored file " << file << " (" << file.title() << " matched).");
     return true;
   } else {
     return false;

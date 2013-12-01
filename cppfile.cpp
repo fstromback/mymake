@@ -18,25 +18,25 @@ CppFile::~CppFile() {}
 void CppFile::updateIncludes() {
   if (!includes.load(*this)) {
     loadIncludes();
-    if (settings.debugOutput) cout << "Loaded includes for: " << title().c_str() << endl;
+    DEBUG(VERBOSE, "Found includes for " << *this);
   } else {
-    if (settings.debugOutput) cout << "Loaded cached includes for: " << title().c_str() << endl;
+    DEBUG(VERBOSE, "Loaded cached includes for " << *this);
   }
 }
 
 void CppFile::loadIncludes() {
-  if (settings.debugOutput) cout << "Generating includes for " << *this << "..." << endl;
+  DEBUG(VERBOSE, "Generating includes for " << *this << "...");
   Files rootIncludes = Files::loadFromCpp(*this);
   
   includes.append(rootIncludes);
 
   for (list<File>::iterator i = includes.begin(); i != includes.end(); i++) {
-    if (settings.debugOutput) cout << "Generating includes for " << i->title() << endl;
+    DEBUG(VERBOSE, "Generating includes for " << *this << " from " << *i << "...");
     Files now = Files::loadFromCpp(*i);
     includes.append(now);
   }
 
-  if (settings.debugOutput) cout << "Saving result..." << endl;
+  DEBUG(VERBOSE, "Saving result...");
   includes.save(*this);
 }
 

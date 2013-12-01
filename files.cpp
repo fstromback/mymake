@@ -26,6 +26,8 @@ Files Files::loadFromCpp(const File &file) {
     return result;
   }
 
+  DEBUG(INCLUDES, "Processing " << file << "...");
+
   while (!f->eof()) {
     string line;
     getline(*f, line);
@@ -37,12 +39,13 @@ Files Files::loadFromCpp(const File &file) {
 	if (token[0] == '"') {
 	  if (token[token.size() - 1] == '"') {
 	    string name = token.substr(1, token.size() - 2);
-	    if (settings.debugOutput) cout << "Adding: " << file.parent() << ", file: " << name << endl;
+
+	    DEBUG(INCLUDES, "Found: " << name);
+
 	    if (result.addCppHeader(file.parent() + name)) {
 	    } else if (result.addCppHeader(name)) {
 	    } else {
-	      cout << "In " << file.toString().c_str() << ": The included file " <<
-		name << " does not exist." << endl;
+	      PLN("In " << file << ": The included file " << name << " does not exist.");
 	    }
 	  }
 	}
@@ -58,13 +61,16 @@ Files Files::loadFromCpp(const File &file) {
 bool Files::addCppHeader(const File &toAdd) {
   if (toAdd.exists()) {
     add(toAdd);
+    DEBUG(VERBOSE, "Included file " << toAdd << " found!");
     return true;
   } else {
+    DEBUG(VERBOSE, "Included file " << toAdd << " not found!");
     return false;
   }
 }
 
 bool Files::addCppHeader(const string &name) {
+  DEBUG(VERBOSE, "Looking for " << name << "...");
   for (list<string>::iterator i = settings.includePaths.begin(); i != settings.includePaths.end(); i++) {
     if (addCppHeader(File(*i) + name)) return true;
   }
@@ -186,11 +192,9 @@ bool Files::load(const File &file) {
   IncludeCache::CachedCpp &cpp = settings.cache.files[f];
 
   if (cpp.modified < file.getLastModified()) {
-    if (settings.debugOutput) {
-      cout << "The file " << file.title().c_str() << 
-          " have been modified from " << cpp.modified << " to " << 
-          file.getLastModified() << ". Renewing cache..." << endl;
-    }
+    DEBUG(VERBOSE, "The file " << file <<
+	  " have been modified from " << cpp.modified <<
+	  " to " << file.getLastModified() << ". Discarding old file cache.");
     return false;
   }
   
@@ -198,11 +202,8 @@ bool Files::load(const File &file) {
   for (list<IncludeCache::CachedFile>::const_iterator i = cpp.includedFiles.begin(); i != cpp.includedFiles.end(); i++) {
     File incFile = File(i->file);
     if (i->modified < incFile.getLastModified()) {
-      if (settings.debugOutput) {
-	cout << "The file " << incFile.title().c_str() << 
-          " have been modified from " << i->modified << " to " << 
-          incFile.getLastModified() << ". Renewing cache..." << endl;
-      }
+      DEBUG(VERBOSE, "The file " << incFile << " have been modified from " <<
+	    i->modified << " to " << incFile.getLastModified() << ". Renewing cache.");
       valid = false;
       break;
     }
@@ -225,7 +226,7 @@ void Files::save(const File &file) const {
 
   for (list<File>::const_iterator i = files.begin(); i != files.end(); i++) {
     File f(*i);
-    if (settings.debugOutput) cout << "Stored file: " << f.title().c_str() << ", time " << f.getLastModified() << endl;
+    DEBUG(VERBOSE, "Stored file: " << f << ", time " << f.getLastModified());
     cpp.includedFiles.push_back(IncludeCache::CachedFile(f.toString(), f.getLastModified()));
   }
 }
