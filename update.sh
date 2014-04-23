@@ -5,20 +5,25 @@ git fetch
 git checkout master -f
 git merge origin/master
 
-# Compile mymake once again.
-if [ -e mymake_new ]
+options="-"
+if [ $# -eq 1 ]
 then
-    rm mymake_new
+    options=$1
 fi
 
 echo "Compiling mymake once more..."
-g++ *.cpp -o mymake_new
+if ./compile.sh mymake_new $options
+then
+    :
+else
+    exit 1
+fi
 
 if [ -e mymake_new ]
 then
-    echo "Compilation succeeded, mymake is updated!"
     rm mymake
     mv mymake_new mymake
+    echo "Compilation succeeded, mymake is updated!"
 else
     echo "Compilation failed!"
     exit 1

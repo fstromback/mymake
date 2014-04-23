@@ -1,21 +1,18 @@
 #!/bin/bash
 
-echo "Compiling mymake..."
-if [ -e mymake ]
+options="-"
+if [ $# -eq 1 ]
 then
-    rm mymake
+    options=$1
 fi
 
-g++ *.cpp -o mymake
-
-if [ -e mymake ]
+echo "Compiling mymake..."
+if ./compile.sh mymake $options
 then
-    echo "Done compiling!"
+    :
 else
-    echo "Compilation error!"
     exit 1
 fi
-
 
 # set up aliases in shells?
 while true
