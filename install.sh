@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "Compiling mymake..."
 if [ -e mymake ]
@@ -61,8 +61,8 @@ do
 	echo "Done! Now do source ~/.bashrc"
     elif [ $shell_type = 2 ]
     then
-	echo "alias ${alias_name} \"$file\"" >> ~/.cshrc.private
-	echo "Done! Now do source ~/.cshrc.private"
+	echo "alias ${alias_name} \"$file\"" >> ~/.cshrc
+	echo "Done! Now do source ~/.cshrc"
     else
 	echo "I do not know about that shell..."
 	go_on="yes"
