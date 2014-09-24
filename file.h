@@ -68,6 +68,7 @@ public:
   // Make this path relative another path.
   File modifyRelative(const File &original, const File &newRel) const;
 
+  string getType() const;
   void setType(const string &to);
   time_t getLastModified() const;
 

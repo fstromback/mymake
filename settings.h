@@ -61,7 +61,7 @@ public:
 
   string getIncludeString() const;
   string getLibString() const;
-  string getCompileCommand(const string &file, const string &output) const;
+  string getCompileCommand(const string &file, const string &output, const string &ext) const;
   string getLinkCommand(const string &files) const;
 
   inline string getBuildPath() const { return active.buildPath; }
@@ -74,7 +74,8 @@ private:
 
   class Configuration {
   public:
-    string compile;
+    // Specific for different kinds of file extensions, ""-> default.
+    map<string, string> compile;
     string link;
     string buildPath;
     string outFile;
@@ -87,6 +88,7 @@ private:
   void loadFile(const string &file);
   void parseLine(const string &file);
   void storeItem(const string &identifier, const string &value);
+  void parseCompile(const string &line);
 
   string replace(const string &in, const string &find, const string &replace) const;
 

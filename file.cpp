@@ -204,6 +204,12 @@ bool File::deleteFile() const {
   return (unlink(toString().c_str()) == 0);
 }
 
+string File::getType() const {
+  string t = title();
+  nat last = t.rfind('.');
+  return t.substr(last + 1);
+}
+
 void File::setType(const string &type) {
   if (type == "") {
     parts.back() = titleNoExt();

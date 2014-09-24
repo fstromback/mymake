@@ -265,7 +265,7 @@ void Settings::storeItem(const string &identifier, const string &value) {
   } else if (identifier == "ignore") {
     ignoreFiles.push_back(value);
   } else if (identifier == "compile") {
-    active.compile = value;
+    parseCompile(value);
   } else if (identifier == "link") {
     active.link = value;
   } else if (identifier == "intermediate") {
@@ -288,6 +288,23 @@ void Settings::storeItem(const string &identifier, const string &value) {
     libraries = parseCommaList(value);
   } else {
     PLN("Unknown identifier: " << identifier);
+  }
+}
+
+void Settings::parseCompile(const string &value) {
+  size_t pos = value.find(':');
+  if (pos == string::npos) {
+    active.compile[""] = value;
+  } else {
+    list<string> exts = parseCommaList(value.substr(0, pos));
+    string val = value.substr(pos + 1);
+
+    while (!exts.empty()) {
+      string s = exts.front();
+      exts.pop_front();
+
+      active.compile[s] = val;
+    }
   }
 }
 
@@ -371,11 +388,16 @@ string Settings::getLibString() const {
   return ss.str();
 }
 
-string Settings::getCompileCommand(const string &file, const string &output) const {
-  string result = replace(active.compile, "<file>", file);
+string Settings::getCompileCommand(const string &file, const string &output, const string &ext) const {
+  string result;
+  if (active.compile.count(ext) == 1)
+    result = active.compile.find(ext)->second;
+  else if (active.compile.count("") == 1)
+    result = active.compile.find("")->second;
+  
+  result = replace(result, "<file>", file);
   result = replace(result, "<output>", output);
   result = replace(result, "<includes>", getIncludeString());
-  //string result = replace(replace(active.compile, "<file>", file), "<output>", output);
   return result;
 }
 
@@ -404,7 +426,15 @@ void Settings::outputConfig() const {
   cout << "Output file: " << active.outFile.c_str() << endl;
   cout << "Executable extension: " << executableExt.c_str() << endl;
   cout << "Build path: " << active.buildPath.c_str() << endl;
-  cout << "Compile with: " << active.compile.c_str() << endl;
+  cout << "Compile with: " << endl;
+  for (map<string, string>::const_iterator i = active.compile.begin(); i != active.compile.end(); ++i) {
+    cout << "  ";
+    if (i->first == "")
+      cout << "Default";
+    else
+      cout << i->first.c_str();
+    cout << ": " << i->second.c_str() << endl;
+  }
   cout << "Link with: " << active.link.c_str() << endl;
   cout << "Execute file: " << (executeCompiled ? "yes" : "no") << endl;
   cout << "Force recompilation: " << (forceRecompilation ? "yes" : "no") << endl;

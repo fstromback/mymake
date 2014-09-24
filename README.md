@@ -79,6 +79,9 @@ The command line executed to compile a compilation unit to an object file.
 * `<includes>` will be replaced by whatever is in `includeCl` followed by include paths. Each path will get its own `includeCl` first.
 * `<output>` will be replaced by the relative path to the output file the compiler is expected to produce.
 
+`compile=c,xyz:gcc <file> -c <includes> -o <output>`
+Same as above, but specifies another compile command-line to be used whenever a file of the type `c` or `xyz` is compiled. In this case we use `gcc` instead of `g++` for c-files.
+
 `link=g++ <files> -o <output>`
 The command line executed to link object-files together to an executable file.
 * `<files>` will be replaced by a list of input files, separated by spaces.

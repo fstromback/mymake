@@ -63,7 +63,7 @@ bool compileFiles(Files &files, Files &toLink) {
 
 	output.ensurePathExists();
 
-	string compileArgument = settings.getCompileCommand(quote(file.toString()), quote(output.toString()));
+	string compileArgument = settings.getCompileCommand(quote(file.toString()), quote(output.toString()), file.getType());
 	if (!runCommand(compileArgument)) {
 	  return false;
 	}
