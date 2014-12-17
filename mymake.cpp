@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
 
   if (!settings.enoughForCompilation() || settings.showHelp) {
     settings.outputUsage();
-    return -1;
+    return 1;
   }
 
   if (settings.debugLevel >= SETTINGS) {
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
       return 0;
     } else {
       cout << "Cleaning failed!" << endl;
-      return -1;
+      return 1;
     }
   }
 
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
 
   if (files.size() == 0) {
     cout << "Error: No files to compile." << endl;
-    return -1;
+    return 1;
   }
 
   int errorCode = 0;
@@ -212,11 +212,11 @@ int main(int argc, char **argv) {
       DEBUG(DEFAULT, "Build successful!");
     } else {
       PLN("Build failed!");
-      errorCode = -2;
+      errorCode = 2;
     }
   } else {
     PLN("Build failed!");
-    errorCode = -1;
+    errorCode = 1;
   }
 
   settings.cache.save();
