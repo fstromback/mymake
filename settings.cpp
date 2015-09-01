@@ -356,10 +356,12 @@ void Settings::outputUsage() const {
 
 string Settings::replace(const string &in, const string &find, const string &replace) const {
   string copy = in;
-  size_t pos = in.find(find);
-  if (pos == string::npos) return in;
 
-  return copy.replace(pos, find.length(), replace);
+  for (size_t pos = in.find(find); pos != string::npos; pos = copy.find(find, pos + replace.size())) {
+    copy = copy.replace(pos, find.length(), replace);
+  }
+
+  return copy;
 }
 
 string Settings::getIncludeString() const {
