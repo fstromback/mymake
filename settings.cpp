@@ -28,6 +28,7 @@ Settings::Settings() {
   showHelp = false;
   debugLevel = DEFAULT;
   showTime = false;
+  keepIntermediateExt = false;
 }
 
 Settings::~Settings() {}
@@ -76,6 +77,9 @@ void Settings::install() const {
   out << "#The extension for intermediate files on the system." << endl;
   out << "intermediate=o" << endl;
   out << "win.intermediate=obj" << endl;
+  out << "" << endl;
+  out << "#Keep the original extension when generating intermediate file names?" << endl;
+  out << "keepIntermediateExt=no" << endl;
   out << "" << endl;
   out << "#Input file(s)" << endl;
   out << "#input=<filename>" << endl;
@@ -128,6 +132,16 @@ void Settings::install() const {
   out << "#Debug level" << endl;
   out << "#debugLevel=1" << endl;
   out << "" << endl;
+}
+
+File Settings::asIntermediate(File path) const {
+  if (keepIntermediateExt) {
+    path.addType(settings.intermediateExt);
+  } else {
+    path.setType(settings.intermediateExt);
+  }
+
+  return path;
 }
 
 void Settings::parseArguments(int argc, char **argv) {
@@ -256,6 +270,8 @@ void Settings::storeItem(const string &identifier, const string &value) {
     platforms.push_back(value);
   } else if (identifier == "ext") {
     addSingle(cppExtensions, value);
+  } else if (identifier == "keepIntermediateExt") {
+    keepIntermediateExt = (value == "yes");
   } else if (identifier == "executableExt") {
     executableExt = value;
   } else if (identifier == "out") {

@@ -218,6 +218,10 @@ void File::setType(const string &type) {
   }
 }
 
+void File::addType(const string &type) {
+  parts.back() += "." + type;
+}
+
 void File::ensurePathExists() const {
   mkpath(parent().toString().c_str(), 0764);
 }

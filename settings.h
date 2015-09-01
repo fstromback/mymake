@@ -30,6 +30,7 @@ public:
   bool showHelp;
   DebugLevel debugLevel;
   bool showTime;
+  bool keepIntermediateExt;
 
   bool clean;
   bool doInstall;
@@ -48,6 +49,9 @@ public:
   IncludeCache cache;
 
   bool ignoreFile(const File &f) const;
+
+  /* Change the file extension for intermediate files. */
+  File asIntermediate(File file) const;
 
   void parseArguments(int argc, char **argv);
   bool enoughForCompilation();

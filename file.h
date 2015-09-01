@@ -70,6 +70,7 @@ public:
 
   string getType() const;
   void setType(const string &to);
+  void addType(const string &to);
   time_t getLastModified() const;
 
   void ensurePathExists() const;

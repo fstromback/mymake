@@ -47,7 +47,8 @@ bool compileFiles(Files &files, Files &toLink) {
     if (file.exists() && !settings.ignoreFile(file)) {
       File relative = file.makeRelative(srcPath);
       File output = File(settings.getBuildPath()) + relative;
-      output.setType(settings.intermediateExt);
+
+      output = settings.asIntermediate(output);
        
       bool needsCompilation = false;
       if (settings.forceRecompilation) {
