@@ -1,0 +1,15 @@
+* Ideas for the new release
+
+  Project + target approach. Root-level has a .mmproject-file, and each sub-directory is then
+  a sub-project with its own .mymake-file. The .mmproject then connects the separate files. Of
+  it should be possible to use only .mymake-files.
+  -> implicit or explicit depencies?
+
+  Support for libraries - compile all .cpp-files in a directory.
+
+  Support for precompiled headers - compile that file first if needed.
+
+  Search upwards to find a .mymake (and .mmproject) so that we do not need to be in the root directory.
+
+  Manage environment variables, to make using cl.exe on Windows easier, and making it possible to manage
+  configurations easily on Windows as well (x86/x64).
