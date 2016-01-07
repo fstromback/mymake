@@ -68,6 +68,7 @@ public:
 
 	// Make this path absolute if it is not already.
 	Path makeAbsolute() const;
+	Path makeAbsolute(const Path &abs) const;
 
 	// Find the children of this path.
 	vector<Path> children() const;

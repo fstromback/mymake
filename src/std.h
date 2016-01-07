@@ -31,6 +31,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <queue>
 #include <set>
 #include <map>
 #include <algorithm>
@@ -56,6 +57,7 @@ typedef std::exception Error;
 using std::ostream;
 using std::endl;
 using std::vector;
+using std::queue;
 using std::map;
 using std::set;
 using std::min;

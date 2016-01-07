@@ -13,3 +13,5 @@
 
   Manage environment variables, to make using cl.exe on Windows easier, and making it possible to manage
   configurations easily on Windows as well (x86/x64).
+
+  Optional CD into the root directory of the project.

@@ -13,12 +13,20 @@ static bool partEq(const String &a, const String &b) {
 	return _stricmp(a.c_str(), b.c_str()) == 0;
 }
 
+static bool partLess(const String &a, const String &b) {
+	return _stricmp(a.c_str(), b.c_str()) < 0;
+}
+
 #else
 
 #error "Finish implementing this file for *NIX"
 
 static bool partEq(const String &a, const String &b) {
 	return a == b;
+}
+
+static bool partLess(const String &a, const String &b) {
+	return a < b;
 }
 
 #endif
@@ -115,7 +123,12 @@ bool Path::operator ==(const Path &o) const {
 bool Path::operator <(const Path &o) const {
 	if (isDirectory != o.isDirectory && parts == o.parts)
 		return o.isDirectory;
-	return parts < o.parts;
+
+	for (nat i = 0; i < parts.size(); i++) {
+		if (partLess(parts[i], o.parts[i]))
+			return true;
+	}
+	return false;
 }
 
 bool Path::operator >(const Path &o) const {
@@ -219,10 +232,14 @@ Path Path::makeRelative(const Path &to) const {
 }
 
 Path Path::makeAbsolute() const {
+	return makeAbsolute(Path::cwd());
+}
+
+Path Path::makeAbsolute(const Path &to) const {
 	if (isAbsolute())
 		return *this;
 
-	return Path::cwd() + *this;
+	return to + *this;
 }
 
 bool Path::exists() const {

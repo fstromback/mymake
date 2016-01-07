@@ -1,6 +1,7 @@
 #include "std.h"
 #include "config.h"
 #include "cmdline.h"
+#include "compile.h"
 
 // Main entry-point for mymake.
 int main(int argc, const char *argv[]) {
@@ -15,7 +16,6 @@ int main(int argc, const char *argv[]) {
 	// Find a config file and cd there.
 	Path newPath = findConfig();
 	DEBUG("Working directory: " << newPath, INFO);
-	Path::cd(newPath);
 
 	MakeConfig config;
 
@@ -38,11 +38,15 @@ int main(int argc, const char *argv[]) {
 		DEBUG("Local file found: " << localFile, INFO);
 	}
 
+	// Compile plain .mymake-file.
 	Config params;
 	config.apply(cmdline.options, params);
 	cmdline.apply(params);
 
-	DEBUG("Configuration options: " << params, INFO);
+	DEBUG("Configuration options: " << params, VERBOSE);
+
+	Compilation c(newPath, params);
+	c.compile();
 
 	return 0;
 }
