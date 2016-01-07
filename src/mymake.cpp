@@ -4,9 +4,9 @@
 
 // Main entry-point for mymake.
 int main(int argc, const char *argv[]) {
-	CmdLine params(vector<String>(argv, argv + argc));
+	CmdLine cmdline(vector<String>(argv, argv + argc));
 
-	if (params.errors) {
+	if (cmdline.errors) {
 		PLN("Errors in the command line...");
 		TODO("Better error message!");
 		return 1;
@@ -16,6 +16,33 @@ int main(int argc, const char *argv[]) {
 	Path newPath = findConfig();
 	DEBUG("Working directory: " << newPath, INFO);
 	Path::cd(newPath);
+
+	MakeConfig config;
+
+	// Load the system-global file.
+	Path globalFile(Path::home() + localConfig);
+	if (globalFile.exists()) {
+		config.load(globalFile);
+	}
+
+	// Load the local config-file.
+	Path localProject(newPath + projectConfig);
+	if (localProject.exists()) {
+		DEBUG("Project file found: " << localProject, INFO);
+		return 0;
+	}
+
+	Path localFile(newPath + localConfig);
+	if (localFile.exists()) {
+		config.load(localFile);
+		DEBUG("Local file found: " << localFile, INFO);
+	}
+
+	Config params;
+	config.apply(cmdline.options, params);
+	cmdline.apply(params);
+
+	DEBUG("Configuration options: " << params, INFO);
 
 	return 0;
 }

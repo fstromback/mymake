@@ -1,6 +1,8 @@
 #pragma once
 #include "path.h"
 
+class Config;
+
 /**
  * Command line error.
  */
@@ -37,6 +39,9 @@ public:
 
 	// Configuration options.
 	set<String> options;
+
+	// Apply to Config object.
+	void apply(Config &config) const;
 
 private:
 	// What should the next param be?

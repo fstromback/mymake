@@ -1,5 +1,6 @@
 #include "std.h"
 #include "cmdline.h"
+#include "config.h"
 
 static const pair<String, char> rawLongOptions[] = {
 	make_pair("output", 'o'),
@@ -31,6 +32,12 @@ CmdLine::CmdLine(const vector<String> &params) :
 			addFile(c);
 		}
 	}
+
+#ifdef WINDOWS
+	options.insert("windows");
+#else
+	options.insert("unix");
+#endif
 }
 
 bool CmdLine::parseOptions(const String &opts) {
@@ -106,4 +113,16 @@ void CmdLine::addFile(const String &file) {
 	} else {
 		options.insert(file);
 	}
+}
+
+void CmdLine::apply(Config &config) const {
+	config.set("output", toS(output));
+
+	for (nat i = 0; i < files.size(); i++)
+		config.add("input", toS(files[i]));
+
+	if (execute == tYes)
+		config.set("execute", "yes");
+	if (execute == tNo)
+		config.set("execute", "no");
 }

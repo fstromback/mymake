@@ -1,0 +1,82 @@
+#Configuration for mymake
+#Lines beginning with # are comments.
+#Any unknown left-hand sides can be used as variables.
+
+[]
+
+#Extensions for source-files, ie. files that should be compiled.
+ext+=cpp
+ext+=cc
+ext+=cxx
+ext+=c++
+ext+=c
+
+#Build directory
+buildDir=build/
+
+#Executable directory
+execDir=bin/
+
+#Ignore files.
+ignore=*.template.*
+
+#Input file(s). Use * for all files (recursively), excluding build directory and bin directory.
+#input=Xxx.cpp
+
+#Output filename, defaults to first input file.
+#output=
+
+#Include path
+#include+=./
+
+#Include libraries.
+#library+=m
+
+#Run output by default
+execute=yes
+
+#Show compilation time?
+#showTime=no
+
+[lib]
+
+#Compile all files into a lib.
+input=*
+
+#Do not run.
+execute=no
+
+[unix]
+
+execExt=
+intermediateExt=o
+
+includeCl=-iquote
+libraryCl=-L
+
+flags=-std=c++11 -Wall -Wextra
+
+#Compile a single file.
+compile=*:g++ <flags> <file> -c <includes> -o <output>
+
+#Link all files
+link=g++ <libs> <files> -o <output>
+
+[unix,lib]
+
+execExt=a
+
+#Link (more flags for libraries?)
+link=ar -cvq <output> <files>
+
+[windows]
+
+execExt=exe
+intermediateExt=obj
+
+compile=*:cl <file> /nologo /c /EHsc /Fo<output>
+link=link <libs> <files> /nologo /OUT:<output>
+
+[windows,lib]
+
+execExt=lib

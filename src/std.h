@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <sstream>
 #include <cassert>
+#include <fstream>
 #include <exception>
 
 // Convenient name for size_t.
@@ -61,6 +62,8 @@ using std::min;
 using std::max;
 using std::make_pair;
 using std::pair;
+using std::ifstream;
+using std::ofstream;
 
 /**
  * Class that disables copying and gives virtual destructor.
@@ -80,6 +83,12 @@ private:
 template <class T>
 inline vector<T> &operator <<(vector<T> &to, const T &elem) {
 	to.push_back(elem);
+	return to;
+}
+
+template <class T>
+inline set<T> &operator <<(set<T> &to, const T &elem) {
+	to.insert(elem);
 	return to;
 }
 
@@ -125,6 +134,9 @@ String join(const T &data, const String &between = L", ") {
 	return to.str();
 }
 
+vector<String> split(const String &str, const String &delimiter);
+String trim(const String &s);
+
 // Tristate.
 enum Tristate {
 	tUnset,
@@ -141,7 +153,7 @@ enum Tristate {
 #define PLN(x) std::cout << x << endl
 
 // Print x = <value of x>
-#define PVAR(x) PLN(#x << " = " << x)
+#define PVAR(x) PLN(#x << "=" << x)
 
 // TODO.
 #define TODO(x) PLN("TODO: " << __FILE__ << "(" << __LINE__ << "): " << x)
@@ -153,6 +165,7 @@ enum {
 	dbg_NORMAL = 1,
 	dbg_INFO = 2,
 	dbg_VERBOSE = 3,
+	dbg_DEBUG = 4,
 };
 
 // Debug level.
