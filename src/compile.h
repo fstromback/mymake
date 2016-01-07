@@ -1,52 +1,38 @@
 #pragma once
 #include "path.h"
 #include "config.h"
+#include "pathqueue.h"
+#include "includes.h"
 
-/**
- * Queue of files to compile.
- */
-class FileQueue {
-public:
-	// Empty?
-	bool empty() const;
-	bool any() const;
+namespace compile {
 
-	// Pop top element.
-	Path pop();
+    /**
+     * Mymake compilation.
+     */
+	class Target {
+	public:
+		// 'wd' is the directory with the .mymake file in it.
+		Target(const Path &wd, const Config &config);
 
-	// Push element, discards it if it has ever been in the queue before.
-	void push(const Path &path);
+		// Compile a directory with a .mymake file in.
+		bool compile();
 
-private:
-	// Files in the queue.
-	set<Path> s;
+	private:
+		// Working directory.
+		Path dir;
 
-	// Queue of files.
-	queue<Path> q;
-};
+		// Configuration.
+		Config config;
 
-/**
- * Mymake compilation.
- */
-class Compilation {
-public:
-	// 'wd' is the directory with the .mymake file in it.
-	Compilation(const Path &wd, const Config &config);
+		// Include cache.
+		Includes includes;
 
-	// Compile a directory with a .mymake file in.
-	bool compile();
+		// Add files to the queue of files to process.
+		void addFiles(PathQueue &to, const vector<String> &src);
 
-private:
-	// Working directory.
-	Path dir;
+		// Add a file to the queue of files to process.
+		void addFile(PathQueue &to, const String &src);
 
-	// Configuration.
-	Config config;
+	};
 
-	// Add files to the queue of files to process.
-	void addFiles(FileQueue &to, const vector<String> &src);
-
-	// Add a file to the queue of files to process.
-	void addFile(FileQueue &to, const String &src);
-
-};
+}

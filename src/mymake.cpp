@@ -45,7 +45,7 @@ int main(int argc, const char *argv[]) {
 
 	DEBUG("Configuration options: " << params, VERBOSE);
 
-	Compilation c(newPath, params);
+	compile::Target c(newPath, params);
 	c.compile();
 
 	return 0;

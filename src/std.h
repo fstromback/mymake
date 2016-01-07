@@ -18,8 +18,8 @@
 #undef min
 #endif
 
-#ifdef min
-#undef min
+#ifdef max
+#undef max
 #endif
 
 #endif
@@ -156,6 +156,9 @@ enum Tristate {
 
 // Print x = <value of x>
 #define PVAR(x) PLN(#x << "=" << x)
+
+// Output warning.
+#define WARNING(x) PLN("WARNING: " << x)
 
 // TODO.
 #define TODO(x) PLN("TODO: " << __FILE__ << "(" << __LINE__ << "): " << x)

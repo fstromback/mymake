@@ -15,3 +15,12 @@
   configurations easily on Windows as well (x86/x64).
 
   Optional CD into the root directory of the project.
+
+* Terminology
+
+  Project + target
+
+  Option (configuration options = non-files on the command line)
+* Check
+  
+  We currently rely on Path elliminating .. as soon as they are found eg. when concatenating paths. Check this!

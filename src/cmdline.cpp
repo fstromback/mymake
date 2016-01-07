@@ -16,7 +16,7 @@ CmdLine::CmdLine(const vector<String> &params) :
 	bool noOptions = false;
 	state = sNone;
 
-	for (nat i = 0; i < params.size(); i++) {
+	for (nat i = 1; i < params.size(); i++) {
 		const String &c = params[i];
 
 		if (optionParam(c)) {

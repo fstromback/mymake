@@ -22,6 +22,7 @@ ignore=*.template.*
 
 #Input file(s). Use * for all files (recursively), excluding build directory and bin directory.
 #input=Xxx.cpp
+input=test/main.cpp
 
 #Output filename, defaults to first input file.
 #output=
