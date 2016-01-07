@@ -7,6 +7,12 @@
 int main(int argc, const char *argv[]) {
 	CmdLine cmdline(vector<String>(argv, argv + argc));
 
+#ifdef WINDOWS
+	// Bash swallows crashes, which is very annoying. This makes it hard to attach the debugger when
+	// using DebugBreak.
+	// SetErrorMode(0);
+#endif
+
 	if (cmdline.errors) {
 		PLN("Errors in the command line...");
 		TODO("Better error message!");
@@ -46,6 +52,7 @@ int main(int argc, const char *argv[]) {
 	DEBUG("Configuration options: " << params, VERBOSE);
 
 	compile::Target c(newPath, params);
+	c.find();
 	c.compile();
 
 	return 0;

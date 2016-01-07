@@ -1,6 +1,10 @@
 #include "std.h"
 #include "includes.h"
 
+IncludeInfo::IncludeInfo() {}
+
+IncludeInfo::IncludeInfo(const Path &file) : file(file) {}
+
 Timestamp IncludeInfo::lastModified() const {
 	Timestamp r = file.mTime();
 	for (set<Path>::const_iterator i = includes.begin(); i != includes.end(); ++i)
@@ -17,9 +21,32 @@ Includes::Includes(const Path &wd, const Config &config) {
 	}
 }
 
+Includes::Info::Info() {}
+
+Includes::Info::Info(const IncludeInfo &info, const Timestamp &modified) : info(info), lastModified(modified) {}
+
+Includes::Info::Info(const Path &file, const Timestamp &modified) : info(file), lastModified(modified) {}
+
+bool Includes::Info::upToDate() const {
+	return info.lastModified() <= lastModified;
+}
+
 IncludeInfo Includes::info(const Path &file) {
-	recursiveIncludesIn(file);
-	return IncludeInfo();
+	InfoMap::iterator cached = cache.find(file);
+	if (cached != cache.end()) {
+		if (cached->second.upToDate()) {
+			DEBUG("Serving " << file << " from cache!", VERBOSE);
+			return cached->second.info;
+		}
+	}
+
+	// We need to update the cache...
+	IncludeInfo r(file);
+	r.includes = recursiveIncludesIn(file);
+
+	cache[file] = Info(r, Timestamp());
+
+	return r;
 }
 
 Path Includes::resolveInclude(const Path &fromFile, const String &src) const {
@@ -87,6 +114,74 @@ void Includes::includesIn(const Path &file, PathQueue &to) {
 			} catch (const IncludeError &e) {
 				WARNING(e.what());
 			}
+		}
+	}
+}
+
+static Path readPath(istream &from) {
+	String p;
+	getline(from, p);
+	return Path(p);
+}
+
+void Includes::load(const Path &from) {
+	ifstream src(toS(from).c_str());
+
+	char type;
+
+	// Compare include paths.
+	nat incId = 0;
+	while (src.peek() == 'i') {
+		src.get();
+		Path path = readPath(src);
+
+		if (incId >= includePaths.size())
+			return;
+
+		if (includePaths[incId++] != path)
+			return;
+	}
+
+	if (incId != includePaths.size())
+		return;
+
+	Info *current = null;
+
+	while (src >> type) {
+		if (type == '+') {
+			Timestamp time;
+			src >> time.time;
+			src.get(); // Read space.
+
+			Path path = readPath(src);
+
+			cache[path] = Info(path, time);
+			current = &cache[path];
+		} else if (type == '-') {
+			if (!current)
+				return;
+
+			current->info.includes << readPath(src);
+		}
+	}
+}
+
+void Includes::save(const Path &to) const {
+	ofstream dest(toS(to).c_str());
+
+	// Include paths, so that we can ignore loading if the include paths have changed.
+	for (nat i = 0; i < includePaths.size(); i++) {
+		dest << "i" << includePaths[i] << endl;
+	}
+
+	// All data.
+	for (InfoMap::const_iterator i = cache.begin(); i != cache.end(); ++i) {
+		const Info &info = i->second;
+
+		dest << "+" << info.lastModified.time << ' ' << info.info.file << endl;
+
+		for (set<Path>::const_iterator i = info.info.includes.begin(); i != info.info.includes.end(); ++i) {
+			dest << "-" << *i << endl;
 		}
 	}
 }

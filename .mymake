@@ -28,7 +28,7 @@ input=test/main.cpp
 #output=
 
 #Include path
-#include+=./
+include+=./
 
 #Include libraries.
 #library+=m
@@ -75,7 +75,12 @@ link=ar -cvq <output> <files>
 execExt=exe
 intermediateExt=obj
 
-compile=*:cl <file> /nologo /c /EHsc /Fo<output>
+includeCl=/I
+libraryCl=
+
+flags=/nologo /EHsc
+
+compile=*:cl <file> <includes> <flags> /c /Fo<output>
 link=link <libs> <files> /nologo /OUT:<output>
 
 [windows,lib]

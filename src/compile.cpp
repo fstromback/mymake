@@ -1,12 +1,34 @@
 #include "std.h"
 #include "compile.h"
+#include "wildcard.h"
 
 namespace compile {
 
-	Target::Target(const Path &wd, const Config &config) : dir(wd), config(config), includes(wd, config) {}
+	Target::Target(const Path &wd, const Config &config) :
+		wd(wd),
+		config(config),
+		includes(wd, config),
+		buildDir(wd + Path(config.getStr("buildDir"))),
+		validExts(config.getArray("ext")),
+		compileVariants(config.getArray("compile")),
+		intermediateExt(config.getStr("intermediateExt")) {
 
-	bool Target::compile() {
-		DEBUG("Compiling project in " << dir, INFO);
+		// Create build directory if it is not already created.
+		buildDir.createDir();
+
+		// Load cached data if possible.
+		if (!force) {
+			includes.load(buildDir + "includes");
+		}
+	}
+
+	Target::~Target() {
+		includes.save(buildDir + "includes");
+	}
+
+	void Target::find() {
+		DEBUG("Compiling project in " << wd, INFO);
+		toCompile.clear();
 
 		PathQueue q;
 
@@ -19,13 +41,106 @@ namespace compile {
 		// Process files...
 		while (q.any()) {
 			Path now = q.pop();
-			PVAR(now);
 
-			// Do we need to re-compile this file?
+			// Check if 'now' is inside the working directory.
+			if (!now.isChild(wd)) {
+				// Maybe a reference to another target from the same project?
+				TODO("Keep track of depencies to other projects!");
+
+				// No need to follow further!
+				continue;
+			}
+
+			toCompile << now;
+
+			// Add all other files we need.
 			IncludeInfo info = includes.info(now);
+			for (set<Path>::const_iterator i = info.includes.begin(); i != info.includes.end(); ++i) {
+				addFile(q, *i);
+			}
+		}
+	}
+
+	bool Target::compile() {
+		Path::cd(wd);
+		DEBUG("CD into: " << wd, NORMAL);
+
+		map<String, String> data;
+		data["file"] = "";
+		data["output"] = "";
+
+		Timestamp latestModified;
+		ostringstream intermediateFiles;
+
+		for (nat i = 0; i < toCompile.size(); i++) {
+			const Path &src = toCompile[i];
+			Path output = src.makeRelative(wd).makeAbsolute(buildDir);
+			output.makeExt(intermediateExt);
+
+			String file = toS(src.makeRelative(wd));
+			String out = toS(output.makeRelative(wd));
+			if (i > 0)
+				intermediateFiles << ' ';
+			intermediateFiles << out;
+
+			if (!force && output.exists() && output.mTime() >= src.mTime()) {
+				DEBUG("Skipping " << src << "...", VERBOSE);
+				continue;
+			}
+
+			DEBUG("Compiling " << src.makeRelative(wd) << "...", NORMAL);
+
+			String cmd = chooseCompile(file);
+			if (cmd == "") {
+				PLN("No suitable compile command-line for " << file);
+				return false;
+			}
+
+			data["file"] = file;
+			data["output"] = out;
+			cmd = config.expandVars(cmd, data);
+
+			DEBUG("Command line: " << cmd, VERBOSE);
+			if (system(cmd.c_str()) != 0) {
+				// Abort compilation.
+				return false;
+			}
+
+			Timestamp mTime = output.mTime();
+			if (i == 0)
+				latestModified = mTime;
+			else
+				latestModified = max(latestModified, mTime);
+
 		}
 
-		return false;
+		// Link the output.
+		String outputName = config.getStr("output");
+		if (outputName == "") {
+			outputName = config.getArray("input").front();
+		}
+
+		Path execDir(config.getStr("execDir"));
+		execDir.createDir();
+
+		Path output = execDir + Path(outputName).titleNoExt();
+		output.makeExt(config.getStr("execExt"));
+
+		if (!force && output.exists() && output.mTime() >= latestModified) {
+			DEBUG("Skipping linking step.", VERBOSE);
+			return true;
+		}
+
+		data["files"] = intermediateFiles.str();
+		data["output"] = toS(output);
+		String cmd = config.getVars("link", data);
+		DEBUG("Command line: " << cmd, VERBOSE);
+
+		if (system(cmd.c_str()) != 0) {
+			return false;
+		}
+
+		return true;
 	}
 
 	void Target::addFiles(PathQueue &to, const vector<String> &src) {
@@ -34,21 +149,58 @@ namespace compile {
 		}
 	}
 
+	bool Target::findExt(Path &path) const {
+		for (nat i = 0; i < validExts.size(); i++) {
+			path.makeExt(validExts[i]);
+			if (path.exists())
+				return true;
+		}
+
+		return false;
+	}
+
 	void Target::addFile(PathQueue &to, const String &src) {
 		Path path(src);
-		path = path.makeAbsolute(dir);
-
-		// TODO: if the file has no or an invalid extension, add one and try it.
+		path = path.makeAbsolute(wd);
 
 		if (!path.exists()) {
-			WARNING("The file " << src << " does not exist.");
+			if (!findExt(path)) {
+				WARNING("The file " << src << " does not exist.");
+				return;
+			}
+		}
+
+		to.push(path);
+	}
+
+	void Target::addFile(PathQueue &to, const Path &header) {
+		Path impl = header;
+		if (!findExt(impl)) {
+			// No cpp file for a header... No big deal.
 			return;
 		}
 
-		// Is the file 'x' inside the directory?
+		to.push(impl);
+	}
 
-		PVAR(path);
-		to.push(path);
+	String Target::chooseCompile(const String &file) {
+		for (nat i = compileVariants.size(); i > 0; i--) {
+			const String &variant = compileVariants[i - 1];
+
+			nat colon = variant.find(':');
+			if (colon == String::npos) {
+				WARNING("Compile variable without telling what filetypes it is for: " << variant);
+				continue;
+			}
+
+			Wildcard w(variant.substr(0, colon));
+			if (w.matches(file))
+				return variant.substr(colon + 1);
+
+			DEBUG("No match for " << file << " using " << variant, VERBOSE);
+		}
+
+		return "";
 	}
 
 }

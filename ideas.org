@@ -16,6 +16,8 @@
 
   Optional CD into the root directory of the project.
 
+  Additional variable syntax: ex. <del,var> where 'del' is inserted before each item in 'var'.
+
 * Terminology
 
   Project + target
@@ -24,3 +26,5 @@
 * Check
   
   We currently rely on Path elliminating .. as soon as they are found eg. when concatenating paths. Check this!
+
+  Move constants used with Config into string constants somewhere.

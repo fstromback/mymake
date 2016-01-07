@@ -175,6 +175,89 @@ bool Config::getBool(const String &k, bool def) const {
 	return r == "yes";
 }
 
+String Config::getVars(const String &key, const map<String, String> &special) const {
+	return expandVars(getStr(key), special);
+}
+
+String Config::expandVars(const String &into, const map<String, String> &special) const {
+	std::ostringstream to;
+
+	nat start = String::npos;
+
+	for (nat i = 0; i < into.size(); i++) {
+		if (start == String::npos) {
+			if (into[i] == '<') {
+				start = i + 1;
+			} else {
+				to << into[i];
+			}
+		} else {
+			if (into[i] == ' ') {
+				for (nat j = start - 1; j <= i; j++)
+					to << into[j];
+				start = String::npos;
+			} else if (into[i] == '>') {
+				to << replacement(into.substr(start, i - start), special);
+				start = String::npos;
+			}
+		}
+	}
+
+	return to.str();
+}
+
+String Config::replacement(const String &var, const map<String, String> &special) const {
+	{
+		map<String, String>::const_iterator i = special.find(var);
+		if (i != special.end())
+			return i->second;
+	}
+
+	// Handle built-in special cases.
+	if (var == "includes") {
+		return buildStringPath("includeCl", "include");
+	} else if (var == "libs") {
+		return buildStringPath("libraryCl", "library");
+	}
+
+	{
+		Data::const_iterator d = data.find(var);
+		if (d != data.end())
+			return join(d->second, " ");
+	}
+
+	WARNING("Unknown variable in string: " << var);
+	return "";
+}
+
+String Config::buildString(const String &insertKey, const String &arrayKey) const {
+	ostringstream to;
+
+	String insert = getStr(insertKey);
+	vector<String> a = getArray(arrayKey);
+	for (nat i = 0; i < a.size(); i++) {
+		if (i > 0)
+			to << ' ';
+		to << insert << a[i];
+	}
+
+	return to.str();
+}
+
+String Config::buildStringPath(const String &insertKey, const String &arrayKey) const {
+	ostringstream to;
+
+	String insert = getStr(insertKey);
+	vector<String> a = getArray(arrayKey);
+	for (nat i = 0; i < a.size(); i++) {
+		if (i > 0)
+			to << ' ';
+		to << insert << Path(a[i]);
+	}
+
+	return to.str();
+}
+
 ostream &operator <<(ostream &to, const Config &c) {
 	for (Config::Data::const_iterator i = c.data.begin(); i != c.data.end(); ++i) {
 		to << endl << i->first << "=" << join(i->second, ",");

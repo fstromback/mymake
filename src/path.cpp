@@ -104,6 +104,8 @@ void Path::simplify() {
 
 std::ostream &operator <<(std::ostream &to, const Path &path) {
 	join(to, path.parts, "\\");
+	if (path.parts.empty())
+		to << '.';
 	if (path.isDir()) to << "\\";
 	return to;
 }
@@ -188,6 +190,14 @@ String Path::ext() const {
 		return t.substr(p + 1);
 }
 
+void Path::makeExt(const String &str) {
+	if (str.empty()) {
+		parts.back() = titleNoExt();
+	} else {
+		parts.back() = titleNoExt() + "." + str;
+	}
+}
+
 bool Path::isDir() const {
 	return isDirectory;
 }
@@ -216,7 +226,7 @@ Path Path::makeRelative(const Path &to) const {
 		} else if (i >= parts.size()) {
 			result.parts.push_back("..");
 			equal = false;
-		} else if (partEq(to.parts[i], parts[i])) {
+		} else if (!partEq(to.parts[i], parts[i])) {
 			result.parts.push_back("..");
 			equal = false;
 		} else {
@@ -240,6 +250,18 @@ Path Path::makeAbsolute(const Path &to) const {
 		return *this;
 
 	return to + *this;
+}
+
+bool Path::isChild(const Path &path) const {
+	if (parts.size() < path.parts.size())
+		return false;
+
+	for (nat i = 0; i < path.parts.size(); i++) {
+		if (!partEq(parts[i], path.parts[i]))
+			return false;
+	}
+
+	return true;
 }
 
 bool Path::exists() const {
@@ -296,4 +318,15 @@ Timestamp Path::cTime() const {
 	FindClose(h);
 
 	return fromFileTime(d.ftCreationTime);
+}
+
+void Path::createDir() const {
+	if (exists())
+		return;
+
+	if (isEmpty())
+		return;
+
+	parent().createDir();
+	CreateDirectory(toS(*this).c_str(), NULL);
 }

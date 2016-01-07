@@ -75,13 +75,13 @@ ostream &operator <<(ostream &to, const Timestamp &t) {
 
 	using std::setw;
 
-	wchar_t f = to.fill('0');
-	to << setw(4) << sTime.wYear << L"-"
-	   << setw(2) << sTime.wMonth << L"-"
-	   << setw(2) << sTime.wDay << L" "
-	   << setw(2) << sTime.wHour << L":"
-	   << setw(2) << sTime.wMinute << L":"
-	   << setw(2) << sTime.wSecond << L","
+	char f = to.fill('0');
+	to << setw(4) << sTime.wYear << "-"
+	   << setw(2) << sTime.wMonth << "-"
+	   << setw(2) << sTime.wDay << " "
+	   << setw(2) << sTime.wHour << ":"
+	   << setw(2) << sTime.wMinute << ":"
+	   << setw(2) << sTime.wSecond << ","
 	   << setw(4) << sTime.wMilliseconds;
 	to.fill(f);
 

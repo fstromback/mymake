@@ -56,6 +56,9 @@ public:
 	// Get file extension (always the last one).
 	String ext() const;
 
+	// Set the file extension (always the last one).
+	void makeExt(const String &ext);
+
 	// Does the file exist?
 	bool exists() const;
 
@@ -70,6 +73,9 @@ public:
 	Path makeAbsolute() const;
 	Path makeAbsolute(const Path &abs) const;
 
+	// Check if this path is a child of another path.
+	bool isChild(const Path &to) const;
+
 	// Find the children of this path.
 	vector<Path> children() const;
 
@@ -78,6 +84,9 @@ public:
 
 	// Created time.
 	Timestamp cTime() const;
+
+	// Create this path as directory if it does not already exist.
+	void createDir() const;
 
 private:
 

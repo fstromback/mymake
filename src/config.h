@@ -33,6 +33,12 @@ public:
 	// Get as a boolean.
 	bool getBool(const String &key, bool def = false) const;
 
+	// Get with replaced variables.
+	String getVars(const String &key, const map<String, String> &special = map<String, String>()) const;
+
+	// Insert variables into a string.
+	String expandVars(const String &into, const map<String, String> &special = map<String, String>()) const;
+
 	// Output.
 	friend ostream &operator <<(ostream &to, const Config &c);
 private:
@@ -40,6 +46,13 @@ private:
 
 	typedef map<String, Value> Data;
 	Data data;
+
+	// Get replacement for variable.
+	String replacement(const String &var, const map<String, String> &special) const;
+
+	// Get string for inserting a string in front of each element in another string.
+	String buildString(const String &repKey, const String &arrayKey) const;
+	String buildStringPath(const String &repKey, const String &arrayKey) const;
 };
 
 /**

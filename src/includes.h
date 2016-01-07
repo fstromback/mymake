@@ -19,6 +19,10 @@ private:
  */
 class IncludeInfo {
 public:
+	// Create.
+	IncludeInfo();
+	IncludeInfo(const Path &file);
+
 	// The file itself.
 	Path file;
 
@@ -44,12 +48,35 @@ public:
 	// Resolve an include string given the include path(s).
 	Path resolveInclude(const Path &fromFile, const String &inc) const;
 
+	// Load the cache from file.
+	void load(const Path &from);
+
+	// Save the cache to file.
+	void save(const Path &to) const;
+
 private:
 	// Include search paths. The root is always first.
 	vector<Path> includePaths;
 
+	// Information about a single file (+ time added to cache).
+	struct Info {
+		Info();
+		Info(const IncludeInfo &info, const Timestamp &time);
+		Info(const Path &file, const Timestamp &time);
+
+		// Regular info.
+		IncludeInfo info;
+
+		// Last modified as seen by the cache.
+		Timestamp lastModified;
+
+		// Up to date?
+		bool upToDate() const;
+	};
+
 	// Information about each file.
-	typedef map<Path, IncludeInfo> InfoMap;
+	typedef map<Path, Info> InfoMap;
+	InfoMap cache;
 
 	// Find includes in file, and all files included from there.
 	set<Path> recursiveIncludesIn(const Path &file);

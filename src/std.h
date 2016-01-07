@@ -55,6 +55,11 @@ typedef std::exception Error;
 
 // Using various things from std.
 using std::ostream;
+using std::istream;
+using std::ifstream;
+using std::ofstream;
+using std::ostringstream;
+using std::istringstream;
 using std::endl;
 using std::vector;
 using std::queue;
@@ -64,8 +69,6 @@ using std::min;
 using std::max;
 using std::make_pair;
 using std::pair;
-using std::ifstream;
-using std::ofstream;
 
 /**
  * Class that disables copying and gives virtual destructor.
@@ -173,12 +176,15 @@ enum {
 	dbg_DEBUG = 4,
 };
 
-// Debug level.
-extern int debugLevel;
-
 #define DEBUG(x, level)							\
 	do {										\
 		if (debugLevel >= dbg_ ## level) {		\
 			PLN(x);								\
 		}										\
 	} while (false)
+
+// Null.
+#define null NULL
+
+
+#include "globals.h"
