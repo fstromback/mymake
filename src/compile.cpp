@@ -16,6 +16,10 @@ namespace compile {
 		intermediateExt(config.getStr("intermediateExt")),
 		pchFile(buildDir + Path(config.getStr("pchFile"))) {
 
+		vector<String> ign = config.getArray("ignore");
+		for (nat i = 0; i < ign.size(); i++)
+			ignore << Wildcard(ign[i]);
+
 		// Create build directory if it is not already created.
 		buildDir.createDir();
 
@@ -127,6 +131,13 @@ namespace compile {
 				continue;
 			}
 
+			for (nat j = 0; j < ignore.size(); j++) {
+				if (ignore[j].matches(file)) {
+					DEBUG("Ignoring " << file << " as per " << ignore[j], INFO);
+					continue;
+				}
+			}
+
 			DEBUG("Compiling " << src.makeRelative(wd) << "...", NORMAL);
 
 			String cmd;
@@ -215,9 +226,27 @@ namespace compile {
 		return false;
 	}
 
+	void Target::addFilesRecursive(CompileQueue &to, const Path &at) {
+		vector<Path> children = at.children();
+		for (nat i = 0; i < children.size(); i++) {
+			if (children[i].isDir()) {
+				addFilesRecursive(to, children[i]);
+			} else {
+				if (std::find(validExts.begin(), validExts.end(), children[i].ext()) != validExts.end()) {
+					to << Compile(children[i], false);
+				}
+			}
+		}
+	}
+
 	void Target::addFile(CompileQueue &to, const String &src, bool pch) {
 		if (src.empty())
 			return;
+
+		if (src == "*") {
+			addFilesRecursive(to, wd);
+			return;
+		}
 
 		Path path(src);
 		path = path.makeAbsolute(wd);

@@ -3,6 +3,7 @@
 #include "config.h"
 #include "pathqueue.h"
 #include "includes.h"
+#include "wildcard.h"
 
 namespace compile {
 
@@ -45,6 +46,9 @@ namespace compile {
 		// Compilation command lines.
 		vector<String> compileVariants;
 
+		// Files to ignore.
+		vector<Wildcard> ignore;
+
 		// Output file type.
 		String intermediateExt;
 
@@ -85,6 +89,9 @@ namespace compile {
 
 		// Choose a file to compile.
 		String chooseCompile(const String &file);
+
+		// Find files recursively.
+		void addFilesRecursive(CompileQueue &to, const Path &root);
 
 	};
 
