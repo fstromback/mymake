@@ -146,6 +146,10 @@ ostream &operator <<(ostream &to, const MakeConfig &c) {
  * Config.
  */
 
+Config::Config() {
+	data.insert(make_pair("library", Value()));
+}
+
 void Config::set(const String &k, const String &v) {
 	data[k] = vector<String>(1, v);
 }
@@ -197,7 +201,7 @@ String Config::expandVars(const String &into, const map<String, String> &special
 					to << into[j];
 				start = String::npos;
 			} else if (into[i] == '>') {
-				to << replacement(into.substr(start, i - start), special);
+				join(to, replacement(into.substr(start, i - start), special));
 				start = String::npos;
 			}
 		}
@@ -206,14 +210,11 @@ String Config::expandVars(const String &into, const map<String, String> &special
 	return to.str();
 }
 
-String Config::replacement(String var, const map<String, String> &special) const {
+vector<String> Config::replacement(String var, const map<String, String> &special) const {
 	nat star = var.find('*');
 	if (star != String::npos) {
-		PLN("Building string " << var);
-		PVAR(replacement(var.substr(0, star), special));
-		PVAR(var.substr(star + 1));
-		PVAR(buildString(replacement(var.substr(0, star), special), var.substr(star + 1)));
-		return buildString(replacement(var.substr(0, star), special), var.substr(star + 1));
+		return addStr(join(replacement(var.substr(0, star), special), " "),
+					replacement(var.substr(star + 1), special));
 	}
 
 	nat pipe = var.find('|');
@@ -226,31 +227,33 @@ String Config::replacement(String var, const map<String, String> &special) const
 	{
 		map<String, String>::const_iterator i = special.find(var);
 		if (i != special.end())
-			return applyFn(op, i->second);
+			return vector<String>(1, applyFn(op, i->second));
 	}
 
 	// Handle built-in special cases.
 	if (var == "includes") {
-		return buildString(getStr("includeCl"), "path|include");
+		return addStr(getStr("includeCl"), replacement("path|include", special));
 	} else if (var == "libs") {
-		return buildString(getStr("libraryCl"), "path|library");
+		return addStr(getStr("libraryCl"), replacement("path|library", special));
 	}
 
 	{
 		Data::const_iterator d = data.find(var);
 		if (d != data.end()) {
-			ostringstream to;
-			for (nat i = 0; i < d->second.size(); i++) {
-				if (i != 0)
-					to << ' ';
-				to << applyFn(op, d->second[i]);
-			}
-			return to.str();
+			vector<String> r = d->second;
+			applyFn(op, r);
+			return r;
 		}
 	}
 
 	WARNING("Unknown variable in string: " << var);
-	return "";
+	return vector<String>();
+}
+
+void Config::applyFn(const String &op, vector<String> &src) const {
+	for (nat i = 0; i < src.size(); i++) {
+		src[i] = applyFn(op, src[i]);
+	}
 }
 
 String Config::applyFn(const String &op, const String &src) const {
@@ -268,39 +271,12 @@ String Config::applyFn(const String &op, const String &src) const {
 	}
 }
 
-String Config::buildString(const String &insert, const String &arrayKey) const {
-	ostringstream to;
-
-	String var = arrayKey;
-	nat pipe = var.find('|');
-	String op;
-	if (pipe != String::npos) {
-		op = var.substr(0, pipe);
-		var = var.substr(pipe + 1);
-	}
-
-	vector<String> a = getArray(var);
-	for (nat i = 0; i < a.size(); i++) {
-		if (i > 0)
-			to << ' ';
-		to << insert << applyFn(op, a[i]);
-	}
-
-	return to.str();
+vector<String> Config::addStr(const String &prefix, vector<String> to) const {
+	for (nat i = 0; i < to.size(); i++)
+		to[i] = prefix + to[i];
+	return to;
 }
 
-String Config::buildStringPath(const String &insert, const String &arrayKey) const {
-	ostringstream to;
-
-	vector<String> a = getArray(arrayKey);
-	for (nat i = 0; i < a.size(); i++) {
-		if (i > 0)
-			to << ' ';
-		to << insert << Path(a[i]);
-	}
-
-	return to.str();
-}
 
 ostream &operator <<(ostream &to, const Config &c) {
 	for (Config::Data::const_iterator i = c.data.begin(); i != c.data.end(); ++i) {

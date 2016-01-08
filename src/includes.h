@@ -33,6 +33,9 @@ public:
 	Timestamp lastModified() const;
 };
 
+// Output.
+ostream &operator <<(ostream &to, const IncludeInfo &i);
+
 /**
  * Keep a cache of all includes from specific files.
  */

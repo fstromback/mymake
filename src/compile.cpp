@@ -59,6 +59,7 @@ namespace compile {
 			// Add all other files we need.
 			IncludeInfo info = includes.info(now);
 			for (set<Path>::const_iterator i = info.includes.begin(); i != info.includes.end(); ++i) {
+				DEBUG(now << " depends on " << *i, VERBOSE);
 				addFile(q, *i);
 			}
 		}
@@ -88,9 +89,14 @@ namespace compile {
 
 		Env env(config);
 
+		// Run pre-compile steps.
+		if (!runSteps("preBuild"))
+			return false;
+
 		map<String, String> data;
 		data["file"] = "";
 		data["output"] = "";
+		data["pchFile"] = toS(pchFile.makeRelative(wd));
 
 		Timestamp latestModified;
 		ostringstream intermediateFiles;
@@ -108,13 +114,16 @@ namespace compile {
 				intermediateFiles << ' ';
 			intermediateFiles << out;
 
+			Timestamp lastModified = includes.info(src).lastModified();
+
 			bool pchValid = true;
 			if (src.isPch) {
-				pchValid = pchFile.exists() && pchFile.mTime() >= src.mTime();
+				pchValid = pchFile.exists() && pchFile.mTime() >= lastModified;
 			}
 
-			if (!force && pchValid && output.exists() && output.mTime() >= src.mTime()) {
-				DEBUG("Skipping " << src << "...", VERBOSE);
+			if (!force && pchValid && output.exists() && output.mTime() >= lastModified) {
+				DEBUG("Skipping " << src.makeRelative(wd) << "...", INFO);
+				DEBUG("Source modified: " << lastModified << ", output modified " << output.mTime(), VERBOSE);
 				continue;
 			}
 
@@ -162,6 +171,24 @@ namespace compile {
 
 		if (system(cmd.c_str()) != 0) {
 			return false;
+		}
+
+		// Run pre-compile steps.
+		if (!runSteps("preBuild"))
+			return false;
+
+		return true;
+	}
+
+	bool Target::runSteps(const String &key) {
+		vector<String> steps = config.getArray(key);
+
+		for (nat i = 0; i < steps.size(); i++) {
+			String expanded = config.expandVars(steps[i]);
+			if (system(expanded.c_str()) != 0) {
+				PLN("Failed running " << key << ": " << expanded);
+				return false;
+			}
 		}
 
 		return true;

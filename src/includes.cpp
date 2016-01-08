@@ -12,6 +12,11 @@ Timestamp IncludeInfo::lastModified() const {
 	return r;
 }
 
+ostream &operator <<(ostream &to, const IncludeInfo &i) {
+	join(to, i.includes);
+	return to;
+}
+
 Includes::Includes(const vector<Path> &ip) : includePaths(ip) {}
 
 Includes::Includes(const Path &wd, const Config &config) {

@@ -22,8 +22,7 @@ ignore=*.template.*
 
 #Input file(s). Use * for all files (recursively), excluding build directory and bin directory.
 #input=Xxx.cpp
-#input=test/main.cpp
-input=src/mymake.cpp
+input=mymake.cpp
 
 #Output filename, defaults to first input file.
 #output=
@@ -41,8 +40,14 @@ execute=yes
 #showTime=no
 
 #Precompiled header.
-pch=src/std.h
-pchFile=build/stdafx.pch
+pch=std.h
+pchFile=stdafx.pch
+
+#Pre-build steps.
+#preBuild=
+
+#Post-build steps.
+#postBuild=
 
 [lib]
 

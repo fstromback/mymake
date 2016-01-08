@@ -13,8 +13,7 @@ int exec(const Path &binary, const vector<String> &args) {
 	}
 	cmdline << '"';
 
-	PVAR(Path::cwd());
-	PLN("Running " << cmdline.str());
+	DEBUG("Running " << cmdline.str(), VERBOSE);
 	return system(cmdline.str().c_str());
 }
 

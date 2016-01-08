@@ -18,6 +18,9 @@ Path findConfig();
  */
 class Config {
 public:
+	// Create. Add some dummy components.
+	Config();
+
 	// Set a variable.
 	void set(const String &str, const String &value);
 
@@ -48,14 +51,14 @@ private:
 	Data data;
 
 	// Get replacement for variable.
-	String replacement(String var, const map<String, String> &special) const;
+	vector<String> replacement(String var, const map<String, String> &special) const;
 
 	// Apply an operation to a string.
+	void applyFn(const String &op, vector<String> &original) const;
 	String applyFn(const String &op, const String &original) const;
 
-	// Get string for inserting a string in front of each element in another string.
-	String buildString(const String &rep, const String &arrayKey) const;
-	String buildStringPath(const String &rep, const String &arrayKey) const;
+	// Add prefix to each element.
+	vector<String> Config::addStr(const String &prefix, vector<String> to) const;
 };
 
 /**

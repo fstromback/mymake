@@ -68,6 +68,9 @@ namespace compile {
 		// Output file.
 		Path output;
 
+		// Run steps.
+		bool runSteps(const String &key);
+
 		// Add files to the queue of files to process.
 		void addFiles(CompileQueue &to, const vector<String> &src);
 
