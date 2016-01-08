@@ -7,6 +7,7 @@ static const pair<String, char> rawLongOptions[] = {
 	make_pair("arguments", 'a'),
 	make_pair("debug", 'd'),
 	make_pair("force", 'f'),
+	make_pair("exec-path", 'p'),
 };
 static const map<String, char> longOptions(rawLongOptions, rawLongOptions + ARRAY_COUNT(rawLongOptions));
 
@@ -83,6 +84,9 @@ bool CmdLine::parseOption(char opt) {
 	case 'f':
 		force = (state != sNegate);
 		break;
+	case 'p':
+		state = sExecPath;
+		break;
 	default:
 		return false;
 	}
@@ -105,6 +109,9 @@ bool CmdLine::optionParam(const String &v) {
 	case sDebug:
 		debugLevel = to<int>(v);
 		return true;
+	case sExecPath:
+		execPath = Path(v).makeAbsolute();
+		return true;
 	}
 
 	return false;
@@ -122,6 +129,9 @@ void CmdLine::addFile(const String &file) {
 void CmdLine::apply(Config &config) const {
 	if (!output.isEmpty())
 		config.set("output", toS(output));
+
+	if (!execPath.isEmpty())
+		config.set("execPath", toS(execPath));
 
 	for (nat i = 0; i < files.size(); i++)
 		config.add("input", toS(files[i]));

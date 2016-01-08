@@ -13,8 +13,8 @@ static bool partEq(const String &a, const String &b) {
 	return _stricmp(a.c_str(), b.c_str()) == 0;
 }
 
-static bool partLess(const String &a, const String &b) {
-	return _stricmp(a.c_str(), b.c_str()) < 0;
+static int partCmp(const String &a, const String &b) {
+	return _stricmp(a.c_str(), b.c_str());
 }
 
 #else
@@ -25,8 +25,8 @@ static bool partEq(const String &a, const String &b) {
 	return a == b;
 }
 
-static bool partLess(const String &a, const String &b) {
-	return a < b;
+static int partCmp(const String &a, const String &b) {
+	return strcmp(a.c_str(), b.c_str();
 }
 
 #endif
@@ -127,9 +127,11 @@ bool Path::operator <(const Path &o) const {
 		return o.isDirectory;
 
 	for (nat i = 0; i < parts.size(); i++) {
-		if (partLess(parts[i], o.parts[i]))
-			return true;
+		int r = partCmp(parts[i], o.parts[i]);
+		if (r != 0)
+			return r < 0;
 	}
+
 	return false;
 }
 
@@ -169,6 +171,10 @@ Path Path::parent() const {
 	result.parts.pop_back();
 	result.isDirectory = true;
 	return result;
+}
+
+String Path::first() const {
+	return parts.front();
 }
 
 String Path::title() const {
@@ -253,7 +259,7 @@ Path Path::makeAbsolute(const Path &to) const {
 }
 
 bool Path::isChild(const Path &path) const {
-	if (parts.size() < path.parts.size())
+	if (parts.size() <= path.parts.size())
 		return false;
 
 	for (nat i = 0; i < path.parts.size(); i++) {

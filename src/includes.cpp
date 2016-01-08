@@ -13,6 +13,7 @@ Timestamp IncludeInfo::lastModified() const {
 }
 
 ostream &operator <<(ostream &to, const IncludeInfo &i) {
+	to << i.file << ": ";
 	join(to, i.includes);
 	return to;
 }

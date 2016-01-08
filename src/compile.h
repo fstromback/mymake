@@ -27,6 +27,9 @@ namespace compile {
 		// Execute the final executable.
 		int execute(const vector<String> &params) const;
 
+		// Depends on these projects:
+		set<String> dependsOn;
+
 	private:
 		// Working directory.
 		Path wd;

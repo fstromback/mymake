@@ -34,7 +34,7 @@ namespace compile {
 	}
 
 	bool Target::find() {
-		DEBUG("Compiling project in " << wd, INFO);
+		DEBUG("Finding depencies for target in " << wd, INFO);
 		toCompile.clear();
 
 		CompileQueue q;
@@ -52,7 +52,10 @@ namespace compile {
 			// Check if 'now' is inside the working directory.
 			if (!now.isChild(wd)) {
 				// Maybe a reference to another target from the same project?
-				TODO("Keep track of depencies to other projects!");
+				Path parentRel = now.makeRelative(wd.parent());
+				if (parentRel.first() != "..") {
+					dependsOn << parentRel.first();
+				}
 
 				// No need to follow further!
 				continue;
@@ -88,6 +91,8 @@ namespace compile {
 	}
 
 	bool Target::compile() {
+		DEBUG("Compiling target in " << wd, INFO);
+
 		Path::cd(wd);
 		DEBUG("CD into: " << wd, VERBOSE);
 
@@ -128,6 +133,13 @@ namespace compile {
 			if (!force && pchValid && output.exists() && output.mTime() >= lastModified) {
 				DEBUG("Skipping " << src.makeRelative(wd) << "...", INFO);
 				DEBUG("Source modified: " << lastModified << ", output modified " << output.mTime(), VERBOSE);
+
+				Timestamp mTime = output.mTime();
+				if (i == 0)
+					latestModified = mTime;
+				else
+					latestModified = max(latestModified, mTime);
+
 				continue;
 			}
 
@@ -175,6 +187,8 @@ namespace compile {
 			return true;
 		}
 
+		DEBUG("Linking...", NORMAL);
+
 		data["files"] = intermediateFiles.str();
 		data["output"] = toS(output.makeRelative(wd));
 		String cmd = config.getVars("link", data);
@@ -206,8 +220,13 @@ namespace compile {
 	}
 
 	int Target::execute(const vector<String> &params) const {
-		Path::cd(wd);
-		return exec(output.makeRelative(wd), params);
+		Path execPath = wd;
+		if (config.has("execPath")) {
+			execPath = Path(config.getStr("execPath")).makeAbsolute(wd);
+		}
+
+		Path::cd(execPath);
+		return exec(output.makeRelative(execPath), params);
 	}
 
 	void Target::addFiles(CompileQueue &to, const vector<String> &src) {

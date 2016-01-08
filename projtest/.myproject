@@ -1,0 +1,148 @@
+#Mymake project file.
+
+#Each sub-directory contains a target, this file specifies any depencies
+#between these projects, aside from what mymake can infer automatically.
+
+#Mymake tries to link any library projects automatically, but this might need
+#to be specified explicitly in each target.
+
+#This file can contain many of the regular options in mymake, and these are
+#applied to each of the targets (targets may override these settings).
+
+
+#include the project directory as well.
+include+=../
+
+#How to build each target.
+[build]
+
+#options when building lib.
+lib+=lib
+
+#options when building main (none needed)
+#main
+
+
+#Depencies
+[deps]
+
+#Explicit dependency on lib. This is not needed, as mymake can figure it out.
+main+=lib
+
+
+
+
+#For now, the 'global' configuration is located here as well. This would probably
+#be located in the global .mymake-file instead.
+
+[]
+
+#Extensions for source-files, ie. files that should be compiled.
+ext+=cpp
+ext+=cc
+ext+=cxx
+ext+=c++
+ext+=c
+
+#Build directory
+buildDir=build/
+
+#Executable directory
+execDir=bin/
+
+#Ignore files.
+ignore=*.template.*
+
+#Input file(s). Use * for all files (recursively), excluding build directory and bin directory.
+#input=Xxx.cpp
+
+#Output filename, defaults to first input file.
+#output=
+
+#Include path
+include+=./
+
+#Include libraries.
+#library+=m
+
+#Run output by default
+execute=yes
+
+#Show compilation time?
+#showTime=no
+
+#Precompiled header.
+#pch=std.h
+#pchFile=stdafx.pch
+
+#Pre-build steps.
+#preBuild=
+
+#Post-build steps.
+#postBuild=
+
+[lib]
+
+#Compile all files into a lib.
+input=*
+
+#Do not run.
+execute=no
+
+[unix]
+
+execExt=
+intermediateExt=o
+
+includeCl=-iquote
+libraryCl=-L
+
+flags=-std=c++11 -Wall -Wextra
+
+#Compile a single file.
+compile=*:g++ <flags> <file> -c <includes> -o <output>
+
+#Link all files
+link=g++ <libs> <files> -o <output>
+
+[unix,lib]
+
+execExt=a
+
+#Link (more flags for libraries?)
+link=ar -cvq <output> <files>
+
+[windows]
+
+execExt=exe
+intermediateExt=obj
+
+includeCl=/I
+libraryCl=
+
+#env+=DevEnvDir=C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\IDE
+env+=DXSDK_DIR=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\
+
+#env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\INCLUDE
+env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE
+env+=INCLUDE=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\include
+
+#env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\LIB
+env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB
+env+=LIB=>C:\Program Files\\Microsoft SDKs\Windows\v6.0A\lib
+
+env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
+env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
+
+flags=/nologo /EHsc
+
+usePch=/Yu
+namePch=/Fp
+
+pchCompile=cl <file> <includes> <flags> /Yc<title|pch> <namePch*path|pchFile> /c /Fo<output>
+compile=*:cl <file> <includes> <flags> <usePch*title|pch> <namePch*path|pchFile> /c /Fo<output>
+link=link <libs> <files> /nologo /OUT:<output>
+
+[windows,lib]
+
+execExt=lib

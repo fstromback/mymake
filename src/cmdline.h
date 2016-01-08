@@ -40,6 +40,9 @@ public:
 	// Configuration options.
 	set<String> options;
 
+	// Path to cd to before executing the final binary.
+	Path execPath;
+
 	// Apply to Config object.
 	void apply(Config &config) const;
 
@@ -51,6 +54,7 @@ private:
 		sOutput,
 		sArguments,
 		sDebug,
+		sExecPath,
 	};
 
 	State state;

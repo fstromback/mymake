@@ -23,6 +23,7 @@
   Project + target
 
   Option (configuration options = non-files on the command line)
+
 * Check
   
   We currently rely on Path elliminating .. as soon as they are found eg. when concatenating paths. Check this!

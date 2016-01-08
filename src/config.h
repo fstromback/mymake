@@ -22,10 +22,15 @@ public:
 	Config();
 
 	// Set a variable.
-	void set(const String &str, const String &value);
+	void set(const String &key, const String &value);
 
 	// Add to a variable.
-	void add(const String &str, const String &value);
+	void add(const String &key, const String &value);
+	void add(const String &key, const vector<String> &value);
+
+
+	// Has variable?
+	bool has(const String &key) const;
 
 	// Get a variable as a string.
 	String getStr(const String &key, const String &def = "") const;

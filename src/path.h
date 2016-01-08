@@ -49,6 +49,9 @@ public:
 	// Get parent directory.
 	Path parent() const;
 
+	// Get first directory part.
+	String first() const;
+
 	// Get the title of this file or directory.
 	String title() const;
 	String titleNoExt() const;

@@ -158,6 +158,16 @@ void Config::add(const String &k, const String &v) {
 	data[k] << v;
 }
 
+void Config::add(const String &k, const vector<String> &v) {
+	vector<String> &to = data[k];
+	for (nat i = 0; i < v.size(); i++)
+		to << v[i];
+}
+
+bool Config::has(const String &k) const {
+	return data.count(k) > 0;
+}
+
 String Config::getStr(const String &k, const String &d) const {
 	Data::const_iterator i = data.find(k);
 	if (i == data.end())
