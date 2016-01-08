@@ -120,7 +120,7 @@ String toS(const T &v) {
 
 // Join strings.
 template <class T>
-void join(ostream &to, const T &data, const String &between = L", ") {
+void join(ostream &to, const T &data, const String &between = ", ") {
 	T::const_iterator i = data.begin();
 	T::const_iterator end = data.end();
 	if (i == end)
@@ -133,7 +133,7 @@ void join(ostream &to, const T &data, const String &between = L", ") {
 }
 
 template <class T>
-String join(const T &data, const String &between = L", ") {
+String join(const T &data, const String &between = ", ") {
 	std::ostringstream to;
 	join(to, data, between);
 	return to.str();

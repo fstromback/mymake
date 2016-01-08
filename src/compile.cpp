@@ -1,6 +1,8 @@
 #include "std.h"
 #include "compile.h"
 #include "wildcard.h"
+#include "system.h"
+#include "env.h"
 
 namespace compile {
 
@@ -26,7 +28,7 @@ namespace compile {
 		includes.save(buildDir + "includes");
 	}
 
-	void Target::find() {
+	bool Target::find() {
 		DEBUG("Compiling project in " << wd, INFO);
 		toCompile.clear();
 
@@ -59,11 +61,31 @@ namespace compile {
 				addFile(q, *i);
 			}
 		}
+
+		String outputName = config.getStr("output");
+		if (outputName == "") {
+			vector<String> input = config.getArray("input");
+			if (input.empty()) {
+				PLN("No input files.");
+				return false;
+			}
+			outputName = input.front();
+		}
+
+		Path execDir = wd + Path(config.getStr("execDir"));
+		execDir.createDir();
+
+		output = execDir + Path(outputName).titleNoExt();
+		output.makeExt(config.getStr("execExt"));
+
+		return true;
 	}
 
 	bool Target::compile() {
 		Path::cd(wd);
-		DEBUG("CD into: " << wd, NORMAL);
+		DEBUG("CD into: " << wd, VERBOSE);
+
+		Env env(config);
 
 		map<String, String> data;
 		data["file"] = "";
@@ -76,6 +98,8 @@ namespace compile {
 			const Path &src = toCompile[i];
 			Path output = src.makeRelative(wd).makeAbsolute(buildDir);
 			output.makeExt(intermediateExt);
+
+			output.parent().createDir();
 
 			String file = toS(src.makeRelative(wd));
 			String out = toS(output.makeRelative(wd));
@@ -115,24 +139,13 @@ namespace compile {
 		}
 
 		// Link the output.
-		String outputName = config.getStr("output");
-		if (outputName == "") {
-			outputName = config.getArray("input").front();
-		}
-
-		Path execDir(config.getStr("execDir"));
-		execDir.createDir();
-
-		Path output = execDir + Path(outputName).titleNoExt();
-		output.makeExt(config.getStr("execExt"));
-
 		if (!force && output.exists() && output.mTime() >= latestModified) {
 			DEBUG("Skipping linking step.", VERBOSE);
 			return true;
 		}
 
 		data["files"] = intermediateFiles.str();
-		data["output"] = toS(output);
+		data["output"] = toS(output.makeRelative(wd));
 		String cmd = config.getVars("link", data);
 		DEBUG("Command line: " << cmd, VERBOSE);
 
@@ -141,6 +154,11 @@ namespace compile {
 		}
 
 		return true;
+	}
+
+	int Target::execute(const vector<String> &params) const {
+		Path::cd(wd);
+		return exec(output.makeRelative(wd), params);
 	}
 
 	void Target::addFiles(PathQueue &to, const vector<String> &src) {

@@ -22,7 +22,7 @@ ignore=*.template.*
 
 #Input file(s). Use * for all files (recursively), excluding build directory and bin directory.
 #input=Xxx.cpp
-input=test/main.cpp
+#input=test/main.cpp
 
 #Output filename, defaults to first input file.
 #output=
@@ -77,6 +77,20 @@ intermediateExt=obj
 
 includeCl=/I
 libraryCl=
+
+#env+=DevEnvDir=C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\IDE
+env+=DXSDK_DIR=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\
+
+#env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\INCLUDE
+env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE
+env+=INCLUDE=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\include
+
+#env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\LIB
+env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB
+env+=LIB=>C:\Program Files\\Microsoft SDKs\Windows\v6.0A\lib
+
+env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
+env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
 
 flags=/nologo /EHsc
 

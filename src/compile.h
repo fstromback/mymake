@@ -18,10 +18,13 @@ namespace compile {
 		~Target();
 
 		// Find all files in the working directory.
-		void find();
+		bool find();
 
 		// Compile a directory with a .mymake file in.
 		bool compile();
+
+		// Execute the final executable.
+		int execute(const vector<String> &params) const;
 
 	private:
 		// Working directory.
@@ -47,6 +50,9 @@ namespace compile {
 
 		// Files to compile in some valid order.
 		vector<Path> toCompile;
+
+		// Output file.
+		Path output;
 
 		// Add files to the queue of files to process.
 		void addFiles(PathQueue &to, const vector<String> &src);

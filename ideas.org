@@ -28,3 +28,5 @@
   We currently rely on Path elliminating .. as soon as they are found eg. when concatenating paths. Check this!
 
   Move constants used with Config into string constants somewhere.
+
+  If one enters a filename without extension, that file is interpreted as a configuration instead...

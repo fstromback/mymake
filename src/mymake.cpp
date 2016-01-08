@@ -52,8 +52,22 @@ int main(int argc, const char *argv[]) {
 	DEBUG("Configuration options: " << params, VERBOSE);
 
 	compile::Target c(newPath, params);
-	c.find();
-	c.compile();
+	if (!c.find()) {
+		PLN("Compilation failed!");
+		return 1;
+	}
+
+	if (!c.compile()) {
+		PLN("Compilation failed!");
+		return 1;
+	}
+
+	DEBUG("Compilation successful!", NORMAL);
+
+	if (params.getBool("execute")) {
+		DEBUG("Running output: " << join(cmdline.params), INFO);
+		return c.execute(cmdline.params);
+	}
 
 	return 0;
 }
