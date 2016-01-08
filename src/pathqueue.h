@@ -2,25 +2,48 @@
 #include "path.h"
 
 /**
- * Queue of paths. Ensures no files are inserted twice.
+ * Ensures no items are inserted twice.
  */
-class PathQueue {
+
+template <class T>
+class UniqueQueue {
 public:
 	// Empty?
-	bool empty() const;
-	bool any() const;
+	bool empty() const {
+		return q.empty();
+	}
+
+	bool any() const {
+		return !empty();
+	}
 
 	// Pop top element.
-	Path pop();
+	T pop() {
+		T r = q.front();
+		q.pop();
+		return r;
+	}
 
 	// Push element, discards it if it has ever been in the queue before.
-	void push(const Path &path);
-	PathQueue &operator <<(const Path &path);
+	void push(const T &elem) {
+		if (s.count(elem) == 0) {
+			s.insert(elem);
+			q.push(elem);
+		}
+	}
+
+	UniqueQueue<T> &operator <<(const T &elem) {
+		push(elem);
+		return *this;
+	}
 
 private:
 	// Files in the queue.
-	set<Path> s;
+	set<T> s;
 
 	// Queue of files.
-	queue<Path> q;
+	queue<T> q;
 };
+
+
+typedef UniqueQueue<Path> PathQueue;

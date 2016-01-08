@@ -206,48 +206,92 @@ String Config::expandVars(const String &into, const map<String, String> &special
 	return to.str();
 }
 
-String Config::replacement(const String &var, const map<String, String> &special) const {
+String Config::replacement(String var, const map<String, String> &special) const {
+	nat star = var.find('*');
+	if (star != String::npos) {
+		PLN("Building string " << var);
+		PVAR(replacement(var.substr(0, star), special));
+		PVAR(var.substr(star + 1));
+		PVAR(buildString(replacement(var.substr(0, star), special), var.substr(star + 1)));
+		return buildString(replacement(var.substr(0, star), special), var.substr(star + 1));
+	}
+
+	nat pipe = var.find('|');
+	String op;
+	if (pipe != String::npos) {
+		op = var.substr(0, pipe);
+		var = var.substr(pipe + 1);
+	}
+
 	{
 		map<String, String>::const_iterator i = special.find(var);
 		if (i != special.end())
-			return i->second;
+			return applyFn(op, i->second);
 	}
 
 	// Handle built-in special cases.
 	if (var == "includes") {
-		return buildStringPath("includeCl", "include");
+		return buildString(getStr("includeCl"), "path|include");
 	} else if (var == "libs") {
-		return buildStringPath("libraryCl", "library");
+		return buildString(getStr("libraryCl"), "path|library");
 	}
 
 	{
 		Data::const_iterator d = data.find(var);
-		if (d != data.end())
-			return join(d->second, " ");
+		if (d != data.end()) {
+			ostringstream to;
+			for (nat i = 0; i < d->second.size(); i++) {
+				if (i != 0)
+					to << ' ';
+				to << applyFn(op, d->second[i]);
+			}
+			return to.str();
+		}
 	}
 
 	WARNING("Unknown variable in string: " << var);
 	return "";
 }
 
-String Config::buildString(const String &insertKey, const String &arrayKey) const {
+String Config::applyFn(const String &op, const String &src) const {
+	if (op == "title") {
+		return Path(src).title();
+	} else if (op == "titleNoExt") {
+		return Path(src).titleNoExt();
+	} else if (op == "path") {
+		return toS(Path(src));
+	} else if (op.empty()) {
+		return src;
+	} else {
+		WARNING("Unknown operation: " << op);
+		return src;
+	}
+}
+
+String Config::buildString(const String &insert, const String &arrayKey) const {
 	ostringstream to;
 
-	String insert = getStr(insertKey);
-	vector<String> a = getArray(arrayKey);
+	String var = arrayKey;
+	nat pipe = var.find('|');
+	String op;
+	if (pipe != String::npos) {
+		op = var.substr(0, pipe);
+		var = var.substr(pipe + 1);
+	}
+
+	vector<String> a = getArray(var);
 	for (nat i = 0; i < a.size(); i++) {
 		if (i > 0)
 			to << ' ';
-		to << insert << a[i];
+		to << insert << applyFn(op, a[i]);
 	}
 
 	return to.str();
 }
 
-String Config::buildStringPath(const String &insertKey, const String &arrayKey) const {
+String Config::buildStringPath(const String &insert, const String &arrayKey) const {
 	ostringstream to;
 
-	String insert = getStr(insertKey);
 	vector<String> a = getArray(arrayKey);
 	for (nat i = 0; i < a.size(); i++) {
 		if (i > 0)

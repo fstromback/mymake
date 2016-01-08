@@ -23,6 +23,7 @@ ignore=*.template.*
 #Input file(s). Use * for all files (recursively), excluding build directory and bin directory.
 #input=Xxx.cpp
 #input=test/main.cpp
+input=src/mymake.cpp
 
 #Output filename, defaults to first input file.
 #output=
@@ -38,6 +39,10 @@ execute=yes
 
 #Show compilation time?
 #showTime=no
+
+#Precompiled header.
+pch=src/std.h
+pchFile=build/stdafx.pch
 
 [lib]
 
@@ -94,7 +99,11 @@ env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
 
 flags=/nologo /EHsc
 
-compile=*:cl <file> <includes> <flags> /c /Fo<output>
+usePch=/Yu
+namePch=/Fp
+
+pchCompile=cl <file> <includes> <flags> /Yc<title|pch> <namePch*path|pchFile> /c /Fo<output>
+compile=*:cl <file> <includes> <flags> <usePch*title|pch> <namePch*path|pchFile> /c /Fo<output>
 link=link <libs> <files> /nologo /OUT:<output>
 
 [windows,lib]

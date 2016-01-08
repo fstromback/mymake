@@ -48,11 +48,14 @@ private:
 	Data data;
 
 	// Get replacement for variable.
-	String replacement(const String &var, const map<String, String> &special) const;
+	String replacement(String var, const map<String, String> &special) const;
+
+	// Apply an operation to a string.
+	String applyFn(const String &op, const String &original) const;
 
 	// Get string for inserting a string in front of each element in another string.
-	String buildString(const String &repKey, const String &arrayKey) const;
-	String buildStringPath(const String &repKey, const String &arrayKey) const;
+	String buildString(const String &rep, const String &arrayKey) const;
+	String buildStringPath(const String &rep, const String &arrayKey) const;
 };
 
 /**

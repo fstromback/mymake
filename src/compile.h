@@ -48,20 +48,34 @@ namespace compile {
 		// Output file type.
 		String intermediateExt;
 
+		// File info.
+		class Compile : public Path {
+		public:
+			// Precompiled header?
+			bool isPch;
+
+			inline Compile(const Path &file, bool pch) : Path(file), isPch(pch) {}
+		};
+
+		// Pch file.
+		Path pchFile;
+
+		typedef UniqueQueue<Compile> CompileQueue;
+
 		// Files to compile in some valid order.
-		vector<Path> toCompile;
+		vector<Compile> toCompile;
 
 		// Output file.
 		Path output;
 
 		// Add files to the queue of files to process.
-		void addFiles(PathQueue &to, const vector<String> &src);
+		void addFiles(CompileQueue &to, const vector<String> &src);
 
 		// Add a file to the queue of files to process.
-		void addFile(PathQueue &to, const String &src);
+		void addFile(CompileQueue &to, const String &src, bool pch);
 
 		// Add a file to the queue of files to process.
-		void addFile(PathQueue &to, const Path &src);
+		void addFile(CompileQueue &to, const Path &src);
 
 		// Find a valid extension for the given Path.
 		bool findExt(Path &to) const;

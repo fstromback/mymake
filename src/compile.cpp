@@ -13,7 +13,8 @@ namespace compile {
 		buildDir(wd + Path(config.getStr("buildDir"))),
 		validExts(config.getArray("ext")),
 		compileVariants(config.getArray("compile")),
-		intermediateExt(config.getStr("intermediateExt")) {
+		intermediateExt(config.getStr("intermediateExt")),
+		pchFile(buildDir + Path(config.getStr("pchFile"))) {
 
 		// Create build directory if it is not already created.
 		buildDir.createDir();
@@ -32,17 +33,17 @@ namespace compile {
 		DEBUG("Compiling project in " << wd, INFO);
 		toCompile.clear();
 
-		PathQueue q;
+		CompileQueue q;
 
-		// TODO: Check pre-compiled header.
-		// addFile(q, config.getStr("precompiledHeader"));
+		// Compile pre-compiled header first.
+		addFile(q, config.getStr("pch"), true);
 
 		// Add initial files.
 		addFiles(q, config.getArray("input"));
 
 		// Process files...
 		while (q.any()) {
-			Path now = q.pop();
+			Compile now = q.pop();
 
 			// Check if 'now' is inside the working directory.
 			if (!now.isChild(wd)) {
@@ -95,7 +96,7 @@ namespace compile {
 		ostringstream intermediateFiles;
 
 		for (nat i = 0; i < toCompile.size(); i++) {
-			const Path &src = toCompile[i];
+			const Compile &src = toCompile[i];
 			Path output = src.makeRelative(wd).makeAbsolute(buildDir);
 			output.makeExt(intermediateExt);
 
@@ -107,14 +108,24 @@ namespace compile {
 				intermediateFiles << ' ';
 			intermediateFiles << out;
 
-			if (!force && output.exists() && output.mTime() >= src.mTime()) {
+			bool pchValid = true;
+			if (src.isPch) {
+				pchValid = pchFile.exists() && pchFile.mTime() >= src.mTime();
+			}
+
+			if (!force && pchValid && output.exists() && output.mTime() >= src.mTime()) {
 				DEBUG("Skipping " << src << "...", VERBOSE);
 				continue;
 			}
 
 			DEBUG("Compiling " << src.makeRelative(wd) << "...", NORMAL);
 
-			String cmd = chooseCompile(file);
+			String cmd;
+			if (src.isPch)
+				cmd = config.getStr("pchCompile");
+			else
+				cmd = chooseCompile(file);
+
 			if (cmd == "") {
 				PLN("No suitable compile command-line for " << file);
 				return false;
@@ -161,9 +172,9 @@ namespace compile {
 		return exec(output.makeRelative(wd), params);
 	}
 
-	void Target::addFiles(PathQueue &to, const vector<String> &src) {
+	void Target::addFiles(CompileQueue &to, const vector<String> &src) {
 		for (nat i = 0; i < src.size(); i++) {
-			addFile(to, src[i]);
+			addFile(to, src[i], false);
 		}
 	}
 
@@ -177,28 +188,29 @@ namespace compile {
 		return false;
 	}
 
-	void Target::addFile(PathQueue &to, const String &src) {
+	void Target::addFile(CompileQueue &to, const String &src, bool pch) {
+		if (src.empty())
+			return;
+
 		Path path(src);
 		path = path.makeAbsolute(wd);
 
-		if (!path.exists()) {
-			if (!findExt(path)) {
-				WARNING("The file " << src << " does not exist.");
-				return;
-			}
+		if (!findExt(path)) {
+			WARNING("The file " << src << " does not exist.");
+			return;
 		}
 
-		to.push(path);
+		to.push(Compile(path, pch));
 	}
 
-	void Target::addFile(PathQueue &to, const Path &header) {
+	void Target::addFile(CompileQueue &to, const Path &header) {
 		Path impl = header;
 		if (!findExt(impl)) {
 			// No cpp file for a header... No big deal.
 			return;
 		}
 
-		to.push(impl);
+		to.push(Compile(impl, false));
 	}
 
 	String Target::chooseCompile(const String &file) {
