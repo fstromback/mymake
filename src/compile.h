@@ -70,7 +70,10 @@ namespace compile {
 			// Precompiled header?
 			bool isPch;
 
-			inline Compile(const Path &file, bool pch) : Path(file), isPch(pch) {}
+			// From automatic search.
+			bool autoFound;
+
+			inline Compile(const Path &file, bool pch, bool a) : Path(file), isPch(pch), autoFound(a) {}
 		};
 
 		// Pch file.

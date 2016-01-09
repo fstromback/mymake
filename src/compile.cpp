@@ -40,6 +40,7 @@ namespace compile {
 		toCompile.clear();
 
 		CompileQueue q;
+		String outputName = config.getStr("output");
 
 		// Compile pre-compiled header first.
 		addFile(q, config.getStr("pch"), true);
@@ -50,6 +51,9 @@ namespace compile {
 		// Process files...
 		while (q.any()) {
 			Compile now = q.pop();
+
+			if (!now.isPch && !now.autoFound && outputName.empty())
+				outputName = now.title();
 
 			// Check if 'now' is inside the working directory.
 			if (!now.isChild(wd)) {
@@ -73,20 +77,13 @@ namespace compile {
 			}
 		}
 
-		String outputName = config.getStr("output");
-		if (outputName == "") {
-			vector<String> input = config.getArray("input");
-			if (input.empty()) {
-				PLN("No input files.");
-				return false;
-			}
-			outputName = input.front();
-
-			if (outputName == "*") {
-				// Use the project title.
-				outputName = wd.title();
-			}
+		if (toCompile.empty()) {
+			PLN("No input files.");
+			return false;
 		}
+
+		if (outputName.empty())
+			outputName = wd.title();
 
 		Path execDir = wd + Path(config.getStr("execDir"));
 		execDir.createDir();
@@ -274,7 +271,7 @@ namespace compile {
 				DEBUG("Found file " << children[i], VERBOSE);
 				if (std::find(validExts.begin(), validExts.end(), children[i].ext()) != validExts.end()) {
 					DEBUG("Adding file " << children[i], INFO);
-					to << Compile(children[i], false);
+					to << Compile(children[i], false, true);
 				}
 			}
 		}
@@ -297,7 +294,7 @@ namespace compile {
 			return;
 		}
 
-		to.push(Compile(path, pch));
+		to.push(Compile(path, pch, true));
 	}
 
 	void Target::addFile(CompileQueue &to, const Path &header) {
@@ -307,7 +304,7 @@ namespace compile {
 			return;
 		}
 
-		to.push(Compile(impl, false));
+		to.push(Compile(impl, false, true));
 	}
 
 	String Target::chooseCompile(const String &file) {

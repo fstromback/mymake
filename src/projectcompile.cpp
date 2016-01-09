@@ -60,6 +60,11 @@ namespace compile {
 			order << info;
 		}
 
+		if (order.empty()) {
+			DEBUG("No input files or projects. Compilation failed.", NORMAL);
+			return false;
+		}
+
 		return true;
 	}
 
