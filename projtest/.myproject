@@ -17,7 +17,7 @@ include+=../
 [build]
 
 #options when building lib.
-lib+=lib
+io+=lib
 
 #options when building main (none needed)
 #main
@@ -27,7 +27,7 @@ lib+=lib
 [deps]
 
 #Explicit dependency on lib. This is not needed, as mymake can figure it out.
-main+=lib
+#main+=io
 
 
 
@@ -145,4 +145,7 @@ link=link <libs> <files> /nologo /OUT:<output>
 
 [windows,lib]
 
+linkOutput=yes
 execExt=lib
+link=lib <libs> <files> /nologo /OUT:<output>
+

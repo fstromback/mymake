@@ -7,3 +7,4 @@ mymake
 my-make
 
 *.exe
+*.lib

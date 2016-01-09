@@ -2,7 +2,7 @@
 #include "print.h"
 
 void print(char nr) {
-	print("char: %c(%d)\n", nr, int(nr));
+	printf("char: %c (%d)\n", nr, int(nr));
 }
 
 void print(int nr) {

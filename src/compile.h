@@ -30,6 +30,15 @@ namespace compile {
 		// Depends on these projects:
 		set<String> dependsOn;
 
+		// Output file.
+		Path output;
+
+		// Link the output file to any projects that depends on this one?
+		bool linkOutput;
+
+		// Add a library.
+		void addLib(const Path &path);
+
 	private:
 		// Working directory.
 		Path wd;
@@ -71,9 +80,6 @@ namespace compile {
 
 		// Files to compile in some valid order.
 		vector<Compile> toCompile;
-
-		// Output file.
-		Path output;
 
 		// Run steps.
 		bool runSteps(const String &key);

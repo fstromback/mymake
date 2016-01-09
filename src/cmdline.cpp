@@ -34,12 +34,6 @@ CmdLine::CmdLine(const vector<String> &params) :
 			addFile(c);
 		}
 	}
-
-#ifdef WINDOWS
-	options.insert("windows");
-#else
-	options.insert("unix");
-#endif
 }
 
 bool CmdLine::parseOptions(const String &opts) {

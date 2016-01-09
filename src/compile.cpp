@@ -16,6 +16,8 @@ namespace compile {
 		intermediateExt(config.getStr("intermediateExt")),
 		pchFile(buildDir + Path(config.getStr("pchFile"))) {
 
+		linkOutput = config.getBool("linkOutput", false);
+
 		vector<String> ign = config.getArray("ignore");
 		for (nat i = 0; i < ign.size(); i++)
 			ignore << Wildcard(ign[i]);
@@ -79,6 +81,11 @@ namespace compile {
 				return false;
 			}
 			outputName = input.front();
+
+			if (outputName == "*") {
+				// Use the project title.
+				outputName = wd.title();
+			}
 		}
 
 		Path execDir = wd + Path(config.getStr("execDir"));
@@ -181,9 +188,17 @@ namespace compile {
 
 		}
 
+		vector<String> libs = config.getArray("library");
+		for (nat i = 0; i < libs.size(); i++) {
+			Path libPath(libs[i]);
+			// Ignore libraries we can not find (may be system libraries).
+			if (libPath.exists())
+				latestModified = max(latestModified, libPath.mTime());
+		}
+
 		// Link the output.
 		if (!force && output.exists() && output.mTime() >= latestModified) {
-			DEBUG("Skipping linking step.", VERBOSE);
+			DEBUG("Skipping linking.", INFO);
 			return true;
 		}
 
@@ -229,6 +244,10 @@ namespace compile {
 		return exec(output.makeRelative(execPath), params);
 	}
 
+	void Target::addLib(const Path &p) {
+		config.add("library", toS(p.makeRelative(wd)));
+	}
+
 	void Target::addFiles(CompileQueue &to, const vector<String> &src) {
 		for (nat i = 0; i < src.size(); i++) {
 			addFile(to, src[i], false);
@@ -249,9 +268,12 @@ namespace compile {
 		vector<Path> children = at.children();
 		for (nat i = 0; i < children.size(); i++) {
 			if (children[i].isDir()) {
+				DEBUG("Found directory " << children[i], VERBOSE);
 				addFilesRecursive(to, children[i]);
 			} else {
+				DEBUG("Found file " << children[i], VERBOSE);
 				if (std::find(validExts.begin(), validExts.end(), children[i].ext()) != validExts.end()) {
+					DEBUG("Adding file " << children[i], INFO);
 					to << Compile(children[i], false);
 				}
 			}

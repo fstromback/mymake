@@ -86,7 +86,7 @@ public:
 	bool load(const Path &file);
 
 	// Apply to a config.
-	void apply(const set<String> &config, Config &to) const;
+	void apply(set<String> config, Config &to) const;
 
 private:
 	// Assignment in a config file.

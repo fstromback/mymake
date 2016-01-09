@@ -2,7 +2,7 @@
 #include "config.h"
 #include "cmdline.h"
 #include "compile.h"
-#include "compileproject.h"
+#include "projectcompile.h"
 
 // Compile a stand-alone .mymake-file.
 int compileTarget(const Path &wd, const CmdLine &cmdline) {

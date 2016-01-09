@@ -108,7 +108,14 @@ static bool allOf(const set<String> &of, const set<String> &in) {
 	return true;
 }
 
-void MakeConfig::apply(const set<String> &options, Config &to) const {
+void MakeConfig::apply(set<String> options, Config &to) const {
+
+#ifdef WINDOWS
+	options.insert("windows");
+#else
+	options.insert("unix");
+#endif
+
 	for (nat i = 0; i < sections.size(); i++) {
 		const Section &s = sections[i];
 
@@ -211,7 +218,7 @@ String Config::expandVars(const String &into, const map<String, String> &special
 					to << into[j];
 				start = String::npos;
 			} else if (into[i] == '>') {
-				join(to, replacement(into.substr(start, i - start), special));
+				join(to, replacement(into.substr(start, i - start), special), " ");
 				start = String::npos;
 			}
 		}
@@ -256,7 +263,6 @@ vector<String> Config::replacement(String var, const map<String, String> &specia
 		}
 	}
 
-	WARNING("Unknown variable in string: " << var);
 	return vector<String>();
 }
 

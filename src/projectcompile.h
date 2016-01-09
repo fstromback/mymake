@@ -31,12 +31,27 @@ namespace compile {
 		// Raw configuration data = contents of project file.
 		MakeConfig projectFile;
 
-		// Configuration.
+		// Configuration (global, cmdline included).
 		Config config;
+
+		// Configuration (only build-section)
+		Config buildConfig;
+
+		// Configuration (only deps-section)
+		Config depsConfig;
+
+		// Information about a target and all it depencies.
+		struct TargetInfo {
+			String name;
+			set<String> dependsOn;
+		};
 
 		// Found targets, in the order we found them. Compiling in reverse order ensures all depencies
 		// are fullfilled.
-		vector<Target *> targets;
+		vector<TargetInfo> order;
+
+		// Targets.
+		map<String, Target *> target;
 
 		// Queue for the targets.
 		typedef UniqueQueue<String> TargetQueue;

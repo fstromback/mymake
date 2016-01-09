@@ -1,16 +1,27 @@
 #include "std.h"
-#include "compileproject.h"
+#include "projectcompile.h"
 
 namespace compile {
+
+	set<String> createSet(const String &member) {
+		set<String> s;
+		s << member;
+		return s;
+	}
 
 	Project::Project(const Path &wd, const MakeConfig &projectFile, const Config &config) :
 		wd(wd),
 		projectFile(projectFile),
-		config(config) {}
+		config(config) {
+
+		projectFile.apply(createSet("deps"), depsConfig);
+		projectFile.apply(createSet("build"), buildConfig);
+	}
 
 	Project::~Project() {
-		for (nat i = 0; i < targets.size(); i++)
-			delete targets[i];
+		for (map<String, Target *>::iterator i = target.begin(); i != target.end(); ++i) {
+			delete i->second;
+		}
 	}
 
 	bool Project::find() {
@@ -25,27 +36,61 @@ namespace compile {
 			DEBUG("Examining target " << now, INFO);
 
 			Target *target = loadTarget(now);
-			targets << target;
+			this->target[now] = target;
 			if (!target->find()) {
 				DEBUG("Compilation of " << now << " failed!", NORMAL);
 				return false;
 			}
 
+			TargetInfo info = { now };
+
 			// Add any dependent projects.
 			for (set<String>::const_iterator i = target->dependsOn.begin(); i != target->dependsOn.end(); ++i) {
 				q << *i;
+				info.dependsOn << *i;
 			}
+
+			// Add any explicit dependent projects.
+			vector<String> depends = depsConfig.getArray(now);
+			for (nat i = 0; i < depends.size(); i++) {
+				q << depends[i];
+				info.dependsOn << depends[i];
+			}
+
+			order << info;
 		}
 
 		return true;
 	}
 
 	bool Project::compile() {
-		return false;
+		for (nat i = order.size(); i > 0; i--) {
+			TargetInfo &info = order[i - 1];
+			Target *t = target[info.name];
+			DEBUG("-- Target " << info.name << " --", NORMAL);
+
+			for (set<String>::const_iterator i = info.dependsOn.begin(); i != info.dependsOn.end(); ++i) {
+				Target *z = target[*i];
+				if (z->linkOutput) {
+					DEBUG(info.name << " includes dependent " << z->output, INFO);
+					t->addLib(z->output);
+				}
+			}
+
+			if (!t->compile()) {
+				DEBUG("Compilation of " << info.name << " failed!", NORMAL);
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	int Project::execute(const vector<String> &params) {
-		return 0;
+		if (order.empty())
+			return 0;
+
+		return target[order.front().name]->execute(params);
 	}
 
 
@@ -66,8 +111,9 @@ namespace compile {
 		Path dir = wd + name;
 		dir.makeDir();
 
-		vector<String> vOptions = config.getArray(name);
+		vector<String> vOptions = buildConfig.getArray(name);
 		set<String> options(vOptions.begin(), vOptions.end());
+		PVAR(join(options));
 
 		MakeConfig config;
 
