@@ -5,19 +5,22 @@ git fetch
 git checkout master -f
 git merge origin/master
 
-options="-"
-if [ $# -eq 1 ]
+if [ ! -e mymake_v2 ]
+then
+    echo "Warning: Updating to version 2 of mymake, which is incompatible with the previous release."
+    echo "Please see README.md for details before upgrading. Run 'update.sh' once more to continue."
+    touch mymake_v2
+    exit 1
+fi
+
+# Compile mymake once again.
+if [ -e mymake_new ]
 then
     options=$1
 fi
 
 echo "Compiling mymake once more..."
-if ./compile.sh mymake_new $options
-then
-    :
-else
-    exit 1
-fi
+./compile.sh mymake_new
 
 if [ -e mymake_new ]
 then

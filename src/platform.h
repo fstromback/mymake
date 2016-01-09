@@ -8,24 +8,10 @@
  */
 
 /**
- * Machine type defines:
- * X86 - x86 cpu
- * X64 - x86-64/amd64 cpu
- */
-
-/**
  * Platform defined:
- * LINUX - compiled on linux
- * POSIX - compiled on posix-compatible platform (eg linux)
+ * UNIX - compiled on unix-compatible platform (eg linux)
  * WINDOWS - compiled on windows
  */
-
-/**
- * Endian-ness: Look in Endian.h for more helpers regarding endianness.
- * LITTLE_ENDIAN
- * BIG_ENDIAN
- */
-
 
 /**
  * Compilers:
@@ -34,40 +20,20 @@
  */
 
 
-// Detect the current architecture and platform.
-#if defined(_WIN64)
-#define X64
+// Detect OS version.
+#if defined(_WIN32)
 #define WINDOWS
-#elif defined(_WIN32)
-#define X86
-#define WINDOWS
+#elif defined(__unix__)
+#define UNIX
 #else
-#error "Unknown platform, please add it here!"
+#error "Unknown os!"
 #endif
 
-// Detect the current compiler.
+// Detect compiler
 #if defined(_MSC_VER)
-// Visual Studio compiler!
-#if _MSC_VER >= 1800
-#define VISUAL_STUDIO 2013
-#elif _MSC_VER >= 1700
-#define VISUAL_STUDIO 2012
-#elif _MSC_VER >= 1600
-#define VISUAL_STUDIO 2010
-#elif _MSC_VER >= 1500
-#define VISUAL_STUDIO 2008
-#else
-#error "Too early VS version, earliest supported is VS2008"
-#endif
-
+#define VISUAL_STUDIO
 #elif defined(__GNUC__)
-// GCC
-#define GCC __GNUC__
-
-#endif
-
-#if defined(X86) || defined(X64)
-#define LITTLE_ENDIAN
+#define GCC
 #else
-#error "Unknown endianness for your platform. Define either LITTLE_ENDIAN or BIG_ENDIAN here."
+#error "Unknown compiler!"
 #endif

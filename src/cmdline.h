@@ -9,7 +9,8 @@ class Config;
 class CmdError : public Error {
 public:
 	CmdError(const String &msg) : msg(msg) {}
-	const char *what() const { return msg.c_str(); }
+	inline ~CmdError() throw() {}
+	const char *what() const throw() { return msg.c_str(); }
 private:
 	String msg;
 };

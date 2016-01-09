@@ -1,6 +1,7 @@
 []
 input=mymake.cpp
 
-#Precompiled header.
+[windows]
+#Precompiled header. (not supported on unix yet)
 pch=std.h
 pchFile=stdafx.pch

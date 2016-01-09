@@ -1,25 +1,12 @@
-#!/bin/bash
+#!/bin/sh
 
-if [ -e $1 ]
+echo "Compiling mymake..."
+if [ -e mymake ]
 then
-    rm $1
+    rm mymake
 fi
 
-if [ $2 = "ida" ]
-then
-    g++ *.cpp -o $1 -std=c++11 -L/sw/gcc-${GCC4_V}/lib -static-libstdc++
-else
-    g++ *.cpp -o $1
-fi
-
-if [ -e $1 ]
-then
-    echo "Done compiling!"
-    exit 0
-else
-    echo ""
-    echo "Compilation error!"
-    echo "Try one of the special options:"
-    echo "ida - when on the computer systems at IDA, LiU"
-    exit 1
-fi
+mkdir -p bin
+g++ textinc/*.cpp -o bin/textinc
+bin/textinc bin/templates.h templates/*.txt
+g++ src/*.cpp -o $1

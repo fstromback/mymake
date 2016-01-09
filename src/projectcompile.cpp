@@ -42,7 +42,7 @@ namespace compile {
 				return false;
 			}
 
-			TargetInfo info = { now };
+			TargetInfo info = { now, set<String>() };
 
 			// Add any dependent projects.
 			for (set<String>::const_iterator i = target->dependsOn.begin(); i != target->dependsOn.end(); ++i) {

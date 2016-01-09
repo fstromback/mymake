@@ -7,11 +7,11 @@ ext=txt
 output=templates
 execExt=h
 
-compile=*.txt:copy <file> <output>
-
-[windows]
-link=..\bin\textinc <output> <files>
+textinc=../bin/textinc
+link=<path|textinc> <output> <files>
 
 [unix]
-link=../bin/textinc <output> <files>
+compile=*.txt:cp <file> <output>
 
+[windows]
+compile=*.txt:copy <file> <output>

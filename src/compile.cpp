@@ -10,9 +10,9 @@ namespace compile {
 		wd(wd),
 		config(config),
 		includes(wd, config),
-		buildDir(wd + Path(config.getStr("buildDir"))),
 		validExts(config.getArray("ext")),
 		compileVariants(config.getArray("compile")),
+		buildDir(wd + Path(config.getStr("buildDir"))),
 		intermediateExt(config.getStr("intermediateExt")),
 		pchFile(buildDir + Path(config.getStr("pchFile"))) {
 

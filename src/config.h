@@ -63,7 +63,7 @@ private:
 	String applyFn(const String &op, const String &original) const;
 
 	// Add prefix to each element.
-	vector<String> Config::addStr(const String &prefix, vector<String> to) const;
+	vector<String> addStr(const String &prefix, vector<String> to) const;
 };
 
 /**

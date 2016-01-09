@@ -1,5 +1,6 @@
 #include "std.h"
 #include "path.h"
+#include "system.h"
 
 #ifdef WINDOWS
 
@@ -17,23 +18,35 @@ static int partCmp(const String &a, const String &b) {
 	return _stricmp(a.c_str(), b.c_str());
 }
 
+static const char separator = '\\';
+static const char *separatorStr = "\\";
+
 #else
 
-#error "Finish implementing this file for *NIX"
+#include <cstring>
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 static bool partEq(const String &a, const String &b) {
 	return a == b;
 }
 
 static int partCmp(const String &a, const String &b) {
-	return strcmp(a.c_str(), b.c_str();
+	return strcmp(a.c_str(), b.c_str());
 }
+
+static const char separator = '/';
+static const char *separatorStr = "/";
 
 #endif
 
 //////////////////////////////////////////////////////////////////////////
 // The Path class
 //////////////////////////////////////////////////////////////////////////
+
+#ifdef WINDOWS
 
 Path Path::cwd() {
 	char tmp[MAX_PATH + 1];
@@ -55,6 +68,176 @@ Path Path::home() {
 	return r;
 }
 
+bool Path::exists() const {
+	return PathFileExists(toS(*this).c_str()) == TRUE;
+}
+
+void Path::deleteFile() const {
+	DeleteFile(toS(*this).c_str());
+}
+
+bool Path::isAbsolute() const {
+	if (parts.size() == 0)
+		return false;
+	const String &first = parts.front();
+	if (first.size() < 2)
+		return false;
+	return first[1] == L':';
+}
+
+vector<Path> Path::children() const {
+	vector<Path> result;
+
+	String searchStr = toS(*this);
+	if (!isDir())
+		searchStr += "\\";
+	searchStr += "*";
+
+	WIN32_FIND_DATA findData;
+	HANDLE h = FindFirstFile(searchStr.c_str(), &findData);
+	if (h == INVALID_HANDLE_VALUE)
+		return result;
+
+	do {
+		if (strcmp(findData.cFileName, "..") != 0 && strcmp(findData.cFileName, ".") != 0) {
+			result.push_back(*this + findData.cFileName);
+			if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				result.back().makeDir();
+		}
+	} while (FindNextFile(h, &findData));
+
+	FindClose(h);
+
+	return result;
+}
+
+Timestamp fromFileTime(FILETIME ft);
+
+Timestamp Path::mTime() const {
+	WIN32_FIND_DATA d;
+	HANDLE h = FindFirstFile(toS(*this).c_str(), &d);
+	if (h == INVALID_HANDLE_VALUE)
+		return Timestamp(0);
+	FindClose(h);
+
+	return fromFileTime(d.ftLastWriteTime);
+}
+
+Timestamp Path::cTime() const {
+	WIN32_FIND_DATA d;
+	HANDLE h = FindFirstFile(toS(*this).c_str(), &d);
+	if (h == INVALID_HANDLE_VALUE)
+		return Timestamp(0);
+	FindClose(h);
+
+	return fromFileTime(d.ftCreationTime);
+}
+
+void Path::createDir() const {
+	if (exists())
+		return;
+
+	if (isEmpty())
+		return;
+
+	parent().createDir();
+	CreateDirectory(toS(*this).c_str(), NULL);
+}
+
+
+#else
+
+Path Path::cwd() {
+	char tmp[512];
+	getcwd(tmp, 512);
+	Path r(tmp);
+	r.makeDir();
+	return r;
+}
+
+void Path::cd(const Path &to) {
+	chdir(toS(to).c_str());
+}
+
+Path Path::home() {
+	Path r(getEnv("HOME"));
+	r.makeDir();
+	return r;
+}
+
+bool Path::exists() const {
+	struct stat s;
+	return stat(toS(*this).c_str(), &s) == 0;
+}
+
+void Path::deleteFile() const {
+	unlink(toS(*this).c_str());
+}
+
+bool Path::isAbsolute() const {
+	if (parts.size() == 0)
+		return false;
+	return parts.front().empty();
+}
+
+vector<Path> Path::children() const {
+	vector<Path> result;
+
+	DIR *h = opendir(toS(*this).c_str());
+	if (h == null)
+		return result;
+
+	dirent *d;
+	struct stat s;
+	while ((d = readdir(h)) != null) {
+		if (strcmp(d->d_name, "..") != 0 && strcmp(d->d_name, ".") != 0) {
+			result.push_back(*this + d->d_name);
+
+			if (stat(toS(result.back()).c_str(), &s) == 0) {
+				if (S_ISDIR(s.st_mode))
+					result.back().makeDir();
+			} else {
+				result.pop_back();
+			}
+		}
+	}
+
+	closedir(h);
+
+	return result;
+}
+
+Timestamp fromFileTime(time_t);
+
+Timestamp Path::mTime() const {
+	struct stat s;
+	if (stat(toS(*this).c_str(), &s))
+		return Timestamp();
+
+	return fromFileTime(s.st_mtime);
+}
+
+Timestamp Path::cTime() const {
+	struct stat s;
+	if (stat(toS(*this).c_str(), &s))
+		return Timestamp();
+
+	return fromFileTime(s.st_ctime);
+}
+
+void Path::createDir() const {
+	if (exists())
+		return;
+
+	if (isEmpty())
+		return;
+
+	parent().createDir();
+	mkdir(toS(*this).c_str(), 0777);
+}
+
+#endif
+
 Path::Path(const String &path) : isDirectory(false) {
 	parseStr(path);
 	simplify();
@@ -63,9 +246,15 @@ Path::Path(const String &path) : isDirectory(false) {
 Path::Path() : isDirectory(false) {}
 
 void Path::parseStr(const String &str) {
+	if (str.empty())
+		return;
+
 	nat numPaths = std::count(str.begin(), str.end(), '\\');
 	numPaths += std::count(str.begin(), str.end(), '/');
 	parts.reserve(numPaths + 1);
+
+	if (str[0] == '\\' || str[0] == '/')
+		parts.push_back("");
 
 	nat startAt = 0;
 	for (nat i = 0; i < str.size(); i++) {
@@ -103,10 +292,10 @@ void Path::simplify() {
 }
 
 std::ostream &operator <<(std::ostream &to, const Path &path) {
-	join(to, path.parts, "\\");
+	join(to, path.parts, separatorStr);
 	if (path.parts.empty())
 		to << '.';
-	if (path.isDir()) to << "\\";
+	if (path.isDir()) to << separatorStr;
 	return to;
 }
 
@@ -208,13 +397,6 @@ bool Path::isDir() const {
 	return isDirectory;
 }
 
-bool Path::isAbsolute() const {
-	if (parts.size() == 0) return false;
-	const String &first = parts.front();
-	if (first.size() < 2) return false;
-	return first[1] == L':';
-}
-
 bool Path::isEmpty() const {
 	return parts.size() == 0;
 }
@@ -268,71 +450,4 @@ bool Path::isChild(const Path &path) const {
 	}
 
 	return true;
-}
-
-bool Path::exists() const {
-	return PathFileExists(toS(*this).c_str()) == TRUE;
-}
-
-void Path::deleteFile() const {
-	DeleteFile(toS(*this).c_str());
-}
-
-vector<Path> Path::children() const {
-	vector<Path> result;
-
-	String searchStr = toS(*this);
-	if (!isDir())
-		searchStr += "\\";
-	searchStr += "*";
-
-	WIN32_FIND_DATA findData;
-	HANDLE h = FindFirstFile(searchStr.c_str(), &findData);
-	if (h == INVALID_HANDLE_VALUE)
-		return result;
-
-	do {
-		if (strcmp(findData.cFileName, "..") != 0 && strcmp(findData.cFileName, ".") != 0) {
-			result.push_back(*this + findData.cFileName);
-			if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-				result.back().makeDir();
-		}
-	} while (FindNextFile(h, &findData));
-
-	FindClose(h);
-
-	return result;
-}
-
-Timestamp fromFileTime(FILETIME ft);
-
-Timestamp Path::mTime() const {
-	WIN32_FIND_DATA d;
-	HANDLE h = FindFirstFile(toS(*this).c_str(), &d);
-	if (h == INVALID_HANDLE_VALUE)
-		return Timestamp(0);
-	FindClose(h);
-
-	return fromFileTime(d.ftLastWriteTime);
-}
-
-Timestamp Path::cTime() const {
-	WIN32_FIND_DATA d;
-	HANDLE h = FindFirstFile(toS(*this).c_str(), &d);
-	if (h == INVALID_HANDLE_VALUE)
-		return Timestamp(0);
-	FindClose(h);
-
-	return fromFileTime(d.ftCreationTime);
-}
-
-void Path::createDir() const {
-	if (exists())
-		return;
-
-	if (isEmpty())
-		return;
-
-	parent().createDir();
-	CreateDirectory(toS(*this).c_str(), NULL);
 }

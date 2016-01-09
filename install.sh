@@ -1,13 +1,8 @@
 #!/bin/bash
 
-options="-"
-if [ $# -eq 1 ]
-then
-    options=$1
-fi
+./compile.sh mymake
 
-echo "Compiling mymake..."
-if ./compile.sh mymake $options
+if [ -e mymake ]
 then
     :
 else

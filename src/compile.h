@@ -43,9 +43,6 @@ namespace compile {
 		// Working directory.
 		Path wd;
 
-		// Build directory.
-		Path buildDir;
-
 		// Configuration.
 		Config config;
 
@@ -57,6 +54,9 @@ namespace compile {
 
 		// Compilation command lines.
 		vector<String> compileVariants;
+
+		// Build directory.
+		Path buildDir;
 
 		// Files to ignore.
 		vector<Wildcard> ignore;

@@ -43,10 +43,10 @@ static const char *helpStr =
 	"--config        - write global config file.\n";
 
 CmdLine::CmdLine(const vector<String> &params) :
-	execute(tUnset),
 	errors(false),
-	showHelp(false),
-	exit(false) {
+	exit(false),
+	execute(tUnset),
+	showHelp(false) {
 
 	bool noOptions = false;
 	state = sNone;
@@ -88,28 +88,6 @@ bool CmdLine::parseOptions(const String &opts) {
 			if (!parseOption(opts[i]))
 				return false;
 		}
-	}
-
-	return true;
-}
-
-static bool copyConfig() {
-	ifstream src(toS(Path::home() + localConfig).c_str());
-	if (!src)
-		return false;
-
-	ofstream dest(toS(Path::home() + localConfig).c_str());
-	if (!dest)
-		return false;
-
-	String line;
-	while (getline(src, line)) {
-		if (line.empty())
-			dest << line << endl;
-		else if (line[0] = '#')
-			dest << line << endl;
-		else
-			dest << '#' << line << endl;
 	}
 
 	return true;
@@ -256,9 +234,9 @@ bool CmdLine::optionParam(const String &v) {
 	case sExecPath:
 		execPath = Path(v).makeAbsolute();
 		return true;
+	default:
+		return false;
 	}
-
-	return false;
 }
 
 void CmdLine::addFile(const String &file) {

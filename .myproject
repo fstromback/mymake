@@ -35,7 +35,7 @@ libraryCl=-L
 flags=-std=c++11 -Wall -Wextra
 
 compile=*:g++ <flags> <file> -c <includes> -o <output>
-link=g++11 <libs> <files> -o <output>
+link=g++ <libs> <files> -o <output>
 
 [windows]
 execExt=exe

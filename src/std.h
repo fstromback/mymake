@@ -44,8 +44,14 @@
 typedef size_t nat;
 
 // Note: nat64 may be the same as nat.
+#ifdef VISUAL_STUDIO
 typedef __int64 int64;
 typedef unsigned __int64 nat64;
+#else
+#include <inttypes.h>
+typedef int64_t int64;
+typedef uint64_t nat64;
+#endif
 
 // String type that follows our naming convention.
 typedef std::string String;
@@ -127,8 +133,8 @@ String toS(const T &v) {
 // Join strings.
 template <class T>
 void join(ostream &to, const T &data, const String &between = ", ") {
-	T::const_iterator i = data.begin();
-	T::const_iterator end = data.end();
+	typename T::const_iterator i = data.begin();
+	typename T::const_iterator end = data.end();
 	if (i == end)
 		return;
 

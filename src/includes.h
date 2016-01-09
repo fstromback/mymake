@@ -9,7 +9,8 @@
 class IncludeError : public Error {
 public:
 	IncludeError(const String &msg) : msg(msg) {}
-	const char *what() const { return msg.c_str(); }
+	inline ~IncludeError() throw () {}
+	const char *what() const throw() { return msg.c_str(); }
 private:
 	String msg;
 };
