@@ -1,10 +1,10 @@
 
 *~
+\#*#
 build/
-build-t/
+bin/
 
 mymake
-my-make
 
 *.exe
 *.lib

@@ -1,0 +1,60 @@
+#Configuration for compiling mymake.
+
+[build]
+#How to build each target.
+#Nothing special required.
+
+[deps]
+#Dependencies
+
+#Src needs explicit depency on textinc
+src+=templates
+templates+=textinc
+
+
+[]
+#Global configuration
+ext=cpp
+
+buildDir=build/
+execDir=../bin/
+
+execute=yes
+
+#Much of this configuration can be skipped if we rely on the user's global config file instead.
+
+[unix]
+execExt=
+intermediateExt=o
+includeCl=-iquote
+libraryCl=-L
+
+flags=-std=c++11 -Wall -Wextra
+
+compile=*:g++ <flags> <file> -c <includes> -o <output>
+link=g++11 <libs> <files> -o <output>
+
+[windows]
+execExt=exe
+intermediateExt=obj
+includeCl=/I
+libraryCl=
+
+#Environment variables for Visual Studio 2008
+env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE
+env+=INCLUDE=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\include
+
+env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB
+env+=LIB=>C:\Program Files\\Microsoft SDKs\Windows\v6.0A\lib
+
+env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
+env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
+
+flags=/nologo /EHsc
+
+usePch=/Yu
+namePch=/Fp
+pchCompile=cl <file> <includes> <flags> /Yc<title|pch> <namePch*path|pchFile> /c /Fo<output>
+compile=*:cl <file> <incudes> <flags> <usePch*title|pch> <namePch*path|pchFile> /c /Fo<output>
+link=link <libs> <files> /nologo /OUT:<output>
+

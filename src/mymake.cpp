@@ -92,9 +92,14 @@ int main(int argc, const char *argv[]) {
 #endif
 
 	if (cmdline.errors) {
-		PLN("Errors in the command line...");
-		TODO("Better error message!");
+		PLN("Errors in the command line!");
+		cmdline.printHelp();
 		return 1;
+	}
+
+	if (cmdline.showHelp) {
+		cmdline.printHelp();
+		return 0;
 	}
 
 	// Find a config file and cd there.

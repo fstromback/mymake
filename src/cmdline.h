@@ -43,8 +43,14 @@ public:
 	// Path to cd to before executing the final binary.
 	Path execPath;
 
+	// Show help?
+	bool showHelp;
+
 	// Apply to Config object.
 	void apply(Config &config) const;
+
+	// Print help.
+	void printHelp() const;
 
 private:
 	// What should the next param be?
@@ -58,6 +64,9 @@ private:
 	};
 
 	State state;
+
+	// Name of the executable.
+	String execName;
 
 	// Parse options.
 	bool parseOptions(const String &opts);

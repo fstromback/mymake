@@ -171,7 +171,7 @@ namespace compile {
 			data["output"] = out;
 			cmd = config.expandVars(cmd, data);
 
-			DEBUG("Command line: " << cmd, VERBOSE);
+			DEBUG("Command line: " << cmd, INFO);
 			if (system(cmd.c_str()) != 0) {
 				// Abort compilation.
 				return false;
@@ -204,7 +204,7 @@ namespace compile {
 		data["files"] = intermediateFiles.str();
 		data["output"] = toS(output.makeRelative(wd));
 		String cmd = config.getVars("link", data);
-		DEBUG("Command line: " << cmd, VERBOSE);
+		DEBUG("Command line: " << cmd, INFO);
 
 		if (system(cmd.c_str()) != 0) {
 			return false;

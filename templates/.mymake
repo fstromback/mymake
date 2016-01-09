@@ -1,0 +1,17 @@
+[]
+input=*
+
+#'compile' .txt-files.
+ext=txt
+
+output=templates
+execExt=h
+
+compile=*.txt:copy <file> <output>
+
+[windows]
+link=..\bin\textinc <output> <files>
+
+[unix]
+link=../bin/textinc <output> <files>
+

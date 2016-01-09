@@ -31,3 +31,6 @@
   Move constants used with Config into string constants somewhere.
 
   If one enters a filename without extension, that file is interpreted as a configuration instead...
+
+  replace / to \ when calling system() on windows.
+

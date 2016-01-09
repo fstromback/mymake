@@ -2,21 +2,54 @@
 #include "cmdline.h"
 #include "config.h"
 
+namespace templ {
+#include "../bin/templates.h"
+}
+
 static const pair<String, char> rawLongOptions[] = {
 	make_pair("output", 'o'),
 	make_pair("arguments", 'a'),
 	make_pair("debug", 'd'),
 	make_pair("force", 'f'),
+	make_pair("execute", 'e'),
+	make_pair("not", 'n'),
 	make_pair("exec-path", 'p'),
+	make_pair("project", '\3'),
+	make_pair("target", '\2'),
+	make_pair("config", '\1'),
+	make_pair("help", '?'),
 };
 static const map<String, char> longOptions(rawLongOptions, rawLongOptions + ARRAY_COUNT(rawLongOptions));
 
+static const char *helpStr =
+	"Usage: %s [option...] [file...] [options]\n"
+	"\n"
+	"Tries to find a .mymake or .myproject file in the current directory or any\n"
+	"parent directory and load any configuration there.\n"
+	"\n"
+	"Options:\n"
+	"[option]        - use the corresponding section in the config file.\n"
+	"[file]          - input files in addition to those specified in the config.\n"
+	"--output, -o    - specify the name of the output file.\n"
+	"--debug, -d     - specify debug level. 0 = silent, 3 = verbose.\n"
+	"--exec-path, -p - specify the cwd when running the output.\n"
+	"--help, -?      - show this help.\n"
+	"--force, -f     - always recompile everything.\n"
+	"--arguments, -a - arguments to the executed program. Must be last.\n"
+	"--execute, -e   - execute the resulting file.\n"
+	"--not, -n       - put in front of --execute (or use -ne) to not execute.\n"
+	"--copy          - copy the global config to cwd.\n"
+	"--config        - write global config file.\n";
+
 CmdLine::CmdLine(const vector<String> &params) :
 	execute(tUnset),
-	errors(false) {
+	errors(false),
+	showHelp(false) {
 
 	bool noOptions = false;
 	state = sNone;
+
+	execName = params[0];
 
 	for (nat i = 1; i < params.size(); i++) {
 		const String &c = params[i];
@@ -36,6 +69,10 @@ CmdLine::CmdLine(const vector<String> &params) :
 	}
 }
 
+void CmdLine::printHelp() const {
+	printf(helpStr, execName.c_str());
+}
+
 bool CmdLine::parseOptions(const String &opts) {
 	if (opts.size() > 1 && opts[0] == '-') {
 		// Long option - only one.
@@ -52,6 +89,61 @@ bool CmdLine::parseOptions(const String &opts) {
 	}
 
 	return true;
+}
+
+static bool copyConfig() {
+	ifstream src(toS(Path::home() + localConfig).c_str());
+	if (!src)
+		return false;
+
+	ofstream dest(toS(Path::home() + localConfig).c_str());
+	if (!dest)
+		return false;
+
+	String line;
+	while (getline(src, line)) {
+		if (line.empty())
+			dest << line << endl;
+		else if (line[0] = '#')
+			dest << line << endl;
+		else
+			dest << '#' << line << endl;
+	}
+
+	return true;
+}
+
+static bool createGlobal() {
+	ofstream dest(toS(Path::home() + localConfig).c_str());
+	if (!dest) {
+		WARNING("Failed to open " << Path::home() + localConfig);
+		return false;
+	}
+
+	dest << templ::target;
+	return true;
+}
+
+static bool createTarget() {
+	ofstream dest(toS(Path::cwd() + localConfig).c_str());
+	if (!dest) {
+		WARNING("Failed to open " << Path::cwd() + localConfig);
+		return false;
+	}
+
+	dest << templ::target;
+	return false;
+}
+
+static bool createProject() {
+	ofstream dest(toS(Path::cwd() + projectConfig).c_str());
+	if (!dest) {
+		WARNING("Failed to open " << Path::cwd() + projectConfig);
+		return false;
+	}
+
+	dest << templ::project;
+	return false;
 }
 
 bool CmdLine::parseOption(char opt) {
@@ -80,6 +172,21 @@ bool CmdLine::parseOption(char opt) {
 		break;
 	case 'p':
 		state = sExecPath;
+		break;
+	case '?':
+		showHelp = true;
+		break;
+	case '\1':
+		if (!createGlobal())
+			errors = true;
+		break;
+	case '\2':
+		if (!createTarget())
+			errors = true;
+		break;
+	case '\3':
+		if (!createProject())
+			errors = true;
 		break;
 	default:
 		return false;
