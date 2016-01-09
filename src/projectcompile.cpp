@@ -113,7 +113,6 @@ namespace compile {
 
 		vector<String> vOptions = buildConfig.getArray(name);
 		set<String> options(vOptions.begin(), vOptions.end());
-		PVAR(join(options));
 
 		MakeConfig config;
 
