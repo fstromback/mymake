@@ -71,7 +71,7 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 		return 1;
 	}
 
-	DEBUG("Compilation successful!", NORMAL);
+	DEBUG("-- Compilation successful! --", NORMAL);
 
 	if (params.getBool("execute")) {
 		DEBUG("Running output: " << join(cmdline.params), INFO);
