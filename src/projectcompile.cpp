@@ -130,6 +130,12 @@ namespace compile {
 		}
 
 		Config opt;
+		// Add output path from our config.
+		String execPath = this->config.getStr("execPath");
+		if (!execPath.empty()) {
+			opt.set("execPath", execPath);
+		}
+
 		// Add input files from our config.
 		vector<String> input = this->config.getArray("input");
 		for (nat i = 0; i < input.size(); i++) {

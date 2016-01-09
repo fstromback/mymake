@@ -115,8 +115,26 @@ static bool copyConfig() {
 	return true;
 }
 
+static bool checkFile(const Path &file) {
+	if (!file.exists())
+		return true;
+
+	char ans;
+	do {
+		std::cout << "File " << file << " already exists. Overwrite? (y/n) ";
+		if (!(std::cin >> ans))
+			return false;
+	} while (ans != 'y' && ans != 'n');
+
+	return ans == 'y';
+}
+
 static bool createGlobal() {
-	ofstream dest(toS(Path::home() + localConfig).c_str());
+	Path file = Path::home() + localConfig;
+	if (!checkFile(file))
+		return false;
+
+	ofstream dest(toS(file).c_str());
 	if (!dest) {
 		WARNING("Failed to open " << Path::home() + localConfig);
 		return false;
@@ -127,7 +145,11 @@ static bool createGlobal() {
 }
 
 static bool createTarget() {
-	ofstream dest(toS(Path::cwd() + localConfig).c_str());
+	Path file = Path::cwd() + localConfig;
+	if (!checkFile(file))
+		return false;
+
+	ofstream dest(toS(file).c_str());
 	if (!dest) {
 		WARNING("Failed to open " << Path::cwd() + localConfig);
 		return false;
@@ -150,7 +172,11 @@ static bool createTarget() {
 }
 
 static bool createProject() {
-	ofstream dest(toS(Path::cwd() + projectConfig).c_str());
+	Path file = Path::cwd() + projectConfig;
+	if (!checkFile(file))
+		return false;
+
+	ofstream dest(toS(file).c_str());
 	if (!dest) {
 		WARNING("Failed to open " << Path::cwd() + projectConfig);
 		return false;
@@ -192,15 +218,18 @@ bool CmdLine::parseOption(char opt) {
 		break;
 	case '\1':
 		if (!createGlobal())
-			exit = errors = true;
+			errors = true;
+		exit = true;
 		break;
 	case '\2':
 		if (!createTarget())
-			exit = errors = true;
+			errors = true;
+		exit = true;
 		break;
 	case '\3':
 		if (!createProject())
-			exit = errors = true;
+			errors = true;
+		exit = true;
 		break;
 	default:
 		return false;
@@ -233,23 +262,23 @@ bool CmdLine::optionParam(const String &v) {
 }
 
 void CmdLine::addFile(const String &file) {
-	Path p(file);
-	if (p.exists()) {
-		files << p.makeAbsolute();
-	} else {
-		options.insert(file);
-	}
+	names << file;
+	order << file;
 }
 
-void CmdLine::apply(Config &config) const {
+void CmdLine::apply(const set<String> &options, Config &config) const {
 	if (!output.isEmpty())
 		config.set("output", toS(output));
 
 	if (!execPath.isEmpty())
 		config.set("execPath", toS(execPath));
 
-	for (nat i = 0; i < files.size(); i++)
-		config.add("input", toS(files[i]));
+	for (nat i = 0; i < order.size(); i++) {
+		if (options.count(order[i]) == 0) {
+			Path file(order[i]);
+			config.add("input", toS(file.makeAbsolute()));
+		}
+	}
 
 	if (execute == tYes)
 		config.set("execute", "yes");

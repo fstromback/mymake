@@ -9,11 +9,13 @@ Path findConfig() {
 	Path home = Path::home();
 
 	for (Path dir = Path::cwd(); !dir.isEmpty(); dir = dir.parent()) {
+		PVAR(dir);
+
 		// Skip home directory, where the global configuration is located.
 		if (dir == home)
 			continue;
 
-		// Search upwards for a configuration...
+		// Search for a configuration...
 		if ((dir + projectConfig).exists())
 			return dir;
 
@@ -36,6 +38,15 @@ Path findConfig() {
  */
 
 MakeConfig::MakeConfig() {}
+
+set<String> MakeConfig::options() const {
+	set<String> r;
+	for (nat i = 0; i < sections.size(); i++) {
+		const Section &s = sections[i];
+		r.insert(s.configurations.begin(), s.configurations.end());
+	}
+	return r;
+}
 
 bool MakeConfig::load(const Path &path) {
 	ifstream src(toS(path).c_str());

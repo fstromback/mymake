@@ -37,11 +37,8 @@ public:
 	// Parameters to the executable.
 	vector<String> params;
 
-	// Files found.
-	vector<Path> files;
-
-	// Configuration options.
-	set<String> options;
+	// Files or options.
+	set<String> names;
 
 	// Path to cd to before executing the final binary.
 	Path execPath;
@@ -50,7 +47,7 @@ public:
 	bool showHelp;
 
 	// Apply to Config object.
-	void apply(Config &config) const;
+	void apply(const set<String> &usedOptions, Config &config) const;
 
 	// Print help.
 	void printHelp() const;
@@ -70,6 +67,9 @@ private:
 
 	// Name of the executable.
 	String execName;
+
+	// Order of the files/options.
+	vector<String> order;
 
 	// Parse options.
 	bool parseOptions(const String &opts);

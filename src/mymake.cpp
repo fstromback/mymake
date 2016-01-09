@@ -23,8 +23,8 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 
 	// Compile plain .mymake-file.
 	Config params;
-	config.apply(cmdline.options, params);
-	cmdline.apply(params);
+	config.apply(cmdline.names, params);
+	cmdline.apply(config.options(), params);
 
 	DEBUG("Configuration options: " << params, VERBOSE);
 
@@ -55,8 +55,8 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	config.load(projectFile);
 
 	Config params;
-	config.apply(cmdline.options, params);
-	cmdline.apply(params);
+	config.apply(cmdline.names, params);
+	cmdline.apply(config.options(), params);
 
 	DEBUG("Configuration options: " << params, VERBOSE);
 

@@ -88,6 +88,9 @@ public:
 	// Apply to a config.
 	void apply(set<String> config, Config &to) const;
 
+	// Get all known options.
+	set<String> options() const;
+
 private:
 	// Assignment in a config file.
 	struct Assignment {

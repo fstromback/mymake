@@ -97,6 +97,12 @@ inline set<T> &operator <<(set<T> &to, const T &elem) {
 	return to;
 }
 
+template <class T>
+inline set<T> operator +(set<T> a, const set<T> &b) {
+	a.insert(b.begin(), b.end());
+	return a;
+}
+
 // Convert to number.
 template <class T>
 T to(const String &s) {
