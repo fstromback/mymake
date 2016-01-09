@@ -294,7 +294,7 @@ namespace compile {
 			return;
 		}
 
-		to.push(Compile(path, pch, true));
+		to.push(Compile(path, pch, false));
 	}
 
 	void Target::addFile(CompileQueue &to, const Path &header) {
