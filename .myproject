@@ -1,5 +1,8 @@
 #Configuration for compiling mymake.
 
+#Build mymake
+input=src
+
 [build]
 #How to build each target.
 #Nothing special required.

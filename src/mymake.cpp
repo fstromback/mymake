@@ -91,6 +91,10 @@ int main(int argc, const char *argv[]) {
 	// SetErrorMode(0);
 #endif
 
+	if (cmdline.exit) {
+		return 0;
+	}
+
 	if (cmdline.errors) {
 		PLN("Errors in the command line!");
 		cmdline.printHelp();

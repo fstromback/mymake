@@ -1,1 +1,21 @@
-project
+#Sample project file for mymake.
+
+#Global things.
+[]
+
+#Start with this project.
+#input=a
+
+
+#Note any options needed to build each target.
+[build]
+
+#Example:
+#a+=option
+
+
+#Depencies between projects that mymake can not figure out.
+[deps]
+
+#Example:
+#a+=b

@@ -105,7 +105,9 @@ namespace compile {
 	}
 
 	void Project::addTarget(const String &param, TargetQueue &to) {
-		Path rel = Path(param).makeAbsolute().makeRelative(wd);
+		Path rel = Path(param);
+		if (rel.isAbsolute())
+			rel = rel.makeRelative(wd);
 		if (rel.isEmpty())
 			return;
 

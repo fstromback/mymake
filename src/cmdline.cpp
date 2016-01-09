@@ -38,13 +38,15 @@ static const char *helpStr =
 	"--arguments, -a - arguments to the executed program. Must be last.\n"
 	"--execute, -e   - execute the resulting file.\n"
 	"--not, -n       - put in front of --execute (or use -ne) to not execute.\n"
-	"--copy          - copy the global config to cwd.\n"
+	"--project       - generate a sample .myproject in cwd.\n"
+	"--target        - generate a sample .mymake in cwd.\n"
 	"--config        - write global config file.\n";
 
 CmdLine::CmdLine(const vector<String> &params) :
 	execute(tUnset),
 	errors(false),
-	showHelp(false) {
+	showHelp(false),
+	exit(false) {
 
 	bool noOptions = false;
 	state = sNone;
@@ -131,7 +133,19 @@ static bool createTarget() {
 		return false;
 	}
 
-	dest << templ::target;
+	istringstream src(templ::target);
+
+	String line;
+	while (getline(src, line)) {
+		if (line.empty()) {
+			dest << endl;
+		} else if (line[0] == '#' || line[0] == '[') {
+			dest << line << endl;
+		} else {
+			dest << '#' << line << endl;
+		}
+	}
+
 	return false;
 }
 
@@ -178,15 +192,15 @@ bool CmdLine::parseOption(char opt) {
 		break;
 	case '\1':
 		if (!createGlobal())
-			errors = true;
+			exit = errors = true;
 		break;
 	case '\2':
 		if (!createTarget())
-			errors = true;
+			exit = errors = true;
 		break;
 	case '\3':
 		if (!createProject())
-			errors = true;
+			exit = errors = true;
 		break;
 	default:
 		return false;

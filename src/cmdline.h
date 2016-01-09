@@ -25,6 +25,9 @@ public:
 	// Any errors during parsing of the command line?
 	bool errors;
 
+	// Exit without doing anything.
+	bool exit;
+
 	// Run the compiled file.
 	Tristate execute;
 

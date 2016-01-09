@@ -1,5 +1,6 @@
 []
 input=mymake.cpp
+output=mymake
 
 #Precompiled header.
 pch=std.h
