@@ -15,7 +15,7 @@ is declared in the header. So if you include the header, the source file needs t
 your program as well. Secondly: mymake assumes that all source files that are not reachable this way
 are not needed by your program. This is true as long as your are not declaring things in another
 file than the header file that has the same name as an implementation file. If you break this
-assumption, mymake fails to detect your depencies automatically and needs some help figuring this
+assumption, mymake fails to detect your dependencies automatically and needs some help figuring this
 out.
 
 Generally, these assumptions are met as long as you follow the structure usually found in
@@ -58,7 +58,7 @@ path.
 After this, run `mm --config` to generate a global `.mymake`-file which contains your system
 specific compilation settings.
 
-From here, you hvae several options:
+From here, you have several options:
 - You always run mymake from the "Visual Studio Command Prompt".
 - You add the environment variables from the "Visual Studio Command Prompt" to your system. Run `set` to seem them.
 - You add the environment variables from the "Visual Studio Command Prompt" to your global `.mymake`-file.
@@ -175,7 +175,7 @@ These variables are used by mymake to understand what should be done:
   is not an option that is specified on the command line is appended to this variable. The special value `*` can
   be used to indicate that all files with an extension in the `ext` variable should be compiled. This is usually
   what you want when you are compiling a library of some kind.
-- `output`: string specifying the name of the ouput file. If not specified, the name of the first input file
+- `output`: string specifying the name of the output file. If not specified, the name of the first input file
   is used instead.
 - `include`: array of paths that should be added to the include path of the compilation.
 - `includeCl`: flag to prepend all elements in `include`.
@@ -196,6 +196,10 @@ These variables are used by mymake to understand what should be done:
 - `link`: command line used when linking the intermediate files. Use `<files>` for all input files and `<output>` for
   the output file-name.
 - `linkOutput`: link the output of one target to any target that are dependent on that target. See projects for more information.
+- `env`: set environment variables. Each of the elements in `env` are expected to be of the form:
+  `variable=value` or `variable<=value` or `variable=>value`. The first form replaces the environment variable `variable`
+  with `value`, the second form prepends `value` to `variable` using the system's separator (`:` on unix and `;` on windows),
+  the third form appends `value` to `variable`. The second and third forms are convenient when working with `PATH` for example.
 
 ## Variables in strings
 
@@ -220,7 +224,7 @@ It is also possible to combine these two operations, like: `<prefix*path|files>`
 priority over pipes, and expressions are evaluated left-to-right.
 
 There are two variables that mymake generate automatically:
-- `includes`: equivalent to `<includeCl*path|include>`, ie. all include paths required by the project prefixed by any flags needded.
+- `includes`: equivalent to `<includeCl*path|include>`, ie. all include paths required by the project prefixed by any flags needed.
 - `libs`: equivalent to `libraryCl*path|library>`, ie. all libraries required by the project.
 
 ## Targets
@@ -230,8 +234,8 @@ starts by looking at all files in `input` (which, among others are the files spe
 command line) and adding them to the set of files to compile. For each file in the set, mymake then
 finds all included files. Both directly included files and indirectly included files are
 found. After that, mymake finds corresponding implementation files (of any type in `<ext>`) and adds
-them to the set of files to compile as well. When this yeilds no more files, mymake compiles them
-one by one if neccessary (just like make would do). Finally, it link all files together to the
+them to the set of files to compile as well. When this yields no more files, mymake compiles them
+one by one if necessary (just like make would do). Finally, it link all files together to the
 output file.
 
 To do this, mymake considers the global `~/.mymake`-file as well as any local `.mymake`-file, in
@@ -242,9 +246,9 @@ that order. Therefore, any assignments in the local file can overwrite global se
 A project is a collection of targets that depend on each other in some way. In mymake, a project is
 represented by a `.myproject`-file in one directory and optional `.mymake`-files in each
 subdirectory that is representing another project. The project configuration follows the same syntax
-as the target configurations, but the project configuration has two special sections: build and deps.
+as the target configurations, but the project configuration has two special sections: `build` and `deps`.
 
-The build section contains information about which options should be passed to each project. When
+The `build` section contains information about which options should be passed to each project. When
 building a project, any options passed on the command line are not automatically passed on to the
 targets. Instead you have to specify which options are needed by assigning a variable with the same
 name as the target any options needed like so:
@@ -255,16 +259,16 @@ main+=lib
 main+=debug
 ```
 
-The deps section contains information about target depencies. By default, mymake tries to figure out
+The `deps` section contains information about target dependencies. By default, mymake tries to figure out
 which targets depend on each other by looking at the includes. Sometimes this is not enough, since a
 project may need the result of another project as a pre-processing step or similar. Therefore,
-mymake allows you to specify any depencies explicitly.
+mymake allows you to specify any dependencies explicitly.
 
 If one target results in a library, it is convenient to set the variable `linkOutput` to `yes` for
 that target. Mymake will then add the output of the library target to the `library` variable of any
 targets that depend on it. See the `testproj` directory for an example.
 
-Of course, the build and deps sections are nothing but regular options, and can therefore be
+Of course, the `build` and `deps` sections are nothing but regular options, and can therefore be
 combined with other options as well:
 
 ```
