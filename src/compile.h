@@ -76,8 +76,14 @@ namespace compile {
 			inline Compile(const Path &file, bool pch, bool a) : Path(file), isPch(pch), autoFound(a) {}
 		};
 
+		// Pch header.
+		String pchHeader;
+
 		// Pch file.
 		Path pchFile;
+
+		// Combined pch generation+compilation.
+		bool combinedPch;
 
 		typedef UniqueQueue<Compile> CompileQueue;
 

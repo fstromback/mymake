@@ -186,9 +186,12 @@ These variables are used by mymake to understand what should be done:
 - `exceute`: yes or no, telling if mymake should execute the program after a successful compilation. This can be
   overridden on the commandline using `-e` or `-ne`.
 - `showTime`: yes or no, telling if mymake should show the total compilation time when done (not implemented).
-- `pch`: the precompiled header file name that should be used (currently only on Windows).
-- `pchFile`: the name of the compiled version of the file in `pch` (currently only on Windows).
-- `pchCompile`: command line for compiling the precompiled header file (currently only on Windows).
+- `pch`: the precompiled header file name that should be used. If you are using the default configuration, you only
+  need to set this variable to use precompiled headers. If you are using `#pragma once` in gcc, you will sadly get a
+  warning that seems impossible to disable (it is not a problem when precompiling headers).
+- `pchFile`: the name of the compiled version of the file in `pch`.
+- `pchCompile`: command line for compiling the precompiled header file.
+- `pchCompileCombined`: if set to yes, `pchCompile` is expected to generate both the pch-file and compile a .cpp-file.
 - `preBuild`: array of command-lines that should be executed before the build is started. Expands variables.
 - `postBuild`: array of command-lines that should be executed after the build is completed. Expands variables.
 - `compile`: array of command lines to use when compiling files. Each command line starts with a pattern
@@ -212,8 +215,7 @@ values, these values are concatenated into one space separated string.
 
 It is also possible to append a string before each element in another variable by using
 `<prefix*variable>`. This means that the string in the variable `prefix` is appended to each element
-in `variable` and then concatenated into a space separated string. Note that any elemenent in the
-array containing the empty string will not get a prefix - it is treated as if that element did not exist.
+in `variable` and then concatenated into a space separated string.
 
 It is also possible to apply an operation to each element in an array by using `<op|variable>`,
 where `op` is the operation to apply. Currently, it is not possible to specify operations in
@@ -221,8 +223,12 @@ configuration files, you can only use the ones built into mymake. Operations cur
 are:
 - `title`: treat the element as a path and extract the file or directory name (eg. `src/foo.txt` gives `foo.txt`).
 - `titleNoExt`: same as title, but the file extension is removed as well.
+- `noExt`: remove the file type from a path.
 - `path`: format the element as a path for the current operating system. For example: `src/foo.txt` evaluates to `src\foo.txt` on Windows.
-- `parent`: evaluates to the parent directory of the path. If no parent is given (eg. only a file-name), an empty string is returned.
+- `buildpath`: make the element into a path inside the build path.
+- `exexpath`: make the element int a path inside the bin path.
+- `parent`: evaluates to the parent directory of the path. If no parent is given (eg. only a file-name), the element is removed from the array.
+- `if`: make all elements empty. This can be used to test if a variable contains a value and then include something.
 
 It is also possible to combine these two operations, like: `<prefix*path|files>`. Stars have
 priority over pipes, and expressions are evaluated left-to-right.

@@ -253,63 +253,83 @@ vector<String> Config::replacement(String var, const map<String, String> &specia
 
 	{
 		map<String, String>::const_iterator i = special.find(var);
-		if (i != special.end())
-			return vector<String>(1, applyFn(op, i->second));
+		if (i != special.end()) {
+			pair<bool, String> r = applyFn(op, i->second);
+			if (r.first)
+				return vector<String>(1, r.second);
+			else
+				return vector<String>();
+		}
 	}
 
 	// Handle built-in special cases.
 	if (var == "includes") {
-		return addStr(getStr("includeCl"), replacement("path|include", special));
+		return addStr(getVars("includeCl", special), replacement("path|include", special));
 	} else if (var == "libs") {
-		return addStr(getStr("libraryCl"), replacement("path|library", special)) +
-			addStr(getStr("localLibraryCl"), replacement("path|localLibrary", special));
+		return addStr(getVars("libraryCl", special), replacement("path|library", special)) +
+			addStr(getVars("localLibraryCl", special), replacement("path|localLibrary", special));
 	}
 
 	{
 		Data::const_iterator d = data.find(var);
 		if (d != data.end()) {
-			vector<String> r = d->second;
-			applyFn(op, r);
-			return r;
+			vector<String> data = d->second;
+			for (nat i = 0; i < data.size(); i++) {
+				data[i] = expandVars(data[i], special);
+			}
+			return applyFn(op, data);
 		}
 	}
 
 	return vector<String>();
 }
 
-void Config::applyFn(const String &op, vector<String> &src) const {
+vector<String> Config::applyFn(const String &op, const vector<String> &src) const {
+	vector<String> r;
 	for (nat i = 0; i < src.size(); i++) {
-		src[i] = applyFn(op, src[i]);
+		pair<bool, String> v = applyFn(op, src[i]);
+		if (v.first)
+			r << v.second;
 	}
+	return r;
 }
 
-String Config::applyFn(const String &op, const String &src) const {
+pair<bool, String> Config::applyFn(const String &op, const String &src) const {
 	if (op == "title") {
-		return Path(src).title();
+		return make_pair(true, Path(src).title());
 	} else if (op == "titleNoExt") {
-		return Path(src).titleNoExt();
+		return make_pair(true, Path(src).titleNoExt());
+	} else if (op == "noExt") {
+		Path p(src);
+		p.makeExt("");
+		return make_pair(true, toS(p));
 	} else if (op == "path") {
-		return toS(Path(src));
+		return make_pair(true, toS(Path(src)));
+	} else if (op == "buildpath") {
+		return make_pair(true, toS(Path(getStr("buildDir")) + Path(src)));
+	} else if (op == "execpath") {
+		return make_pair(true, toS(Path(getStr("execDir")) + Path(src)));
 	} else if (op == "dir") {
 		Path p(src);
 		if (p.isEmpty())
-			return "";
+			return make_pair(false, String());
 		p = p.parent();
 		if (p.isEmpty())
-			return "";
-		return toS(p);
+			return make_pair(false, String());
+		return make_pair(true, toS(p));
+	} else if (op == "if") {
+		return make_pair(true, String());
 	} else if (op.empty()) {
-		return src;
+		return make_pair(true, src);
 	} else {
 		WARNING("Unknown operation: " << op);
-		return src;
+		return make_pair(true, src);
 	}
 }
 
 vector<String> Config::addStr(const String &prefix, vector<String> to) const {
 	for (nat i = 0; i < to.size(); i++)
-		if (!to[i].empty())
-			to[i] = prefix + to[i];
+		to[i] = prefix + to[i];
 	return to;
 }
 

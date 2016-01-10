@@ -14,7 +14,9 @@ namespace compile {
 		compileVariants(config.getArray("compile")),
 		buildDir(wd + Path(config.getStr("buildDir"))),
 		intermediateExt(config.getStr("intermediateExt")),
-		pchFile(buildDir + Path(config.getStr("pchFile"))) {
+		pchHeader(config.getStr("pch")),
+		pchFile(buildDir + Path(config.getStr("pchFile"))),
+		combinedPch(config.getBool("pchCompileCombined")) {
 
 		linkOutput = config.getBool("linkOutput", false);
 
@@ -154,10 +156,24 @@ namespace compile {
 				}
 			}
 
+			if (!combinedPch && src.isPch) {
+				DEBUG("Compiling header " << src.makeRelative(wd) << "...", NORMAL);
+				String cmd = config.getStr("pchCompile");
+				data["file"] = pchHeader;
+				data["output"] = data["pchFile"];
+				cmd = config.expandVars(cmd, data);
+
+				DEBUG("Command line: " << cmd, INFO);
+				if (system(cmd.c_str()) != 0) {
+					// Abort!
+					return false;
+				}
+			}
+
 			DEBUG("Compiling " << src.makeRelative(wd) << "...", NORMAL);
 
 			String cmd;
-			if (src.isPch)
+			if (combinedPch && src.isPch)
 				cmd = config.getStr("pchCompile");
 			else
 				cmd = chooseCompile(file);

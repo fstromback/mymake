@@ -59,8 +59,8 @@ private:
 	vector<String> replacement(String var, const map<String, String> &special) const;
 
 	// Apply an operation to a string.
-	void applyFn(const String &op, vector<String> &original) const;
-	String applyFn(const String &op, const String &original) const;
+	vector<String> applyFn(const String &op, const vector<String> &original) const;
+	pair<bool, String> applyFn(const String &op, const String &original) const;
 
 	// Add prefix to each element.
 	vector<String> addStr(const String &prefix, vector<String> to) const;
