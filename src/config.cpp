@@ -261,7 +261,8 @@ vector<String> Config::replacement(String var, const map<String, String> &specia
 	if (var == "includes") {
 		return addStr(getStr("includeCl"), replacement("path|include", special));
 	} else if (var == "libs") {
-		return addStr(getStr("libraryCl"), replacement("path|library", special));
+		return addStr(getStr("libraryCl"), replacement("path|library", special)) +
+			addStr(getStr("localLibraryCl"), replacement("path|localLibrary", special));
 	}
 
 	{
@@ -289,6 +290,14 @@ String Config::applyFn(const String &op, const String &src) const {
 		return Path(src).titleNoExt();
 	} else if (op == "path") {
 		return toS(Path(src));
+	} else if (op == "dir") {
+		Path p(src);
+		if (p.isEmpty())
+			return "";
+		p = p.parent();
+		if (p.isEmpty())
+			return "";
+		return toS(p);
 	} else if (op.empty()) {
 		return src;
 	} else {
@@ -299,7 +308,8 @@ String Config::applyFn(const String &op, const String &src) const {
 
 vector<String> Config::addStr(const String &prefix, vector<String> to) const {
 	for (nat i = 0; i < to.size(); i++)
-		to[i] = prefix + to[i];
+		if (!to[i].empty())
+			to[i] = prefix + to[i];
 	return to;
 }
 

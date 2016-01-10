@@ -179,8 +179,10 @@ These variables are used by mymake to understand what should be done:
   is used instead.
 - `include`: array of paths that should be added to the include path of the compilation.
 - `includeCl`: flag to prepend all elements in `include`.
-- `library`: array of libraries that should be linked to your executable.
+- `library`: array of system libraries that should be linked to your executable.
 - `libraryCl`: flag to prepend all elements in `library`.
+- `localLibrary`: array of local libraries that should be linked to your executable (usually used in a project).
+- `localLibraryCl`: flag to prepend all elements in `localLibrary`.
 - `exceute`: yes or no, telling if mymake should execute the program after a successful compilation. This can be
   overridden on the commandline using `-e` or `-ne`.
 - `showTime`: yes or no, telling if mymake should show the total compilation time when done (not implemented).
@@ -210,7 +212,8 @@ values, these values are concatenated into one space separated string.
 
 It is also possible to append a string before each element in another variable by using
 `<prefix*variable>`. This means that the string in the variable `prefix` is appended to each element
-in `variable` and then concatenated into a space separated string.
+in `variable` and then concatenated into a space separated string. Note that any elemenent in the
+array containing the empty string will not get a prefix - it is treated as if that element did not exist.
 
 It is also possible to apply an operation to each element in an array by using `<op|variable>`,
 where `op` is the operation to apply. Currently, it is not possible to specify operations in
@@ -219,13 +222,14 @@ are:
 - `title`: treat the element as a path and extract the file or directory name (eg. `src/foo.txt` gives `foo.txt`).
 - `titleNoExt`: same as title, but the file extension is removed as well.
 - `path`: format the element as a path for the current operating system. For example: `src/foo.txt` evaluates to `src\foo.txt` on Windows.
+- `parent`: evaluates to the parent directory of the path. If no parent is given (eg. only a file-name), an empty string is returned.
 
 It is also possible to combine these two operations, like: `<prefix*path|files>`. Stars have
 priority over pipes, and expressions are evaluated left-to-right.
 
 There are two variables that mymake generate automatically:
 - `includes`: equivalent to `<includeCl*path|include>`, ie. all include paths required by the project prefixed by any flags needed.
-- `libs`: equivalent to `libraryCl*path|library>`, ie. all libraries required by the project.
+- `libs`: equivalent to `<libraryCl*path|library> <localLibraryCl*path|library>`, ie. all libraries required by the project.
 
 ## Targets
 

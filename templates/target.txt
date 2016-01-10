@@ -29,8 +29,11 @@ ignore=*.template.*
 #Include path
 include+=./
 
-#Include libraries.
+#Include system libraries.
 #library+=m
+
+#Include local libraries (eg. in other projects). Usually done automatically.
+#localLibrary+=mylib
 
 #Run output by default
 execute=yes
@@ -65,7 +68,8 @@ execExt=
 intermediateExt=o
 
 includeCl=-iquote
-libraryCl=-L
+libraryCl=-l
+localLibraryCl=
 
 flags=-std=c++11 -Wall -Wextra
 
@@ -73,14 +77,14 @@ flags=-std=c++11 -Wall -Wextra
 compile=*:g++ <flags> <file> -c <includes> -o <output>
 
 #Link all files
-link=g++ <libs> <files> -o <output>
+link=g++ <files> <libs> -o <output>
 
 [unix,lib]
 
 execExt=a
 
 #Link (more flags for libraries?)
-link=ar -cvq <output> <files>
+link=ar rcs <output> <files>
 
 [windows]
 
@@ -89,6 +93,7 @@ intermediateExt=obj
 
 includeCl=/I
 libraryCl=
+localLibraryCl=
 
 #Environment variables for Visual Studio 2008 Replace these with your own. Find them by
 #starting the visual studio command prompt and run 'set'.

@@ -104,6 +104,13 @@ inline set<T> &operator <<(set<T> &to, const T &elem) {
 }
 
 template <class T>
+inline vector<T> operator +(vector<T> a, const vector<T> &b) {
+	for (nat i = 0; i < b.size(); i++)
+		a << b[i];
+	return a;
+}
+
+template <class T>
 inline set<T> operator +(set<T> a, const set<T> &b) {
 	a.insert(b.begin(), b.end());
 	return a;

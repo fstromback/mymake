@@ -62,8 +62,11 @@ ignore=*.template.*
 #Include path
 include+=./
 
-#Include libraries.
+#Include libraries (system libraries).
 #library+=m
+
+#Local libraries.
+#localLibrary+=mylib.a
 
 #Run output by default
 execute=yes
@@ -95,7 +98,8 @@ execExt=
 intermediateExt=o
 
 includeCl=-iquote
-libraryCl=-L
+libraryCl=-l
+localLibraryCl=
 
 flags=-std=c++11 -Wall -Wextra
 
@@ -103,14 +107,14 @@ flags=-std=c++11 -Wall -Wextra
 compile=*:g++ <flags> <file> -c <includes> -o <output>
 
 #Link all files
-link=g++ <libs> <files> -o <output>
+link=g++ <files> <libs> -o <output>
 
 [unix,lib]
 
 execExt=a
 
 #Link (more flags for libraries?)
-link=ar -cvq <output> <files>
+link=ar rcs <output> <files>
 
 [windows]
 
@@ -119,6 +123,7 @@ intermediateExt=obj
 
 includeCl=/I
 libraryCl=
+localLibraryCl=
 
 #env+=DevEnvDir=C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\IDE
 env+=DXSDK_DIR=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\
