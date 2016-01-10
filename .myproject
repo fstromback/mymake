@@ -43,7 +43,7 @@ pchCompile=g++ <flags> <file> -c <includes> -o <output>
 pchCompileCombined=no
 usePch=-include <noExt|pchFile>
 
-compile=*:g++ <flags> <file> -c <includes> -o <output>
+compile=*:g++ <flags> <usePch*if|pch> <file> -c <includes> -o <output>
 link=g++ <libs> <files> -o <output>
 
 [windows,standalone]
