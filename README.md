@@ -155,6 +155,9 @@ Each of these assignments are evaluated from top to bottom, so a variable can be
 in a configuration file. The global `.mymake`-file is evaluated before any local files. Any
 variables originating from the command-line are applied last.
 
+By default, mymake defines either the option `windows` or `unix` so that files can detect what kind
+of platform are being used easily.
+
 ## Variables used by mymake
 
 These variables are used by mymake to understand what should be done:
@@ -192,6 +195,7 @@ These variables are used by mymake to understand what should be done:
   (starting with `*:`), and then add more specific ones. Here, you can use `<file>` for the input file and `<output>`.
 - `link`: command line used when linking the intermediate files. Use `<files>` for all input files and `<output>` for
   the output file-name.
+- `linkOutput`: link the output of one target to any target that are dependent on that target. See projects for more information.
 
 ## Variables in strings
 
@@ -221,9 +225,49 @@ There are two variables that mymake generate automatically:
 
 ## Targets
 
-A target in mymake is a set of files that will compile into one file. For example, a set of `.cpp`
-and `.h`-files may produce an executable file. Each target directory in mymake may contain a
-`.mymake`-file that specifies how mymake should behave. The global `~/.mymake`-file is also taken
-into account, but the local `.mymake`-file may override any settings in the global file.
+The goal of a target is to produce the file `<execDir>/<output>.<outputExt>`. To do this, mymake
+starts by looking at all files in `input` (which, among others are the files specified on the
+command line) and adding them to the set of files to compile. For each file in the set, mymake then
+finds all included files. Both directly included files and indirectly included files are
+found. After that, mymake finds corresponding implementation files (of any type in `<ext>`) and adds
+them to the set of files to compile as well. When this yeilds no more files, mymake compiles them
+one by one if neccessary (just like make would do). Finally, it link all files together to the
+output file.
 
-- input, output
+To do this, mymake considers the global `~/.mymake`-file as well as any local `.mymake`-file, in
+that order. Therefore, any assignments in the local file can overwrite global settings.
+
+## Projects
+
+A project is a collection of targets that depend on each other in some way. In mymake, a project is
+represented by a `.myproject`-file in one directory and optional `.mymake`-files in each
+subdirectory that is representing another project. The project configuration follows the same syntax
+as the target configurations, but the project configuration has two special sections: build and deps.
+
+The build section contains information about which options should be passed to each project. When
+building a project, any options passed on the command line are not automatically passed on to the
+targets. Instead you have to specify which options are needed by assigning a variable with the same
+name as the target any options needed like so:
+
+```
+[build]
+main+=lib
+main+=debug
+```
+
+The deps section contains information about target depencies. By default, mymake tries to figure out
+which targets depend on each other by looking at the includes. Sometimes this is not enough, since a
+project may need the result of another project as a pre-processing step or similar. Therefore,
+mymake allows you to specify any depencies explicitly.
+
+If one target results in a library, it is convenient to set the variable `linkOutput` to `yes` for
+that target. Mymake will then add the output of the library target to the `library` variable of any
+targets that depend on it. See the `testproj` directory for an example.
+
+Of course, the build and deps sections are nothing but regular options, and can therefore be
+combined with other options as well:
+
+```
+[build,windows]
+main+=foo
+```
