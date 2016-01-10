@@ -10,7 +10,7 @@ namespace compile {
 	class Project : NoCopy {
 	public:
 		// Create.
-		Project(const Path &wd, const MakeConfig &projectFile, const Config &config);
+		Project(const Path &wd, const set<String> &cmdlineOptions, const MakeConfig &projectFile, const Config &config);
 
 		// Destroy.
 		~Project();

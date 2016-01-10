@@ -14,6 +14,9 @@ input=src
 src+=templates
 templates+=textinc
 
+[build,standalone]
+textinc+=standalone
+src+=standalone
 
 []
 #Global configuration
@@ -52,13 +55,14 @@ localLibraryCl=
 
 flags=/nologo /EHsc
 
+pchFile=stdafx.pch
 usePch=/Yu
 namePch=/Fp<pchFile>
 
 pchCompile=cl <file> <includes> <flags> /Yc<title|pch> <namePch*if|pch> /c /Fo<output>
 pchCompileCombined=yes
 
-compile=*:cl <file> <incudes> <flags> <usePch*title|pch> <namePch*path|pchFile> /c /Fo<output>
+compile=*:cl <file> <incudes> <flags> <usePch*title|pch> <namePch*if|pch> /c /Fo<output>
 link=link <libs> <files> /nologo /OUT:<output>
 
 #Good if the global .mymake is broken

@@ -9,13 +9,13 @@ namespace compile {
 		return s;
 	}
 
-	Project::Project(const Path &wd, const MakeConfig &projectFile, const Config &config) :
+	Project::Project(const Path &wd, const set<String> &cmdline, const MakeConfig &projectFile, const Config &config) :
 		wd(wd),
 		projectFile(projectFile),
 		config(config) {
 
-		projectFile.apply(createSet("deps"), depsConfig);
-		projectFile.apply(createSet("build"), buildConfig);
+		projectFile.apply(createSet("deps") + cmdline, depsConfig);
+		projectFile.apply(createSet("build") + cmdline, buildConfig);
 	}
 
 	Project::~Project() {
@@ -121,6 +121,8 @@ namespace compile {
 		vector<String> vOptions = buildConfig.getArray(name);
 		set<String> options(vOptions.begin(), vOptions.end());
 
+		DEBUG("Options for " << name << ": " << join(options), INFO);
+
 		MakeConfig config;
 
 		Path configFile = dir + localConfig;
@@ -148,7 +150,7 @@ namespace compile {
 		projectFile.apply(options, opt);
 		config.apply(options, opt);
 
-		DEBUG("Configuration options for " << name << ": " << opt, VERBOSE);
+		DEBUG("Configuration for " << name << ": " << opt, VERBOSE);
 
 		return new Target(dir, opt);
 	}

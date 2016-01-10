@@ -121,7 +121,6 @@ localLibraryCl=
 flags=/nologo /EHsc
 
 pchFile=stdafx.pch
-
 usePch=/Yu
 namePch=/Fp<pchFile>
 

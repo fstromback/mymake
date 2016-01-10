@@ -67,7 +67,7 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 
 	DEBUG("Configuration options: " << params, VERBOSE);
 
-	compile::Project c(wd, config, params);
+	compile::Project c(wd, cmdline.names, config, params);
 	if (!c.find()) {
 		PLN("Compilation failed!");
 		return 1;
