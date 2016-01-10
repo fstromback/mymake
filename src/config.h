@@ -117,7 +117,7 @@ private:
 	void parseSection(String line);
 
 	// Parse assignment.
-	void parseAssignment(String line);
+	void parseAssignment(String line, nat initialSize);
 
 	// Output:
 	friend ostream &operator <<(ostream &to, const MakeConfig &c);

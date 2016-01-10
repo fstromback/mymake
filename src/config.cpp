@@ -9,8 +9,6 @@ Path findConfig() {
 	Path home = Path::home();
 
 	for (Path dir = Path::cwd(); !dir.isEmpty(); dir = dir.parent()) {
-		PVAR(dir);
-
 		// Skip home directory, where the global configuration is located.
 		if (dir == home)
 			continue;
@@ -50,6 +48,7 @@ set<String> MakeConfig::options() const {
 
 bool MakeConfig::load(const Path &path) {
 	ifstream src(toS(path).c_str());
+	nat initSize = sections.size();
 
 	String line;
 	while (getline(src, line)) {
@@ -62,7 +61,7 @@ bool MakeConfig::load(const Path &path) {
 		if (line[0] == '[') {
 			parseSection(line);
 		} else {
-			parseAssignment(line);
+			parseAssignment(line, initSize);
 		}
 
 	}
@@ -86,7 +85,7 @@ void MakeConfig::parseSection(String line) {
 	sections << s;
 }
 
-void MakeConfig::parseAssignment(String line) {
+void MakeConfig::parseAssignment(String line, nat initialSize) {
 	nat eq = line.find('=');
 	if (eq == String::npos)
 		return;
@@ -102,7 +101,7 @@ void MakeConfig::parseAssignment(String line) {
 		a.append = true;
 	}
 
-	if (sections.empty()) {
+	if (sections.size() <= initialSize) {
 		Section s;
 		sections << s;
 	}

@@ -9,6 +9,8 @@ else
     exit 1
 fi
 
+touch mymake_v2
+
 # set up aliases in shells?
 while true
 do

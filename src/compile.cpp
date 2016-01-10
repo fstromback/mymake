@@ -199,7 +199,7 @@ namespace compile {
 			return true;
 		}
 
-		DEBUG("Linking...", NORMAL);
+		DEBUG("Linking " << output.title() << "...", NORMAL);
 
 		data["files"] = intermediateFiles.str();
 		data["output"] = toS(output.makeRelative(wd));

@@ -1,125 +1,229 @@
-mymake
-======
+# mymake
 
-mymake is an alternative to make, but requires close to no configuration in most cases.
+## overview
 
-mymake was created when I got tired of waiting for the simplest compilation to finish each time I made a change to my source (no make, nothing but the compiler). Manually keeping track of which files to re-compile was completely out of the question, so I tried make. However, the approach I knew at that time required me to remember to update my make file each time I included a new file from any other source file. I realized that this would be tiresome and very error-prone, so I decided against it. Lazy as I was (or maybe dumb...) I did not feel like I wanted to take the effort to learn how to write proper make-files, neither evaluate other tools. I wanted something almost as easy to use as to just compile files on the command line, but which can also do a "minimal rebuild".
+Mymake is a tool to build C/C++-programs that requires close to no configuration.
 
-This was when mymake was born. It is, as previously mentionend, designed to work almost like the native approach on the command line, but it also reduces build-times by doing "minimal rebuilds" as well as minimizes what you have to type in the terminal to make it do its job. One thing I also incorporated is the "auto-run" feature. When you are doing a lot of testing, you don't want to first rebuild and then run your program if it was successfully built. Especially if you have command-lines more than a few (one?) character. It turns out that this is more or less what you want when you are coding smaller projects, where you do not want to start by writing makefiles or configuring other tools, but you just want to code.
+For simple programs, it is enough to do `mm main.cpp`, where `main.cpp` is the file containing the
+`main` function of the program. Mymake will then find all other source files that need to be
+compiled and will compile these. Like `make`, mymake also only re-compiles the files that have been
+changed (keeping track of included headers) automatically, without configuration.
 
-How it works
-------------
+To be able to do this, mymake makes two assumptions about your code. Firstly: if you include a
+header, say `foo.h`, the file `foo.cpp`, `foo.cxx`, `foo.c`... contains the implementation for what
+is declared in the header. So if you include the header, the source file needs to be linked into
+your program as well. Secondly: mymake assumes that all source files that are not reachable this way
+are not needed by your program. This is true as long as your are not declaring things in another
+file than the header file that has the same name as an implementation file. If you break this
+assumption, mymake fails to detect your depencies automatically and needs some help figuring this
+out.
 
-How does mymake accomplish its task without almost any configuration?
-It makes the following assumption about your code: If you include a header-file, you want to compile the corresponding .cpp file as well. This means that cpp and h files are treated as a pair (if a cpp-file does not exist, it does not matter). This is usually no problem, as this is how you usually structure your code to keep track of it yourself.
+Generally, these assumptions are met as long as you follow the structure usually found in
+C/C++-programs, so usually you do not have to worry. If your codebase does not follow these
+criteria, it is usually easy to make the codebase meed the criteria by adding a few includes and/or
+a few mostly empty header files.
 
-Making this assumption, we can then look for all files needed in the project as long as we are given at least one file to start from. This is the file given to mymake for compilation.
-
-So what happens when you tell mymake to compile your code file `main.cpp` is that mymake first scans it for `#include` statements, and keeps track of these files. If we assume we find that `main.cpp` includes `class.h`, then mymake remembers that `main.cpp` depends on `class.h`, as well as adds `class.cpp` to the list of files to examine (if it exists). Mymake will in this manner recursively scan all included files from all `.cpp` files found. To speed up the compilation process even more, mymake checks the file dates of all included files against the latest sucessfully compiled object file, to see if a re-compilation is neccessary. Mymake also keeps a cache of includes in the build-folder to avoid scanning uncanged files for includes.
-
-This incremental rebuild will work fine in most cases, however it might currently fail to detect some changes if you keep editing files while the rebuild is in progress. I have not personally seen this issue myself, but it might happen with the current implementation. If something looks strange, you can always rebuild with `mm <file> -f` to force a rebuild, or you can simply remove the build directory.
-
-Worth to notice is that mymake does not take any other preprocessor macros into consideration, which means that mymake will treat all `#include` as active ones, even if they are surrounded by `#if 0` or similar. This is usually not a problem, since it will only result in mymake re-compiling some files too often and compiles a few files mor than what might have been neccessary. Mymake does not either take any notice of `#include <>`, as these are considered library files, which should be specified on the link command-line instead (in `.mymake`).
-
-One thing worth to think about here is that one can have multiple files containing an `int main()`, as long as these files do not include each others. If you have one file `main.cpp`, which is the regular entry-point for your application, you can also have a file `run_tests.cpp`, which runs your tests instead. Then you can simply run them with `mm main` and `mm run_tests` respectively. The two main files will even share intermediate object files, which also reduces compilation times. Another use is if you have a networked application, and want to have a server and a client with a lot of shared code, then you can have your `server.cpp` and `client.cpp` side-by-side without any problems.
-
-Updating
----------
-
-Updating mymake is from now on easy, assuming you used the install script. Just run the update.sh in the repo, and mymake will get the latest changes and re-install mymake.
-
-Installation
--------------
-
-Sadly, even mymake requires some configuration. The first thing you need to do is to download the source code somewhere. Then you can simply run the "install.sh" to build mymake from source and, if you want, add an alias to your favorite shell. I prefer the short name `mm`, which I am going to use throughout this document.
-
-When that is done, you just need to set up your global configuration file.
+## Terminology
 
 
-Configuration
---------------
+Here, the terminology used in mymake is explained.
 
-To create your global configuration file `~/.mymake`, you just need to run `mm -config` to create the global configuration file. This will later serve as a base file to your specific projects, so it might be worth spending a few moments to custumize it, even though everything will work perfectly fine without editing it.
+- **target**: a directory containing a set of source files that together will provide one final output file.
+- **project**: a directory containing a set of related *targets*. These *targets* can depend on each other.
+- **option**: a string (either specified on the command line or in a project) that modifies the behaviour of the build.
 
-The configuration file now supports platform specific properties. If a flag is preceeded by XXX., it means that mymake will ignore that line unless we are currently compiling for the platform XXX. For example, in the default generated compilation file, you will see `win.includeCl=...`. This means that this line will override the default `includeCl` used on linux, since it comes after that line in the file. There are currently two platforms supported, `win` and `unix` for windows and unix-like systems respectively.
+Note: I am using the command `mm` to execute mymake through this document.
 
-These are also extended to generic command line parameters. If you enter the command line `mymake foo bar`, then all entries in the configuration file containing `foo` and `bar` will be applied. A setting can contain more than one dot, for example `win.foo.input=bar.cpp`. In that case it will only be added if all the configurations are specified.
+## Installation
 
-Now we have a global configuration file. This is the file used for all settings not present in the local configuration file. Settings in the local file will override the global one as well. In new projects, if you need to specialize the global file, you can easily copy it to the current working directory using `mm -cp`. This copies it into the working directory and adding comments to all lines, so that relevant lines can easily be uncommented.
+### Linux/Unix (or MinGW)
 
-Below is a description of the most important settings in the `.mymake` file:
+The first time you install mymake, clone the repository somewhere and then run `install.sh`. This
+will compile mymake using `g++`, and then ask you if you want to set up an alias in your shell. If
+you set up an alias, you need to type `source ~/.bashrc` in your shell, or restart your shell, to be
+able to use mymake.
 
-`ext=cpp`
-Tells mymake which file types it should consider implementation files. One row for each file type. The default is to accept cpp, cc, cxx, c++ and c. This should be fine in most cases.
+If you do not want an alias, you can copy the binary `mymake` to somewhere in your path.
 
-`input=`
-This row is equivalent to specifying files on the command line. This should not be used in the global configuration, and does not need to be included in the specific files either, as mymake will in most cases discover relevant files itself. As discussed above, mymake will use all files listed as inputs (either here or on the command line) to traverse the include-hierarcy to find the needed files for the project.
+After this, run `mm --config` to generate a global `.mymake`-file which contains your system
+specific compilation settings.
 
-`ignore=`
-Add one ignore-line for each wildcard pattern you wish to ignore. This is useful when dealing with c++-templates when you are keeping the template-implementation in a separate file named `XXX.template.cpp` for example. Since that file should not be compiled as a regular file, you can simply ignore it with the wildcard pattern `*.template.*`.
+### Windows (using Visual Studio 2008 or later)
 
-`include=`
-Additional include paths, automatically tells the compiler about these as well. As before, use one include-line per include path you need.
+The first time you install mymake, clone the repository somewhere. Open the "Visual Studio Command
+Prompt", from the start menu (or any command prompt you can run cl.exe from) and cd into the
+directory you cloned mymake into and run `compile.bat`. Now, copy `mymake.exe` somewhere in your
+path.
 
-`includeCl=`
-The flag used to tell the compiler about additional include paths. `-iquote ` for gcc (pay attention to trailing spaces here!)
+After this, run `mm --config` to generate a global `.mymake`-file which contains your system
+specific compilation settings.
 
-`libraryCl=`
-The flag used to tell the compiler about additional libraries (static).
+From here, you hvae several options:
+- You always run mymake from the "Visual Studio Command Prompt".
+- You add the environment variables from the "Visual Studio Command Prompt" to your system. Run `set` to seem them.
+- You add the environment variables from the "Visual Studio Command Prompt" to your global `.mymake`-file.
 
-`libs=`
-Tells mymake that the project needs additional libraries using the libraryCl flag.
+The two first ones are not described any further here.
 
-`out=`
-If you want a specific name of the executable file, specify it here. Otherwise mymake will generate a name from the first source file specified.
+To add environment variables to your `.mymake`-file, open `C:\Users\<user>\.mymake` in your
+favourite editor and find the lines in the generated configuration starting with `env+=` (they are
+commented out). Find the paths for your installation by running `set` in the "Visual Studio Command
+Prompt", and uncommenting and changing the lines you need. Note you only need the `Path` variables
+that points to `cl.exe`, not the regular ones that are also present in the regular command prompt.
 
-`compile=g++ <file> -c <includes> -o <output>`
-The command line executed to compile a compilation unit to an object file.
-* `<file>` will be replaced by the current file to compile
-* `<includes>` will be replaced by whatever is in `includeCl` followed by include paths. Each path will get its own `includeCl` first.
-* `<output>` will be replaced by the relative path to the output file the compiler is expected to produce.
+For example, if your output from `set` is:
 
-`compile=c,xyz:gcc <file> -c <includes> -o <output>`
-Same as above, but specifies another compile command-line to be used whenever a file of the type `c` or `xyz` is compiled. In this case we use `gcc` instead of `g++` for c-files.
+```
+INCLUDE=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\INCLUDE;C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE;C:\Program Files\Microsoft SDKs\Windows\v6.0A\include;
 
-`link=g++ <files> -o <output>`
-The command line executed to link object-files together to an executable file.
-* `<files>` will be replaced by a list of input files, separated by spaces.
-* `<output>` will be replaced by the output executable the compiler should produce.
+LIB=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\LIB;C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB;C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib;
 
-Usage
------
+Path=C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\IDE;C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN;C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\Tools;C:\windows\Microsoft.NET\Framework\v3.5;C:\windows\Microsoft.NET\Framework\v2.0.50727;C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\VCPackages;C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;
+```
 
-Now when we have got through the heavy configuration (`mm -config`, really time consuming, right?), we can go through how I thought it to be used.
+you want to add:
 
-Generally you use one of the three top-most in your shell to run and test your program. Since you only have one command, you can quickly compile and run by hitting up-arrow and return in your shell (or `M-p RET` if you have it in Emacs...).
+```
+env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\INCLUDE
+env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE
+env+=INCLUDE=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\include
 
-* `mm main` compile code with the root file named `main.cpp`, and execute it if compilation succeeded.
-* `mm main -a foo bar` To pass parameters `foo bar` to your program when it starts.
-* `mm main -ne` Do not execute the compiled program.
-* `mm main -f` If you want to force recompilation of all files.
+env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\LIB
+env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB
+env+=LIB=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib
 
-If you see that you need to customize the `.mymake` file (adding libraries for example), simply do:
-`mm -cp` and it will be copied for you. More or less a shorthand for `cp ~/.mymake ./`
+env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
+env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
+```
 
-Quick start
------------
+In general, it does not hurt to add too many environment variables.
 
-This is a list of the bare minimum you need to do to get mymake up and running. Great if you want (just like me) get coding without understanding why it works, or are (just like me) too lazy to read the wall of text above.
+## Update
 
-* Download the code
-* `install.sh` - will compile code and add (if you want) aliases to your shell
-* `mm -config` - create the global configuration file
-* `cd ~/my/project/`
-* `mm root_file`
+### Linux/Unix
 
-That is about it. The last line is where your project is compiled and run. If you need to specialize the configuration for your project, just do:
+Run the `update.sh` script, and it will download the latest version from git and re-compile it. If
+you have set up an alias when you installed mymake, you do not need to do anything more. Otherwise
+you need to copy mymake to your path once more.
 
-* `mm -cp`
+### Windows
 
-and edit `.mymake` in your text editor.
+Check out the latest version of mymake using the git client you are using. Then re-compile mymake,
+either using `compile.bat`, or by using mymake: `mm -ne`. If you are using mymake, remember that the
+resulting binary is in the bin-directory.
 
-Windows
--------
+## Usage
 
-Mymake can also be used on Windows with `cl.exe`, the Visual Studio compiler. Sadly, I have not made any install scripts for Windows yet, but you should be fine with compiling all the source files with something like `cl *.cpp /nologo /EHsc /Fomymake.exe`. Then store the executable somewhere in your `PATH` and then you should be able to follow the rest of the steps above. This of course assumes you have the visual studio environment variable set up. It is possible to work around that, but it gets kind of messy.
+To compile things with mymake, run `mm <file>` where `<file>` is the source file containing the
+main function of your program. In most simple programs, this is enough, but sometimes some
+configuration is required. Mymake will then compile your program and finally run your program if the
+compilation succeeded.
+
+If you need to configure your build process, run `mm --target` to generate a sample `.mymake`-file
+that shows all available options. At startup, mymake tries to find a `.mymake` or `.myproject`-file
+in the current directory or any parent directories (except for your home directory). If one is
+found, mymake uses that directory as the root directory when trying to compile.
+
+To pass parameters to the compiled program, use the `-a` parameter.
+
+
+## Configuration files
+
+Configuration in mymake is done by assigning values to variables. Each variable is an array of
+strings.
+
+Mymake knows two different configuration files: `.mymake` and `.myproject`. Both follows the same
+basic syntax. A configuration file contains a number of sections, each of which contains a number of
+assignments.
+
+In this context, a name is a string only containing characters and numbers.
+
+Lines starting with `#` are comments.
+
+A section starts with zero or more comma separated names enclosed in square brackets (`[]`). The
+names indicate which options need to be specified on the command line for the section to be
+evaluated. For example: `[windows,lib]` indicates that the options `windows` and `lib` needs to be
+active for that section to be evaluated. A special case: `[]` is always evaluated. If nothing is
+specified before an assignment, it is assumed to be contained inside an empty section (ie. `[]`).
+
+Each section contains zero or more assignments. An assignment has the form `name=value` or
+`name+=value`. The first form, means that the variable on the left hand side is replaced with
+the value on the right hand side. The second form, however, means that the value is appended to the
+variable.
+
+Each of these assignments are evaluated from top to bottom, so a variable can be overwritten later
+in a configuration file. The global `.mymake`-file is evaluated before any local files. Any
+variables originating from the command-line are applied last.
+
+## Variables used by mymake
+
+These variables are used by mymake to understand what should be done:
+- `ext`: array of the file extensions you want to compile. Whenever mymake realizes you have included `x.h`,
+  looks for all extensions in `ext` and tries them to find the corresponding implementation file.
+- `execExt`: file extension of executable files.
+- `intermediateExt`: file extension of intermediate files.
+- `buildDir`: string containing the directory used to store all temporary files when building your program.
+  Relative to the root directory of the target (ie. where the `.mymake` file is).
+- `execDir`: string containing the directory used to store the final output (the executable) of all targets.
+  Relative to the root directory of the target.
+- `ignore`: array of patterns (like in the shell) that determines if a certain file should be ignored. Useful
+  when working with templates sometimes.
+- `input`: array of file names to use as roots when looking for files that needs to be compiled. Anything that
+  is not an option that is specified on the command line is appended to this variable. The special value `*` can
+  be used to indicate that all files with an extension in the `ext` variable should be compiled. This is usually
+  what you want when you are compiling a library of some kind.
+- `output`: string specifying the name of the ouput file. If not specified, the name of the first input file
+  is used instead.
+- `include`: array of paths that should be added to the include path of the compilation.
+- `includeCl`: flag to prepend all elements in `include`.
+- `library`: array of libraries that should be linked to your executable.
+- `libraryCl`: flag to prepend all elements in `library`.
+- `exceute`: yes or no, telling if mymake should execute the program after a successful compilation. This can be
+  overridden on the commandline using `-e` or `-ne`.
+- `showTime`: yes or no, telling if mymake should show the total compilation time when done (not implemented).
+- `pch`: the precompiled header file name that should be used (currently only on Windows).
+- `pchFile`: the name of the compiled version of the file in `pch` (currently only on Windows).
+- `pchCompile`: command line for compiling the precompiled header file (currently only on Windows).
+- `preBuild`: array of command-lines that should be executed before the build is started. Expands variables.
+- `postBuild`: array of command-lines that should be executed after the build is completed. Expands variables.
+- `compile`: array of command lines to use when compiling files. Each command line starts with a pattern
+  (ending in `:`) that is matched against the file name to be compiled. The command line added last is checked
+  first, and the first matching command-line is used. Therefore it is useful to first add the general command-line
+  (starting with `*:`), and then add more specific ones. Here, you can use `<file>` for the input file and `<output>`.
+- `link`: command line used when linking the intermediate files. Use `<files>` for all input files and `<output>` for
+  the output file-name.
+
+## Variables in strings
+
+In indicated variables, you can embed any variable (even ones not known by mymake) that will be
+expanded into that string. The syntax for this is `<variable>`. This means that the value of
+`variable` is inserted into the string at that location. If `variable` is an array with multiple
+values, these values are concatenated into one space separated string.
+
+It is also possible to append a string before each element in another variable by using
+`<prefix*variable>`. This means that the string in the variable `prefix` is appended to each element
+in `variable` and then concatenated into a space separated string.
+
+It is also possible to apply an operation to each element in an array by using `<op|variable>`,
+where `op` is the operation to apply. Currently, it is not possible to specify operations in
+configuration files, you can only use the ones built into mymake. Operations currently supported
+are:
+- `title`: treat the element as a path and extract the file or directory name (eg. `src/foo.txt` gives `foo.txt`).
+- `titleNoExt`: same as title, but the file extension is removed as well.
+- `path`: format the element as a path for the current operating system. For example: `src/foo.txt` evaluates to `src\foo.txt` on Windows.
+
+It is also possible to combine these two operations, like: `<prefix*path|files>`. Stars have
+priority over pipes, and expressions are evaluated left-to-right.
+
+There are two variables that mymake generate automatically:
+- `includes`: equivalent to `<includeCl*path|include>`, ie. all include paths required by the project prefixed by any flags needded.
+- `libs`: equivalent to `libraryCl*path|library>`, ie. all libraries required by the project.
+
+## Targets
+
+A target in mymake is a set of files that will compile into one file. For example, a set of `.cpp`
+and `.h`-files may produce an executable file. Each target directory in mymake may contain a
+`.mymake`-file that specifies how mymake should behave. The global `~/.mymake`-file is also taken
+into account, but the local `.mymake`-file may override any settings in the global file.
+
+- input, output

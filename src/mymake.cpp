@@ -50,8 +50,15 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 }
 
 int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdline) {
-	DEBUG("Project file found: " << projectFile, INFO);
 	MakeConfig config;
+
+	Path globalFile(Path::home() + localConfig);
+	if (globalFile.exists()) {
+		DEBUG("Global file found: " << globalFile, INFO);
+		config.load(globalFile);
+	}
+
+	DEBUG("Project file found: " << projectFile, INFO);
 	config.load(projectFile);
 
 	Config params;

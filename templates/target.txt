@@ -22,7 +22,6 @@ ignore=*.template.*
 
 #Input file(s). Use * for all files (recursively), excluding build directory and bin directory.
 #input=Xxx.cpp
-input=mymake.cpp
 
 #Output filename, defaults to first input file.
 #output=
@@ -40,8 +39,8 @@ execute=yes
 #showTime=no
 
 #Precompiled header.
-pch=std.h
-pchFile=stdafx.pch
+#pch=std.h
+#pchFile=stdafx.pch
 
 #Pre-build steps.
 #preBuild=
@@ -56,6 +55,9 @@ input=*
 
 #Do not run.
 execute=no
+
+#Link the output of this target into any dependent targets.
+linkOutput=yes
 
 [unix]
 
@@ -90,19 +92,18 @@ libraryCl=
 
 #Environment variables for Visual Studio 2008 Replace these with your own. Find them by
 #starting the visual studio command prompt and run 'set'.
-#env+=DevEnvDir=C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\IDE
-env+=DXSDK_DIR=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\
+#env+=DXSDK_DIR=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\
 
 #env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\INCLUDE
-env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE
-env+=INCLUDE=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\include
+#env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE
+#env+=INCLUDE=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\include
 
 #env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\LIB
-env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB
-env+=LIB=>C:\Program Files\\Microsoft SDKs\Windows\v6.0A\lib
+#env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB
+#env+=LIB=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib
 
-env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
-env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
+#env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
+#env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
 
 flags=/nologo /EHsc
 

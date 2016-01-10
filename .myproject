@@ -22,7 +22,7 @@ ext=cpp
 buildDir=build/
 execDir=../bin/
 
-execute=yes
+execute=no
 
 #Much of this configuration can be skipped if we rely on the user's global config file instead.
 
@@ -44,14 +44,14 @@ includeCl=/I
 libraryCl=
 
 #Environment variables for Visual Studio 2008
-env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE
-env+=INCLUDE=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\include
+#env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE
+#env+=INCLUDE=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\include
 
-env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB
-env+=LIB=>C:\Program Files\\Microsoft SDKs\Windows\v6.0A\lib
+#env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB
+#env+=LIB=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib
 
-env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
-env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
+#env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
+#env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
 
 flags=/nologo /EHsc
 
