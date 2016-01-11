@@ -27,6 +27,9 @@ public:
 	// The file itself.
 	Path file;
 
+	// The first included file (if any).
+	String firstInclude;
+
 	// All files included from this file.
 	set<Path> includes;
 
@@ -83,9 +86,9 @@ private:
 	InfoMap cache;
 
 	// Find includes in file, and all files included from there.
-	set<Path> recursiveIncludesIn(const Path &file);
+	IncludeInfo recursiveIncludesIn(const Path &file);
 
 	// Find includes in file.
-	void includesIn(const Path &file, PathQueue &to);
+	void includesIn(const Path &file, PathQueue &to, String *firstInclude);
 
 };

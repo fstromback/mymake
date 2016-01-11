@@ -2,7 +2,6 @@
   
   Move constants used with Config into string constants somewhere.
 
-  We should check so that precompiled headers are always included first in every .cpp-file.
 
 
 

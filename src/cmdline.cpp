@@ -178,6 +178,7 @@ bool CmdLine::parseOption(char opt) {
 		break;
 	case 'a':
 		state = sArguments;
+		execute = tYes;
 		break;
 	case 'e':
 		execute = (state == sNegate) ? tNo : tYes;

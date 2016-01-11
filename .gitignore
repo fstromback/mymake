@@ -8,3 +8,5 @@ mymake
 
 *.exe
 *.lib
+*.pch
+*.gch

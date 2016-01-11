@@ -14,6 +14,8 @@ Timestamp IncludeInfo::lastModified() const {
 
 ostream &operator <<(ostream &to, const IncludeInfo &i) {
 	to << i.file << ": ";
+	if (!i.firstInclude.empty())
+		to << "(first: " << i.firstInclude << ") ";
 	join(to, i.includes);
 	return to;
 }
@@ -47,8 +49,7 @@ IncludeInfo Includes::info(const Path &file) {
 	}
 
 	// We need to update the cache...
-	IncludeInfo r(file);
-	r.includes = recursiveIncludesIn(file);
+	IncludeInfo r = recursiveIncludesIn(file);
 
 	cache[file] = Info(r, Timestamp());
 
@@ -69,17 +70,23 @@ Path Includes::resolveInclude(const Path &fromFile, const String &src) const {
 	throw IncludeError("The include " + src + " in file " + toS(fromFile) + " was not found!");
 }
 
-set<Path> Includes::recursiveIncludesIn(const Path &file) {
-	set<Path> result;
+IncludeInfo Includes::recursiveIncludesIn(const Path &file) {
+	bool first = true;
+	IncludeInfo result(file);
 
 	PathQueue to;
 	to.push(file);
 
 	while (to.any()) {
 		Path now = to.pop();
-		result << now;
+		result.includes << now;
 
-		includesIn(now, to);
+		if (first) {
+			includesIn(now, to, &result.firstInclude);
+			first = false;
+		} else {
+			includesIn(now, to, null);
+		}
 	}
 
 	return result;
@@ -108,18 +115,38 @@ static bool isInclude(const String &line, String &out) {
 	return true;
 }
 
-void Includes::includesIn(const Path &file, PathQueue &to) {
+static bool isBlank(const String &line) {
+	for (nat i = 0; i < line.size(); i++) {
+		switch (line[i]) {
+		case ' ':
+		case '\t':
+		case '\r':
+			break;
+		default:
+			return false;
+		}
+	}
+	return true;
+}
+
+void Includes::includesIn(const Path &file, PathQueue &to, String *firstInclude) {
 	ifstream in(toS(file).c_str());
+	bool first = true;
 
 	String include;
 	String line;
 	while (getline(in, line)) {
 		if (isInclude(line, include)) {
 			try {
+				if (first && firstInclude)
+					*firstInclude = include;
 				to << resolveInclude(file, include);
 			} catch (const IncludeError &e) {
 				WARNING(e.what());
 			}
+			first = false;
+		} else if (!isBlank(line)) {
+			first = false;
 		}
 	}
 }
@@ -163,6 +190,11 @@ void Includes::load(const Path &from) {
 
 			cache[path] = Info(path, time);
 			current = &cache[path];
+		} else if (type == '>') {
+			if (!current)
+				return;
+
+			getline(src, current->info.firstInclude);
 		} else if (type == '-') {
 			if (!current)
 				return;
@@ -185,6 +217,7 @@ void Includes::save(const Path &to) const {
 		const Info &info = i->second;
 
 		dest << "+" << info.lastModified.time << ' ' << info.info.file << endl;
+		dest << ">" << info.info.firstInclude << endl;
 
 		for (set<Path>::const_iterator i = info.info.includes.begin(); i != info.info.includes.end(); ++i) {
 			dest << "-" << *i << endl;

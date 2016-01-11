@@ -45,7 +45,8 @@ namespace compile {
 		String outputName = config.getStr("output");
 
 		// Compile pre-compiled header first.
-		addFile(q, config.getStr("pch"), true);
+		String pchStr = config.getStr("pch");
+		addFile(q, pchStr, true);
 
 		// Add initial files.
 		addFiles(q, config.getArray("input"));
@@ -73,6 +74,15 @@ namespace compile {
 
 			// Add all other files we need.
 			IncludeInfo info = includes.info(now);
+
+			// Check so that any pch file is included first.
+			if (!pchStr.empty() && pchStr != info.firstInclude) {
+				PLN("ERROR: Precompiled header " << pchStr << " must be included first in each implementation file.");
+				PLN("This is not the case for " << now.makeRelative(wd) << ".");
+				PLN("You need to use '#include \"" << pchStr << "\"' (exactly like that), and use 'include=./'.");
+				return false;
+			}
+
 			for (set<Path>::const_iterator i = info.includes.begin(); i != info.includes.end(); ++i) {
 				DEBUG(now << " depends on " << *i, VERBOSE);
 				addFile(q, *i);
