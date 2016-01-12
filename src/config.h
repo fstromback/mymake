@@ -66,13 +66,6 @@ private:
 	vector<String> addStr(const String &prefix, vector<String> to) const;
 };
 
-/**
- * Project file config.
- */
-class ProjectConfig {
-public:
-	// TODO...
-};
 
 /**
  * Mymake-file.
@@ -103,8 +96,11 @@ private:
 
 	// Data in this config file.
 	struct Section {
-		// Valid for these configurations.
-		set<String> configurations;
+		// Valid for these options.
+		set<String> options;
+
+		// Valid when these options are excluded.
+		set<String> exclude;
 
 		// Assignments in this configuration.
 		vector<Assignment> assignments;

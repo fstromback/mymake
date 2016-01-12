@@ -143,8 +143,9 @@ Lines starting with `#` are comments.
 A section starts with zero or more comma separated names enclosed in square brackets (`[]`). The
 names indicate which options need to be specified on the command line for the section to be
 evaluated. For example: `[windows,lib]` indicates that the options `windows` and `lib` needs to be
-active for that section to be evaluated. A special case: `[]` is always evaluated. If nothing is
-specified before an assignment, it is assumed to be contained inside an empty section (ie. `[]`).
+active for that section to be evaluated. You can also negate the options required by prepending a
+`!`, eg. `[lib,!windows]`. A special case: `[]` is always evaluated. If nothing is specified before
+an assignment, it is assumed to be contained inside an empty section (ie. `[]`).
 
 Each section contains zero or more assignments. An assignment has the form `name=value` or
 `name+=value`. The first form, means that the variable on the left hand side is replaced with
@@ -157,6 +158,15 @@ variables originating from the command-line are applied last.
 
 By default, mymake defines either the option `windows` or `unix` so that files can detect what kind
 of platform are being used easily.
+
+## Pre-defined options
+
+The following options are pre-defined by mymake or the default configuration:
+- `release`: When this option is present, mymake generates a release version of your program. See the
+  default .mymake-file for how this is done for your compiler.
+- `windows`: Defined when running on a windows system, expected to be using CL.exe as the compiler.
+- `unix`: Defined when running on an unix system, or when running in MinGW.
+
 
 ## Variables used by mymake
 
@@ -183,6 +193,8 @@ These variables are used by mymake to understand what should be done:
 - `libraryCl`: flag to prepend all elements in `library`.
 - `localLibrary`: array of local libraries that should be linked to your executable (usually used in a project).
 - `localLibraryCl`: flag to prepend all elements in `localLibrary`.
+- `define`: preprocessor defines.
+- `defineCl`: preprocessor define flag.
 - `exceute`: yes or no, telling if mymake should execute the program after a successful compilation. This can be
   overridden on the commandline using `-e` or `-ne`.
 - `showTime`: yes or no, telling if mymake should show the total compilation time when done (not implemented).

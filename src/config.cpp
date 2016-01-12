@@ -41,7 +41,8 @@ set<String> MakeConfig::options() const {
 	set<String> r;
 	for (nat i = 0; i < sections.size(); i++) {
 		const Section &s = sections[i];
-		r.insert(s.configurations.begin(), s.configurations.end());
+		r.insert(s.options.begin(), s.options.end());
+		r.insert(s.exclude.begin(), s.exclude.end());
 	}
 	return r;
 }
@@ -79,7 +80,12 @@ void MakeConfig::parseSection(String line) {
 	Section s;
 
 	for (nat i = 0; i < parts.size(); i++) {
-		s.configurations << trim(parts[i]);
+		String t = trim(parts[i]);
+		if (!t.empty() && t[0] == '!') {
+			s.exclude << t.substr(1);
+		} else {
+			s.options << t;
+		}
 	}
 
 	sections << s;
@@ -118,6 +124,14 @@ static bool allOf(const set<String> &of, const set<String> &in) {
 	return true;
 }
 
+static bool noneOf(const set<String> &of, const set<String> &in) {
+	for (set<String>::const_iterator i = of.begin(); i != of.end(); ++i) {
+		if (in.count(*i) != 0)
+			return false;
+	}
+	return true;
+}
+
 void MakeConfig::apply(set<String> options, Config &to) const {
 
 #ifdef WINDOWS
@@ -129,7 +143,9 @@ void MakeConfig::apply(set<String> options, Config &to) const {
 	for (nat i = 0; i < sections.size(); i++) {
 		const Section &s = sections[i];
 
-		if (!allOf(s.configurations, options))
+		if (!allOf(s.options, options))
+			continue;
+		if (!noneOf(s.exclude, options))
 			continue;
 
 		for (nat i = 0; i < s.assignments.size(); i++) {
@@ -147,7 +163,7 @@ ostream &operator <<(ostream &to, const MakeConfig &c) {
 	for (nat i = 0; i < c.sections.size(); i++) {
 		const MakeConfig::Section &s = c.sections[i];
 		to << endl;
-		to << "[" << join(s.configurations, ",") << "]";
+		to << "[" << join(s.options, ",") << "]";
 
 		for (nat i = 0; i < s.assignments.size(); i++) {
 			const MakeConfig::Assignment &a = s.assignments[i];
