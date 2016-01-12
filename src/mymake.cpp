@@ -62,7 +62,9 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	config.load(projectFile);
 
 	Config params;
-	config.apply(cmdline.names, params);
+	set<String> opts = cmdline.names;
+	opts.insert("project");
+	config.apply(opts, params);
 	cmdline.apply(config.options(), params);
 
 	DEBUG("Configuration options: " << params, VERBOSE);

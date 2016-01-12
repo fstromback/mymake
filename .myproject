@@ -27,6 +27,11 @@ execDir=../bin/
 
 execute=no
 
+[release]
+buildDir=release/
+execDir=../release/
+all+=release
+
 #Use the global config unless 'standalone' is used on the command line.
 
 [unix,standalone]

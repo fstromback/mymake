@@ -23,8 +23,16 @@ void Timespan::save(void *to) const {
 	*((int64 *)to) = time;
 }
 
+static int64 abs(int64 v) {
+	if (v < 0)
+		return -v;
+	else
+		return v;
+}
+
 ostream &operator <<(ostream &output, const Timespan &t) {
 	int64 time = ::abs(t.time);
+
 	if (time < 1000) {
 		output << t.time << L" us";
 	} else if (time < 1000 * 1000) {

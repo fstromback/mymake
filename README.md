@@ -109,7 +109,7 @@ you need to copy mymake to your path once more.
 ### Windows
 
 Check out the latest version of mymake using the git client you are using. Then re-compile mymake,
-either using `compile.bat`, or by using mymake: `mm -ne`. If you are using mymake, remember that the
+either using `compile.bat`, or by using mymake: `mm release -f`. If you are using mymake, remember that the
 resulting binary is in the bin-directory.
 
 ## Usage
@@ -164,6 +164,9 @@ of platform are being used easily.
 The following options are pre-defined by mymake or the default configuration:
 - `release`: When this option is present, mymake generates a release version of your program. See the
   default .mymake-file for how this is done for your compiler.
+- `lib`: build a static library.
+- `sharedlib`: build a shared library.
+- `project`: defined when a project file is evaluated in the project-context.
 - `windows`: Defined when running on a windows system, expected to be using CL.exe as the compiler.
 - `unix`: Defined when running on an unix system, or when running in MinGW.
 
