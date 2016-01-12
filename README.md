@@ -269,6 +269,8 @@ main+=lib
 main+=debug
 ```
 
+There is also a special target named `all`. All options in this target are used for all targets.
+
 The `deps` section contains information about target dependencies. By default, mymake tries to figure out
 which targets depend on each other by looking at the includes. Sometimes this is not enough, since a
 project may need the result of another project as a pre-processing step or similar. Therefore,

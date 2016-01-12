@@ -121,6 +121,9 @@ namespace compile {
 		vector<String> vOptions = buildConfig.getArray(name);
 		set<String> options(vOptions.begin(), vOptions.end());
 
+		vOptions = buildConfig.getArray("all");
+		options.insert(vOptions.begin(), vOptions.end());
+
 		DEBUG("Options for " << name << ": " << join(options), INFO);
 
 		MakeConfig config;
