@@ -166,14 +166,14 @@ pchCompile=cl <defines> <file> <includes> <flags> /Yc<title|pch> <namePch*if|pch
 pchCompileCombined=yes
 
 compile=*:cl <defines> <file> <includes> <flags> <usePch*title|pch> <namePch*if|pch> /c /Fo<output>
-link=link <files> /nologo /OUT:<output>
+link=link <libs> <files> /nologo /OUT:<output>
 
 [windows,!release]
 flags+=/MDd /DEBUG /Z7
 
 [windows,lib]
 execExt=lib
-link=lib <libs> <files> /nologo /OUT:<output>
+link=lib <files> /nologo /OUT:<output>
 
 [windows,sharedlib]
 execExt=dll
