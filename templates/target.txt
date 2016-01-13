@@ -141,7 +141,20 @@ libraryCl=
 localLibraryCl=
 defineCl=/D
 
-#Environment variables for Visual Studio 2008 Replace these with your own. Find them by
+flags=/nologo /EHsc /W3
+
+pchFile=stdafx.pch
+usePch=/Yu
+namePch=/Fp<pchFile>
+
+pchCompile=cl <defines> <file> <includes> <flags> /Yc<title|pch> <namePch*if|pch> /c /Fo<output>
+pchCompileCombined=yes
+
+compile=*:cl <defines> <file> <includes> <flags> <usePch*title|pch> <namePch*if|pch> /c /Fo<output>
+link=link <libs> <files> /nologo /OUT:<output>
+
+[windows,!64]
+#Environment variables for Visual Studio 2008. Replace these with your own. Find them by
 #starting the visual studio command prompt and run 'set'.
 #env+=DXSDK_DIR=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\
 
@@ -156,17 +169,16 @@ defineCl=/D
 #env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
 #env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
 
-flags=/nologo /EHsc /W3
+[windows,64]
+#Environment variables for Visual Studio 2008 x64. Replace these with your own.
+#env+=DXSDK_DIR=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\
 
-pchFile=stdafx.pch
-usePch=/Yu
-namePch=/Fp<pchFile>
+#env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\LIB\amd64
+#env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB\amd64
+#env+=LIB=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib\x64
 
-pchCompile=cl <defines> <file> <includes> <flags> /Yc<title|pch> <namePch*if|pch> /c /Fo<output>
-pchCompileCombined=yes
-
-compile=*:cl <defines> <file> <includes> <flags> <usePch*title|pch> <namePch*if|pch> /c /Fo<output>
-link=link <libs> <files> /nologo /OUT:<output>
+#env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN\x86_amd64
+#env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
 
 [windows,!release]
 flags+=/MDd /DEBUG /Z7
