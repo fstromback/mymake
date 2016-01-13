@@ -142,6 +142,7 @@ localLibraryCl=
 defineCl=/D
 
 flags=/nologo /EHsc /W3
+linkFlags=/MANIFEST
 
 pchFile=stdafx.pch
 usePch=/Yu
@@ -151,7 +152,7 @@ pchCompile=cl <defines> <file> <includes> <flags> /Yc<title|pch> <namePch*if|pch
 pchCompileCombined=yes
 
 compile=*:cl <defines> <file> <includes> <flags> <usePch*title|pch> <namePch*if|pch> /c /Fo<output>
-link=link <libs> <files> /nologo /OUT:<output>
+link=link <linkFlags> <libs> <files> /nologo /OUT:<output>
 
 [windows,!64]
 #Environment variables for Visual Studio 2008. Replace these with your own. Find them by
@@ -181,7 +182,10 @@ link=link <libs> <files> /nologo /OUT:<output>
 #env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB\amd64
 #env+=LIB=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib\x64
 
+#env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
 #env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN\amd64
+
+linkFlags+=/MACHINE:X64
 
 [windows,!release]
 flags+=/MDd /DEBUG /Z7
@@ -192,4 +196,4 @@ link=lib <files> /nologo /OUT:<output>
 
 [windows,sharedlib]
 execExt=dll
-link=link /DLL <libs> <files> /nologo /OUT:<output>
+linkFlags+=/DLL
