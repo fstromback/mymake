@@ -26,14 +26,15 @@ namespace compile {
 
 	bool Project::find() {
 		// Figure out which projects we need.
-
-		// TODO? Detect circular depencies?
 		TargetQueue q;
 		addTargets(config.getArray("input"), q);
 
 		while (q.any()) {
 			String now = q.pop();
 			DEBUG("Examining target " << now, INFO);
+
+			if (mainTarget.empty())
+				mainTarget = now;
 
 			Target *target = loadTarget(now);
 			this->target[now] = target;
@@ -65,12 +66,18 @@ namespace compile {
 			return false;
 		}
 
+		try {
+			order = topoSort(order);
+		} catch (const TopoError &e) {
+			PLN("Error: " << e.what());
+		}
+
 		return true;
 	}
 
 	bool Project::compile() {
-		for (nat i = order.size(); i > 0; i--) {
-			TargetInfo &info = order[i - 1];
+		for (nat i = 0; i < order.size(); i++) {
+			TargetInfo &info = order[i];
 			Target *t = target[info.name];
 			DEBUG("-- Target " << info.name << " --", NORMAL);
 
@@ -92,8 +99,10 @@ namespace compile {
 	}
 
 	int Project::execute(const vector<String> &params) {
-		if (order.empty())
-			return 0;
+		if (mainTarget.empty()) {
+			PLN("Nothing to run!");
+			return 1;
+		}
 
 		return target[order.front().name]->execute(params);
 	}

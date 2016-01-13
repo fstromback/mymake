@@ -1,6 +1,7 @@
 #pragma once
 #include "compile.h"
 #include "pathqueue.h"
+#include "toposort.h"
 
 namespace compile {
 
@@ -41,14 +42,14 @@ namespace compile {
 		Config depsConfig;
 
 		// Information about a target and all it depencies.
-		struct TargetInfo {
-			String name;
-			set<String> dependsOn;
-		};
+		typedef Node<String> TargetInfo;
 
 		// Found targets, in the order we found them. Compiling in reverse order ensures all depencies
 		// are fullfilled.
 		vector<TargetInfo> order;
+
+		// The target we want to run.
+		String mainTarget;
 
 		// Targets.
 		map<String, Target *> target;

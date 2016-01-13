@@ -104,6 +104,12 @@ inline set<T> &operator <<(set<T> &to, const T &elem) {
 }
 
 template <class T>
+inline queue<T> &operator <<(queue<T> &to, const T &elem) {
+	to.push(elem);
+	return to;
+}
+
+template <class T>
 inline vector<T> operator +(vector<T> a, const vector<T> &b) {
 	for (nat i = 0; i < b.size(); i++)
 		a << b[i];
