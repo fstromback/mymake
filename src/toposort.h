@@ -51,7 +51,7 @@ vector<Node<T>> topoSort(const InputIt &begin, const InputIt &end) {
 		reverse[at->name].incoming = at->dependsOn.size();
 
 		// Add reverse depencies.
-		for (typename Edges::const_iterator i = at->dependsOn.begin(), end = at->dependsOn.end(); i != end; ++i) {
+		for (typename Edges::const_iterator i = at->dependsOn.begin(), e = at->dependsOn.end(); i != e; ++i) {
 			reverse[*i].to << at->name;
 		}
 	}
@@ -60,7 +60,7 @@ vector<Node<T>> topoSort(const InputIt &begin, const InputIt &end) {
 	queue<T> done;
 
 	// Find all edges with all depencies fulfilled.
-	for (typename RevMap::const_iterator i = reverse.begin(), end = reverse.end(); i != end; ++i) {
+	for (typename RevMap::const_iterator i = reverse.begin(), e = reverse.end(); i != e; ++i) {
 		if (i->second.incoming == 0)
 			done << i->first;
 	}
@@ -71,8 +71,8 @@ vector<Node<T>> topoSort(const InputIt &begin, const InputIt &end) {
 		T now = done.front(); done.pop();
 		order << now;
 
-		Edges &e = reverse[now].to;
-		for (typename Edges::const_iterator i = e.begin(), end = e.end(); i != end; ++i) {
+		Edges &edge = reverse[now].to;
+		for (typename Edges::const_iterator i = edge.begin(), e = edge.end(); i != e; ++i) {
 			if (--reverse[*i].incoming == 0)
 				done << *i;
 		}
@@ -82,13 +82,13 @@ vector<Node<T>> topoSort(const InputIt &begin, const InputIt &end) {
 	if (order.size() < reverse.size()) {
 		// No. Find the nodes with minimum # of incoming edges.
 		nat lowest = reverse.size();
-		for (typename RevMap::const_iterator i = reverse.begin(), end = reverse.end(); i != end; ++i) {
+		for (typename RevMap::const_iterator i = reverse.begin(), e = reverse.end(); i != e; ++i) {
 			if (i->second.incoming > 0)
 				lowest = min(lowest, i->second.incoming);
 		}
 
 		vector<String> cycleNodes;
-		for (typename RevMap::const_iterator i = reverse.begin(), end = reverse.end(); i != end; ++i) {
+		for (typename RevMap::const_iterator i = reverse.begin(), e = reverse.end(); i != e; ++i) {
 			if (i->second.incoming == lowest)
 				cycleNodes << i->first;
 		}

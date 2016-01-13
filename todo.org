@@ -2,6 +2,7 @@
   
   Move constants used with Config into string constants somewhere.
 
+  Ignore comments in the include parser.
 
 
 

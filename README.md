@@ -110,7 +110,7 @@ you need to copy mymake to your path once more.
 
 Check out the latest version of mymake using the git client you are using. Then re-compile mymake,
 either using `compile.bat`, or by using mymake: `mm release -f`. If you are using mymake, remember that the
-resulting binary is in the bin-directory.
+resulting binary is in the release-directory.
 
 ## Usage
 
