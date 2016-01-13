@@ -181,8 +181,7 @@ link=link <libs> <files> /nologo /OUT:<output>
 #env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB\amd64
 #env+=LIB=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib\x64
 
-#env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN\x86_amd64
-#env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
+#env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN\amd64
 
 [windows,!release]
 flags+=/MDd /DEBUG /Z7

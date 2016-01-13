@@ -259,6 +259,9 @@ namespace compile {
 	}
 
 	int Target::execute(const vector<String> &params) const {
+		if (!config.getBool("execute"))
+			return 0;
+
 		Path execPath = wd;
 		if (config.has("execPath")) {
 			execPath = Path(config.getStr("execPath")).makeAbsolute(wd);

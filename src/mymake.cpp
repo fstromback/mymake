@@ -41,9 +41,7 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 
 	DEBUG("Compilation successful!", NORMAL);
 
-	if (params.getBool("execute")) {
-		return c.execute(cmdline.params);
-	}
+	return c.execute(cmdline.params);
 
 	return 0;
 }
