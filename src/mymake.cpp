@@ -95,7 +95,7 @@ int main(int argc, const char *argv[]) {
 #ifdef WINDOWS
 	// Bash swallows crashes, which is very annoying. This makes it hard to attach the debugger when
 	// using DebugBreak.
-	// SetErrorMode(0);
+	SetErrorMode(0);
 #endif
 
 	if (cmdline.exit) {
