@@ -59,6 +59,7 @@ namespace compile {
 			}
 
 			order << info;
+			targetInfo[info.name] = info;
 		}
 
 		if (order.empty()) {
@@ -75,18 +76,61 @@ namespace compile {
 		return true;
 	}
 
+	vector<Path> Project::dependencies(const String &root, const TargetInfo &at) const {
+		vector<Path> o;
+		dependencies(root, o, at);
+		return o;
+	}
+
+	void Project::dependencies(const String &root, vector<Path> &out, const TargetInfo &at) const {
+		for (set<String>::const_iterator i = at.dependsOn.begin(); i != at.dependsOn.end(); ++i) {
+			const String &name = *i;
+
+			map<String, Target *>::const_iterator f = target.find(name);
+			if (f == target.end())
+				continue;
+
+			Target *z = f->second;
+			if (z->linkOutput) {
+				DEBUG(root << " includes dependent " << z->output, INFO);
+				out << z->output;
+			}
+
+			if (z->forwardDeps) {
+				map<String, TargetInfo>::const_iterator f = targetInfo.find(name);
+				if (f == targetInfo.end())
+					continue;
+
+				dependencies(root, out, f->second);
+			}
+		}
+	}
+
+	static vector<Path> removeDuplicates(const vector<Path> &d) {
+		map<Path, nat> count;
+		for (nat i = 0; i < d.size(); i++) {
+			count[d[i]]++;
+		}
+
+		vector<Path> r;
+		for (nat i = 0; i < d.size(); i++) {
+			if (--count[d[i]] == 0)
+				r << d[i];
+		}
+
+		return r;
+	}
+
 	bool Project::compile() {
 		for (nat i = 0; i < order.size(); i++) {
 			TargetInfo &info = order[i];
 			Target *t = target[info.name];
 			DEBUG("-- Target " << info.name << " --", NORMAL);
 
-			for (set<String>::const_iterator i = info.dependsOn.begin(); i != info.dependsOn.end(); ++i) {
-				Target *z = target[*i];
-				if (z->linkOutput) {
-					DEBUG(info.name << " includes dependent " << z->output, INFO);
-					t->addLib(z->output);
-				}
+			vector<Path> d = dependencies(info.name, info);
+			d = removeDuplicates(d);
+			for (nat i = 0; i < d.size(); i++) {
+				t->addLib(d[i]);
 			}
 
 			if (!t->compile()) {
@@ -104,7 +148,7 @@ namespace compile {
 			return 1;
 		}
 
-		return target[order.front().name]->execute(params);
+		return target[mainTarget]->execute(params);
 	}
 
 

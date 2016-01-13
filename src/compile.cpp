@@ -19,6 +19,7 @@ namespace compile {
 		combinedPch(config.getBool("pchCompileCombined")) {
 
 		linkOutput = config.getBool("linkOutput", false);
+		forwardDeps = config.getBool("forwardDeps", false);
 
 		vector<String> ign = config.getArray("ignore");
 		for (nat i = 0; i < ign.size(); i++)
@@ -264,6 +265,7 @@ namespace compile {
 		}
 
 		Path::cd(execPath);
+		DEBUG("Executing " << output.makeRelative(execPath) << " " << join(params) << " in " << execPath, INFO);
 		return exec(output.makeRelative(execPath), params);
 	}
 

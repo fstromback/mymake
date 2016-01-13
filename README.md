@@ -216,6 +216,7 @@ These variables are used by mymake to understand what should be done:
 - `link`: command line used when linking the intermediate files. Use `<files>` for all input files and `<output>` for
   the output file-name.
 - `linkOutput`: link the output of one target to any target that are dependent on that target. See projects for more information.
+- `forwardDeps`: forward any of this target's dependencies to any target that is dependent on this target.
 - `env`: set environment variables. Each of the elements in `env` are expected to be of the form:
   `variable=value` or `variable<=value` or `variable=>value`. The first form replaces the environment variable `variable`
   with `value`, the second form prepends `value` to `variable` using the system's separator (`:` on unix and `;` on windows),

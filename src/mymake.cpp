@@ -42,7 +42,6 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 	DEBUG("Compilation successful!", NORMAL);
 
 	if (params.getBool("execute")) {
-		DEBUG("Running output: " << join(cmdline.params), INFO);
 		return c.execute(cmdline.params);
 	}
 
@@ -83,7 +82,6 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	DEBUG("-- Compilation successful! --", NORMAL);
 
 	if (params.getBool("execute")) {
-		DEBUG("Running output: " << join(cmdline.params), INFO);
 		return c.execute(cmdline.params);
 	}
 

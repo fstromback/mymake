@@ -36,6 +36,9 @@ namespace compile {
 		// Link the output file to any projects that depends on this one?
 		bool linkOutput;
 
+		// Link our depencies to targets dependent on us.
+		bool forwardDeps;
+
 		// Add a library.
 		void addLib(const Path &path);
 

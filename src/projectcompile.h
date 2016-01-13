@@ -54,6 +54,9 @@ namespace compile {
 		// Targets.
 		map<String, Target *> target;
 
+		// Info.
+		map<String, TargetInfo> targetInfo;
+
 		// Queue for the targets.
 		typedef UniqueQueue<String> TargetQueue;
 
@@ -63,6 +66,10 @@ namespace compile {
 
 		// Create a new target.
 		Target *loadTarget(const String &name) const;
+
+		// Find dependencies to a target. May contain duplicates.
+		vector<Path> dependencies(const String &root, const TargetInfo &at) const;
+		void dependencies(const String &root, vector<Path> &out, const TargetInfo &at) const;
 	};
 
 }
