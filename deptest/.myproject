@@ -1,0 +1,15 @@
+#Here, we have the following depencies:
+#main -> a -> lib
+#     -> b -> c -> lib
+
+[project]
+input=main
+
+[build]
+a+=lib
+b+=lib
+c+=lib
+utils+=lib
+
+[]
+include+=../

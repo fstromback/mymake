@@ -78,7 +78,7 @@ namespace compile {
 			// Check so that any pch file is included first.
 			if (!pchStr.empty() && pchStr != info.firstInclude) {
 				PLN("ERROR: Precompiled header " << pchStr << " must be included first in each implementation file.");
-				PLN("This is not the case for " << now.makeRelative(wd) << ".");
+				PLN("This is not the case for " << now << ".");
 				PLN("You need to use '#include \"" << pchStr << "\"' (exactly like that), and use 'include=./'.");
 				return false;
 			}
@@ -316,7 +316,7 @@ namespace compile {
 		path = path.makeAbsolute(wd);
 
 		if (!findExt(path)) {
-			WARNING("The file " << src << " does not exist.");
+			WARNING("The file " << src << " does not exist with any of the extensions " << join(validExts));
 			return;
 		}
 
