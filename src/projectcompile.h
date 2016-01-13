@@ -16,7 +16,7 @@ namespace compile {
 		// Destroy.
 		~Project();
 
-		// Find depencies.
+		// Find dependencies.
 		bool find();
 
 		// Compile.
@@ -41,10 +41,13 @@ namespace compile {
 		// Configuration (only deps-section)
 		Config depsConfig;
 
-		// Information about a target and all it depencies.
+		// Ignore sub-directories without a .mymake-file in them.
+		bool explicitTargets;
+
+		// Information about a target and all it dependencies.
 		typedef Node<String> TargetInfo;
 
-		// Found targets, in the order we found them. Compiling in reverse order ensures all depencies
+		// Found targets, in the order we found them. Compiling in reverse order ensures all dependencies
 		// are fullfilled.
 		vector<TargetInfo> order;
 

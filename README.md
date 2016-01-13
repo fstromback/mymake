@@ -221,6 +221,7 @@ These variables are used by mymake to understand what should be done:
   `variable=value` or `variable<=value` or `variable=>value`. The first form replaces the environment variable `variable`
   with `value`, the second form prepends `value` to `variable` using the system's separator (`:` on unix and `;` on windows),
   the third form appends `value` to `variable`. The second and third forms are convenient when working with `PATH` for example.
+- `explicitTargets`: In projects: ignore any potential targets that do not have their own `.mymake`-file.
 
 ## Variables in strings
 

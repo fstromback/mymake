@@ -1,4 +1,4 @@
-#Here, we have the following depencies:
+#Here, we have the following dependencies:
 #main -> a -> lib
 #     -> b -> c -> lib
 

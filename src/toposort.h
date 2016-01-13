@@ -30,7 +30,7 @@ private:
 };
 
 
-// Find a topological order that fulfills all depencies. Throws error on failure.
+// Find a topological order that fulfills all dependencies. Throws error on failure.
 template <class T, class InputIt>
 vector<Node<T>> topoSort(const InputIt &begin, const InputIt &end) {
 	typedef set<T> Edges;
@@ -47,19 +47,19 @@ vector<Node<T>> topoSort(const InputIt &begin, const InputIt &end) {
 
 	// Add all edges to our structures.
 	for (InputIt at = begin; at != end; ++at) {
-		// Remember # of depencies.
+		// Remember # of dependencies.
 		reverse[at->name].incoming = at->dependsOn.size();
 
-		// Add reverse depencies.
+		// Add reverse dependencies.
 		for (typename Edges::const_iterator i = at->dependsOn.begin(), e = at->dependsOn.end(); i != e; ++i) {
 			reverse[*i].to << at->name;
 		}
 	}
 
-	// All items that currently have all depencies fullfilled.
+	// All items that currently have all dependencies fullfilled.
 	queue<T> done;
 
-	// Find all edges with all depencies fulfilled.
+	// Find all edges with all dependencies fulfilled.
 	for (typename RevMap::const_iterator i = reverse.begin(), e = reverse.end(); i != e; ++i) {
 		if (i->second.incoming == 0)
 			done << i->first;

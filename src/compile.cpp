@@ -39,7 +39,7 @@ namespace compile {
 	}
 
 	bool Target::find() {
-		DEBUG("Finding depencies for target in " << wd, INFO);
+		DEBUG("Finding dependencies for target in " << wd, INFO);
 		toCompile.clear();
 
 		CompileQueue q;

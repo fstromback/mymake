@@ -16,6 +16,7 @@ namespace compile {
 
 		projectFile.apply(createSet("deps") + cmdline, depsConfig);
 		projectFile.apply(createSet("build") + cmdline, buildConfig);
+		explicitTargets = config.getBool("explicitTargets", false);
 	}
 
 	Project::~Project() {
@@ -37,6 +38,9 @@ namespace compile {
 				mainTarget = now;
 
 			Target *target = loadTarget(now);
+			if (!target)
+				continue;
+
 			this->target[now] = target;
 			if (!target->find()) {
 				DEBUG("Compilation of " << now << " failed!", NORMAL);
@@ -185,6 +189,9 @@ namespace compile {
 		if (configFile.exists()) {
 			DEBUG("Found local config: " << configFile, INFO);
 			config.load(configFile);
+		} else if (explicitTargets) {
+			DEBUG("No config in " << dir << ", ignoring.", INFO);
+			return null;
 		}
 
 		Config opt;

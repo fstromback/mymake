@@ -1,7 +1,9 @@
 #Configuration for compiling mymake.
 
 #Build mymake
+[project]
 input=src
+explicitTargets=yes
 
 [build]
 #How to build each target.
@@ -10,7 +12,7 @@ input=src
 [deps]
 #Dependencies
 
-#Src needs explicit depency on textinc
+#Src needs explicit dependency on textinc
 src+=templates
 templates+=textinc
 
@@ -30,7 +32,10 @@ execute=no
 [release]
 buildDir=release/
 execDir=../release/
-all+=release
+
+[release,build]
+#Only mymake itself needs a release version. The textinc is only used during compilation anyway.
+src+=release
 
 #Use the global config unless 'standalone' is used on the command line.
 

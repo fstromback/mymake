@@ -1,6 +1,6 @@
 #Mymake project file.
 
-#Each sub-directory contains a target, this file specifies any depencies
+#Each sub-directory contains a target, this file specifies any dependencies
 #between these projects, aside from what mymake can infer automatically.
 
 #Mymake tries to link any library projects automatically, but this might need
