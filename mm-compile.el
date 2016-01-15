@@ -1,5 +1,7 @@
 ;; Emacs integration.
 
+(require 'cl)
+
 ;; Configuration.
 (defvar mymake-command "mm" "Command-line used to run mymake.")
 (defvar mymake-config "buildconfig" "Config file to look for when compiling.")
@@ -13,23 +15,29 @@
 (global-set-key (kbd "M-p") 'mymake-compile)
 (global-set-key (kbd "C-c C-m") 'mymake-clean)
 (global-set-key (kbd "C-c C-k") 'mymake-kill)
+(global-set-key (kbd "C-c C-r") 'mymake-release)
 
 ;; Bindable functions
 
 ;; Compile using buildconfig (if it exists). Command line overridable by passing extra parameter.
 (defun mymake-compile (force)
   (interactive "P")
-  (mymake-run force 'nil 'nil))
+  (mymake-run :force force))
+
+;; Clean project.
+(defun mymake-clean ()
+  (interactive)
+  (mymake-run :prepend "-c"))
 
 ;; Compile in release mode.
 (defun mymake-release (force)
   (interactive "P")
-  (mymake-run force 'nil "release"))
+  (mymake-run :force force :replace "release"))
 
 ;; Compile in release mode for x64.
 (defun mymake-release-64 (force)
   (interactive "P")
-  (mymake-run force 'nil '("release" "64")))
+  (mymake-run :force force :replace "release 64"))
 
 ;; Implementations.
 
@@ -44,7 +52,7 @@
 (defun mymake-find-config (dir)
   (let ((file (concat (file-name-as-directory dir) "buildconfig")))
     (if (file-exists-p file)
-	file
+	(file-name-as-directory dir)
       (let ((parent (parent-directory dir)))
 	(if (endp parent)
 	    'nil
@@ -56,7 +64,10 @@
     (split-string (buffer-string) "\n")))
 
 (defun mymake-remove-comments (lines)
-  (remove-if (lambda (x) (= (string-to-char x) ?#)) lines))
+  (remove-if (lambda (x)
+	       (or
+		(= (length x) 0)
+		(= (string-to-char x) ?#))) lines))
 
 (defun mymake-list-to-str (lines)
   (cond ((stringp lines) lines)
@@ -77,16 +88,20 @@
 	 "")
       (list
        dir
-       (mymake-load-config-file (concat (file-name-as-directory dir) "buildconfig"))))))
+       (mymake-load-config-file (concat dir "buildconfig"))))))
 
-(defun mymake-run (&optional force prepend replace)
+(defun mymake-args-str (prepend replace config)
+  (let ((replace-str (mymake-list-to-str replace))
+	(prepend-str (mymake-list-to-str prepend)))
+    (if (string= replace-str "")
+	(mymake-list-to-str (mymake-remove-comments (list prepend-str config)))
+      replace-str)))
+
+(cl-defun mymake-run (&optional &key force &key prepend &key replace)
   (let* ((config (mymake-load-config))
 	 (wd (first config))
 	 (default-directory wd)
-	 (args (cond ((stringp replace) replace)
-		     ((listp replace) (mymake-list-to-str replace))
-		     (t (concat (mymake-list-to-str prepend) " "
-				(second config))))))
+	 (args (mymake-args-str prepend replace (second config))))
     (compile (concat
 	      mymake-command " "
 	      (if (endp force)

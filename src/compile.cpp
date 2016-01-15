@@ -18,6 +18,8 @@ namespace compile {
 		pchFile(buildDir + Path(config.getStr("pchFile"))),
 		combinedPch(config.getBool("pchCompileCombined")) {
 
+		buildDir.makeDir();
+
 		linkOutput = config.getBool("linkOutput", false);
 		forwardDeps = config.getBool("forwardDeps", false);
 
@@ -36,6 +38,14 @@ namespace compile {
 
 	Target::~Target() {
 		includes.save(buildDir + "includes");
+	}
+
+	void Target::clean() {
+		buildDir.recursiveDelete();
+
+		Path e = wd + Path(config.getStr("execDir"));
+		e.makeDir();
+		e.recursiveDelete();
 	}
 
 	bool Target::find() {

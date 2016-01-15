@@ -67,6 +67,10 @@ public:
 
 	// Delete the file.
 	void deleteFile() const;
+	void deleteDir() const;
+
+	// Recursive removal of file/directory.
+	void recursiveDelete() const;
 
 	// Make this path relative to another path. Absolute-making is accomplished by
 	// using the + operator above.

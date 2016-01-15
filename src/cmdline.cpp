@@ -11,6 +11,7 @@ static const pair<String, char> rawLongOptions[] = {
 	make_pair("arguments", 'a'),
 	make_pair("debug", 'd'),
 	make_pair("force", 'f'),
+	make_pair("clean", 'c'),
 	make_pair("execute", 'e'),
 	make_pair("not", 'n'),
 	make_pair("exec-path", 'p'),
@@ -35,6 +36,7 @@ static const char *helpStr =
 	"--exec-path, -p - specify the cwd when running the output.\n"
 	"--help, -?      - show this help.\n"
 	"--force, -f     - always recompile everything.\n"
+	"--clean, -c     - clean the selected project/target. Deletes the entire execDir and buildDir!\n"
 	"--arguments, -a - arguments to the executed program. Must be last.\n"
 	"--execute, -e   - execute the resulting file.\n"
 	"--not, -n       - put in front of --execute (or use -ne) to not execute.\n"
@@ -46,7 +48,8 @@ CmdLine::CmdLine(const vector<String> &params) :
 	errors(false),
 	exit(false),
 	execute(tUnset),
-	showHelp(false) {
+	showHelp(false),
+	clean(false) {
 
 	bool noOptions = false;
 	state = sNone;
@@ -185,6 +188,9 @@ bool CmdLine::parseOption(char opt) {
 		break;
 	case 'd':
 		state = sDebug;
+		break;
+	case 'c':
+		clean = true;
 		break;
 	case 'f':
 		force = (state != sNegate);

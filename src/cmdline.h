@@ -47,6 +47,9 @@ public:
 	// Show help?
 	bool showHelp;
 
+	// Clean project?
+	bool clean;
+
 	// Apply to Config object.
 	void apply(const set<String> &usedOptions, Config &config) const;
 

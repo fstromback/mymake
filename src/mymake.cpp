@@ -29,6 +29,11 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 	DEBUG("Configuration options: " << params, VERBOSE);
 
 	compile::Target c(wd, params);
+	if (cmdline.clean) {
+		c.clean();
+		return 0;
+	}
+
 	if (!c.find()) {
 		PLN("Compilation failed!");
 		return 1;
@@ -42,8 +47,6 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 	DEBUG("Compilation successful!", NORMAL);
 
 	return c.execute(cmdline.params);
-
-	return 0;
 }
 
 int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdline) {
@@ -70,6 +73,11 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	if (!c.find()) {
 		PLN("Compilation failed!");
 		return 1;
+	}
+
+	if (cmdline.clean) {
+		c.clean();
+		return 0;
 	}
 
 	if (!c.compile()) {

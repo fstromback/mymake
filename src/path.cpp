@@ -76,6 +76,10 @@ void Path::deleteFile() const {
 	DeleteFile(toS(*this).c_str());
 }
 
+void Path::deleteDir() const {
+	RemoveDirectory(toS(*this).c_str());
+}
+
 bool Path::isAbsolute() const {
 	if (parts.size() == 0)
 		return false;
@@ -172,6 +176,10 @@ bool Path::exists() const {
 
 void Path::deleteFile() const {
 	unlink(toS(*this).c_str());
+}
+
+void Path::deleteDir() const {
+	rmdir(toS(*this).c_str());
 }
 
 bool Path::isAbsolute() const {
@@ -450,4 +458,20 @@ bool Path::isChild(const Path &path) const {
 	}
 
 	return true;
+}
+
+void Path::recursiveDelete() const {
+	if (!exists())
+		return;
+
+	if (isDir()) {
+		vector<Path> sub = children();
+		for (nat i = 0; i < sub.size(); i++) {
+			sub[i].recursiveDelete();
+		}
+
+		deleteDir();
+	} else {
+		deleteFile();
+	}
 }

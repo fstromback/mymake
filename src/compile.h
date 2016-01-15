@@ -18,6 +18,9 @@ namespace compile {
 		// Saves some caches.
 		~Target();
 
+		// Clean this target.
+		void clean();
+
 		// Find all files in the working directory.
 		bool find();
 

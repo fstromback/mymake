@@ -19,6 +19,9 @@ namespace compile {
 		// Find dependencies.
 		bool find();
 
+		// Clean.
+		void clean();
+
 		// Compile.
 		bool compile();
 

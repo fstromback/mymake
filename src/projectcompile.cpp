@@ -125,6 +125,15 @@ namespace compile {
 		return r;
 	}
 
+	void Project::clean() {
+		for (nat i = 0; i < order.size(); i++) {
+			TargetInfo &info = order[i];
+			Target *t = target[info.name];
+			DEBUG("-- Target " << info.name << " --", NORMAL);
+			t->clean();
+		}
+	}
+
 	bool Project::compile() {
 		for (nat i = 0; i < order.size(); i++) {
 			TargetInfo &info = order[i];
