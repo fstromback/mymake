@@ -15,6 +15,7 @@
 (global-set-key (kbd "C-c C-m") 'mymake-clean)
 (global-set-key (kbd "C-c C-k") 'mymake-kill)
 (global-set-key (kbd "C-c C-r") 'mymake-release)
+(global-set-key (kbd "C-c q") 'mymake-command)
 
 ;; Error navigation.
 (global-set-key (kbd "M-n") 'next-error)
@@ -45,6 +46,10 @@
   (interactive "P")
   (mymake-run :force force :replace "release 64"))
 
+(defun mymake-command (command)
+  "Run custom mymake command"
+  (interactive "sCommand to mymake: ")
+  (mymake-run :replace command))
 
 
 (defun mymake-delete-file ()

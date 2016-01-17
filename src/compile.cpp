@@ -41,10 +41,12 @@ namespace compile {
 	}
 
 	void Target::clean() {
+		DEBUG("Cleaning " << buildDir.makeRelative(wd) << "...", NORMAL);
 		buildDir.recursiveDelete();
 
 		Path e = wd + Path(config.getStr("execDir"));
 		e.makeDir();
+		DEBUG("Cleaning " << e.makeRelative(wd) << "...", NORMAL);
 		e.recursiveDelete();
 	}
 

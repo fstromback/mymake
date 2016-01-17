@@ -142,7 +142,7 @@ localLibraryCl=
 defineCl=/D
 
 flags=/nologo /EHsc /W3
-linkFlags=/MANIFEST
+linkFlags=/MANIFEST /NXCOMPAT
 manifestId=1
 
 pchFile=stdafx.pch
@@ -189,7 +189,8 @@ link=link <linkFlags> <libs> <files> /nologo /OUT:<output> && mt -nologo -manife
 linkFlags+=/MACHINE:X64
 
 [windows,!release]
-flags+=/MDd /DEBUG /Z7
+flags+=/MDd /DEBUG /Zi /Fd<path|buildDir>
+linkFlags+=/DEBUG /INCREMENTAL:NO /PDB:<path|execDir><titleNoExt|output>.pdb
 
 [windows,release]
 flags+=/MD
