@@ -31,6 +31,7 @@ namespace compile {
 		buildDir.createDir();
 
 		// Load cached data if possible.
+		includes.ignore(config.getArray("noIncludes"));
 		if (!force) {
 			includes.load(buildDir + "includes");
 		}
@@ -89,9 +90,9 @@ namespace compile {
 			IncludeInfo info = includes.info(now);
 
 			// Check so that any pch file is included first.
-			if (!pchStr.empty() && pchStr != info.firstInclude) {
-				PLN("ERROR: Precompiled header " << pchStr << " must be included first in each implementation file.");
-				PLN("This is not the case for " << now << ".");
+			if (!info.ignored && !pchStr.empty() && pchStr != info.firstInclude) {
+				PLN(now << ":1: Precompiled header " << pchStr << " not used.");
+				PLN("The precompiled header " << pchStr << " must be included first in each implementation file.");
 				PLN("You need to use '#include \"" << pchStr << "\"' (exactly like that), and use 'include=./'.");
 				return false;
 			}

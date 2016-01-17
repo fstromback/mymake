@@ -2,6 +2,7 @@
 #include "path.h"
 #include "pathqueue.h"
 #include "config.h"
+#include "wildcard.h"
 
 /**
  * Error with includes.
@@ -22,7 +23,7 @@ class IncludeInfo {
 public:
 	// Create.
 	IncludeInfo();
-	IncludeInfo(const Path &file);
+	IncludeInfo(const Path &file, bool ignored = false);
 
 	// The file itself.
 	Path file;
@@ -32,6 +33,9 @@ public:
 
 	// All files included from this file.
 	set<Path> includes;
+
+	// Is this file ignored?
+	bool ignored;
 
 	// Compute the last modified date of all includes.
 	Timestamp lastModified() const;
@@ -53,7 +57,7 @@ public:
 	IncludeInfo info(const Path &file);
 
 	// Resolve an include string given the include path(s).
-	Path resolveInclude(const Path &fromFile, const String &inc) const;
+	Path resolveInclude(const Path &first, const Path &fromFile, nat lineNr, const String &inc) const;
 
 	// Load the cache from file.
 	void load(const Path &from);
@@ -61,7 +65,16 @@ public:
 	// Save the cache to file.
 	void save(const Path &to) const;
 
+	// Set patterns for ignored files.
+	void ignore(const vector<String> &patterns);
+
 private:
+	// Ignored patterns.
+	vector<Wildcard> ignorePatterns;
+
+	// Check if a path is ignored.
+	bool ignored(const Path &path) const;
+
 	// Include search paths. The root is always first.
 	vector<Path> includePaths;
 
@@ -89,6 +102,6 @@ private:
 	IncludeInfo recursiveIncludesIn(const Path &file);
 
 	// Find includes in file.
-	void includesIn(const Path &file, PathQueue &to, String *firstInclude);
+	void includesIn(const Path &firstFile, const Path &file, PathQueue &to, String *firstInclude);
 
 };

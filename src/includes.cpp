@@ -1,9 +1,9 @@
 #include "std.h"
 #include "includes.h"
 
-IncludeInfo::IncludeInfo() {}
+IncludeInfo::IncludeInfo() : ignored(false) {}
 
-IncludeInfo::IncludeInfo(const Path &file) : file(file) {}
+IncludeInfo::IncludeInfo(const Path &file, bool ignored) : file(file), ignored(ignored) {}
 
 Timestamp IncludeInfo::lastModified() const {
 	Timestamp r = file.mTime();
@@ -49,6 +49,11 @@ IncludeInfo Includes::info(const Path &file) {
 	}
 
 	// We need to update the cache...
+
+	// Ignored?
+	if (ignored(file))
+		return IncludeInfo(file, true);
+
 	IncludeInfo r = recursiveIncludesIn(file);
 
 	cache[file] = Info(r, Timestamp());
@@ -56,7 +61,7 @@ IncludeInfo Includes::info(const Path &file) {
 	return r;
 }
 
-Path Includes::resolveInclude(const Path &fromFile, const String &src) const {
+Path Includes::resolveInclude(const Path &first, const Path &fromFile, nat lineNr, const String &src) const {
 	Path sameFolder = fromFile.parent() + Path(src);
 	if (sameFolder.exists())
 		return sameFolder;
@@ -67,7 +72,15 @@ Path Includes::resolveInclude(const Path &fromFile, const String &src) const {
 			return p;
 	}
 
-	throw IncludeError("The include " + src + " in file " + toS(fromFile) + " was not found!");
+	ostringstream message;
+	message << fromFile << ":" << lineNr << ": The include " << src << " was not found!" << endl;
+	message << " while finding includes from " << first << endl;
+	message << " searched " << fromFile.parent();
+	for (nat i = 0; i < includePaths.size(); i++) {
+		message << endl << " searched " << includePaths[i];
+	}
+
+	throw IncludeError(message.str());
 }
 
 IncludeInfo Includes::recursiveIncludesIn(const Path &file) {
@@ -82,10 +95,10 @@ IncludeInfo Includes::recursiveIncludesIn(const Path &file) {
 		result.includes << now;
 
 		if (first) {
-			includesIn(now, to, &result.firstInclude);
+			includesIn(file, now, to, &result.firstInclude);
 			first = false;
 		} else {
-			includesIn(now, to, null);
+			includesIn(file, now, to, null);
 		}
 	}
 
@@ -129,10 +142,11 @@ static bool isBlank(const String &line) {
 	return true;
 }
 
-void Includes::includesIn(const Path &file, PathQueue &to, String *firstInclude) {
+void Includes::includesIn(const Path &firstFile, const Path &file, PathQueue &to, String *firstInclude) {
 	ifstream in(toS(file).c_str());
 	bool first = true;
 
+	nat lineNr = 1;
 	String include;
 	String line;
 	while (getline(in, line)) {
@@ -140,14 +154,16 @@ void Includes::includesIn(const Path &file, PathQueue &to, String *firstInclude)
 			try {
 				if (first && firstInclude)
 					*firstInclude = include;
-				to << resolveInclude(file, include);
+				to << resolveInclude(firstFile, file, lineNr, include);
 			} catch (const IncludeError &e) {
-				WARNING(e.what());
+				PLN(e.what());
 			}
 			first = false;
 		} else if (!isBlank(line)) {
 			first = false;
 		}
+
+		lineNr++;
 	}
 }
 
@@ -223,4 +239,18 @@ void Includes::save(const Path &to) const {
 			dest << "-" << *i << endl;
 		}
 	}
+}
+
+void Includes::ignore(const vector<String> &patterns) {
+	ignorePatterns = vector<Wildcard>(patterns.begin(), patterns.end());
+}
+
+bool Includes::ignored(const Path &path) const {
+	for (nat i = 0; i < ignorePatterns.size(); i++) {
+		if (ignorePatterns[i].matches(path.title())) {
+			DEBUG(path << " ignored as per " << ignorePatterns[i], VERBOSE);
+			return true;
+		}
+	}
+	return false;
 }

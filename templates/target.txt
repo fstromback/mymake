@@ -203,3 +203,8 @@ link=lib <files> /nologo /OUT:<output>
 execExt=dll
 linkFlags+=/DLL
 manifestId=2
+
+[!winMain,!sharedlib,!lib]
+#Windows applications have a special entry point...
+linkFlags+=/SUBSYSTEM:CONSOLE
+define+=_CONSOLE

@@ -184,6 +184,9 @@ These variables are used by mymake to understand what should be done:
   Relative to the root directory of the target.
 - `ignore`: array of patterns (like in the shell) that determines if a certain file should be ignored. Useful
   when working with templates sometimes.
+- `noIncludes`: array of patterns (like in the shell) that determines if a certain file should not be scanned for
+  headers. Useful when you want to parts of the code that is not C/C++, where it is not meaningful to look for
+  `#include`.
 - `input`: array of file names to use as roots when looking for files that needs to be compiled. Anything that
   is not an option that is specified on the command line is appended to this variable. The special value `*` can
   be used to indicate that all files with an extension in the `ext` variable should be compiled. This is usually
