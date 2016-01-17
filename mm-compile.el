@@ -8,8 +8,7 @@
 (defvar mymake-compile-frame nil "Use a new frame when compiling.")
 (defvar mymake-compilation-w 100 "Compilation window width")
 (defvar mymake-compilation-h 83 "Compilation window height")
-(defvar mymake-compilation-adjust 30 "Compilation window adjustment")
-
+(defvar mymake-compilation-adjust 10 "Compilation window adjustment")
 
 ;; Keybindings
 (global-set-key (kbd "M-p") 'mymake-compile)
@@ -17,27 +16,51 @@
 (global-set-key (kbd "C-c C-k") 'mymake-kill)
 (global-set-key (kbd "C-c C-r") 'mymake-release)
 
+;; Error navigation.
+(global-set-key (kbd "M-n") 'next-error)
+
+;; Convenient delete/rename of files.
+(global-set-key (kbd "C-c C-f C-r") 'mymake-rename-file)
+(global-set-key (kbd "C-c C-f C-d") 'mymake-delete-file)
+
 ;; Bindable functions
 
-;; Compile using buildconfig (if it exists). Command line overridable by passing extra parameter.
 (defun mymake-compile (force)
+  "Compile using buildconfig (if it exists). Command line overridable by passing extra parameter."
   (interactive "P")
   (mymake-run :force force))
 
-;; Clean project.
 (defun mymake-clean ()
+  "Clean project."
   (interactive)
   (mymake-run :prepend "-c"))
 
-;; Compile in release mode.
 (defun mymake-release (force)
+  "Compile in release mode."
   (interactive "P")
   (mymake-run :force force :replace "release"))
 
-;; Compile in release mode for x64.
 (defun mymake-release-64 (force)
+  "Compile in release mode for x64."
   (interactive "P")
   (mymake-run :force force :replace "release 64"))
+
+
+
+(defun mymake-delete-file ()
+  "Delete the file of the current buffer and deletes the buffer."
+  (interactive)
+  (if (yes-or-no-p (concat "Really delete " buffer-file-name "? "))
+      (progn
+	(delete-file buffer-file-name)
+	(kill-buffer))))
+
+(defun mymake-rename-file ()
+  "Renames the file of the current buffer."
+  (interactive)
+  (let ((name (read-file-name "New name: ")))
+    (rename-file buffer-file-name name)
+    (set-visited-file-name name t t)))
 
 ;; Implementations.
 
@@ -134,7 +157,7 @@
     (progn
       (if (eq mymake-compilation-frame 'nil)
 	  (mymake-create-compilation-frame)
-	(if (not (frame-live-p compilation-frame))
+	(if (not (frame-live-p mymake-compilation-frame))
 	    (mymake-create-compilation-frame)))
       (window--display-buffer buffer mymake-compilation-window 'frame alist)
       mymake-compilation-window)))
