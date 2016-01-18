@@ -97,7 +97,7 @@ namespace compile {
 		vector<Compile> toCompile;
 
 		// Run steps.
-		bool runSteps(const String &key);
+		bool runSteps(const String &key, const map<String, String> &options = map<String, String>());
 
 		// Add files to the queue of files to process.
 		void addFiles(CompileQueue &to, const vector<String> &src);

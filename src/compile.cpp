@@ -252,8 +252,10 @@ namespace compile {
 			return false;
 		}
 
-		// Run pre-compile steps.
-		if (!runSteps("preBuild"))
+		// Run post-compile steps.
+		map<String, String> stepData;
+		stepData["output"] = data["output"];
+		if (!runSteps("postBuild", stepData))
 			return false;
 
 		return true;
@@ -269,11 +271,11 @@ namespace compile {
 		return false;
 	}
 
-	bool Target::runSteps(const String &key) {
+	bool Target::runSteps(const String &key, const map<String, String> &options) {
 		vector<String> steps = config.getArray(key);
 
 		for (nat i = 0; i < steps.size(); i++) {
-			String expanded = config.expandVars(steps[i]);
+			String expanded = config.expandVars(steps[i], options);
 			DEBUG("Running " << expanded, INFO);
 			if (system(expanded.c_str()) != 0) {
 				PLN("Failed running " << key << ": " << expanded);
