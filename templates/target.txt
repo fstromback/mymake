@@ -193,7 +193,7 @@ flags+=/MDd /DEBUG /Zi /Fd<path|buildDir>
 linkFlags+=/DEBUG /INCREMENTAL:NO /PDB:<path|execDir><titleNoExt|output>.pdb
 
 [windows,release]
-flags+=/MD
+flags+=/MD /O2
 
 [windows,lib]
 execExt=lib

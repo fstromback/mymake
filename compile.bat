@@ -14,5 +14,5 @@ md bin
 
 cl /nologo /EHsc textinc\*.cpp /Fobuild\ /Febin\textinc.exe
 bin\textinc.exe bin\templates.h templates\project.txt templates\target.txt
-cl /nologo /EHsc src\*.cpp /Fobuild\ /Femymake.exe
+cl /nologo /O2 /EHsc src\*.cpp /Fobuild\ /Femymake.exe
 

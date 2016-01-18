@@ -9,4 +9,4 @@ fi
 mkdir -p bin
 g++ textinc/*.cpp -o bin/textinc
 bin/textinc bin/templates.h templates/*.txt
-g++ src/*.cpp -o $1
+g++ -O3 src/*.cpp -o $1
