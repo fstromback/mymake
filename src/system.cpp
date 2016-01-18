@@ -6,12 +6,12 @@
 int exec(const Path &binary, const vector<String> &args) {
 	ostringstream cmdline;
 
-	cmdline << '"';
+	// cmdline << '"';
 	cmdline << binary;
 	for (nat i = 0; i < args.size(); i++) {
 		cmdline << ' ' << args[i];
 	}
-	cmdline << '"';
+	//cmdline << '"';
 
 	DEBUG("Running " << cmdline.str(), VERBOSE);
 	return system(cmdline.str().c_str());

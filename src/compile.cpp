@@ -69,6 +69,9 @@ namespace compile {
 		while (q.any()) {
 			Compile now = q.pop();
 
+			if (ignored(toS(now.makeRelative(wd))))
+				continue;
+
 			if (!now.isPch && !now.autoFound && outputName.empty())
 				outputName = now.title();
 
@@ -153,6 +156,9 @@ namespace compile {
 				intermediateFiles << ' ';
 			intermediateFiles << out;
 
+			if (ignored(file))
+				continue;
+
 			Timestamp lastModified = includes.info(src).lastModified();
 
 			bool pchValid = true;
@@ -171,13 +177,6 @@ namespace compile {
 					latestModified = max(latestModified, mTime);
 
 				continue;
-			}
-
-			for (nat j = 0; j < ignore.size(); j++) {
-				if (ignore[j].matches(file)) {
-					DEBUG("Ignoring " << file << " as per " << ignore[j], INFO);
-					continue;
-				}
 			}
 
 			if (!combinedPch && src.isPch) {
@@ -225,17 +224,20 @@ namespace compile {
 
 		}
 
-		vector<String> libs = config.getArray("library");
+		vector<String> libs = config.getArray("localLibrary");
 		for (nat i = 0; i < libs.size(); i++) {
 			Path libPath(libs[i]);
-			// Ignore libraries we can not find (may be system libraries).
-			if (libPath.exists())
+			if (libPath.exists()) {
 				latestModified = max(latestModified, libPath.mTime());
+			} else {
+				WARNING("Local library " << libPath << " not found. Use 'library' for system libraries.");
+			}
 		}
 
 		// Link the output.
 		if (!force && output.exists() && output.mTime() >= latestModified) {
 			DEBUG("Skipping linking.", INFO);
+			DEBUG("Output modified " << output.mTime() << ", input modified " << latestModified, VERBOSE);
 			return true;
 		}
 
@@ -257,11 +259,22 @@ namespace compile {
 		return true;
 	}
 
+	bool Target::ignored(const String &file) {
+		for (nat j = 0; j < ignore.size(); j++) {
+			if (ignore[j].matches(file)) {
+				DEBUG("Ignoring " << file << " as per " << ignore[j], INFO);
+				return true;
+			}
+		}
+		return false;
+	}
+
 	bool Target::runSteps(const String &key) {
 		vector<String> steps = config.getArray(key);
 
 		for (nat i = 0; i < steps.size(); i++) {
 			String expanded = config.expandVars(steps[i]);
+			DEBUG("Running " << expanded, INFO);
 			if (system(expanded.c_str()) != 0) {
 				PLN("Failed running " << key << ": " << expanded);
 				return false;

@@ -117,6 +117,9 @@ namespace compile {
 		// Find files recursively.
 		void addFilesRecursive(CompileQueue &to, const Path &root);
 
+		// File ignored?
+		bool ignored(const String &file);
+
 	};
 
 }
