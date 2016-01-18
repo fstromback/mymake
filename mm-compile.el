@@ -46,9 +46,13 @@
   (interactive "P")
   (mymake-run :force force :replace "release 64"))
 
+(defvar mymake-last-command "" "Last command used in 'mymake-command'.")
+
 (defun mymake-command (command)
-  "Run custom mymake command"
-  (interactive "sCommand to mymake: ")
+  "Run custom mymake command."
+  (interactive
+   (list (read-string "Command to mymake: " mymake-last-command)))
+  (setq mymake-last-command command)
   (mymake-run :replace command))
 
 
