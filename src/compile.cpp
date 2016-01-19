@@ -1,7 +1,7 @@
 #include "std.h"
 #include "compile.h"
 #include "wildcard.h"
-#include "system.h"
+#include "process.h"
 #include "env.h"
 
 namespace compile {
@@ -208,7 +208,7 @@ namespace compile {
 			cmd = config.expandVars(cmd, data);
 
 			DEBUG("Command line: " << cmd, INFO);
-			if (shellExec(cmd.c_str(), wd, &env) != 0) {
+			if (shellExec(cmd, wd, &env) != 0) {
 				// Abort compilation.
 				return false;
 			}

@@ -5,14 +5,6 @@
  * System specific functions.
  */
 
-class Env;
-
-// Low-level exec functionality.
-int exec(const Path &binary, const vector<String> &args, const Path &cwd, const Env *env);
-
-// Run a command through a shell.
-int shellExec(const String &command, const Path &cwd, const Env *env);
-
 // Environment variables data type (system-specific).
 typedef void *EnvData;
 
