@@ -313,7 +313,7 @@ namespace compile {
 	}
 
 	void Target::addLib(const Path &p) {
-		config.add("localLibrary", toS(p.makeRelative(wd)));
+		config.add("localLibrary", toS(p));
 	}
 
 	void Target::addFiles(CompileQueue &to, const vector<String> &src) {
