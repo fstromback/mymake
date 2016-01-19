@@ -148,7 +148,11 @@ int exec(const Path &binary, const vector<String> &args, const Path &cwd, const 
 
 	pid_t child = fork();
 	if (child == 0) {
-		chdir(toS(cwd).c_str());
+		if (chdir(toS(cwd).c_str())) {
+			PLN("Failed to chdir to " << cwd);
+			exit(1);
+		}
+
 		if (env) {
 			execve(argv[0], argv, (char **)env->data());
 		} else {
@@ -193,11 +197,12 @@ EnvData allocEnv(nat entries, nat) {
 }
 
 void freeEnv(EnvData data) {
-	for (nat pos = 0; data[pos]; pos++) {
-		delete []data[pos];
+	char **d = (char **)data;
+	for (nat pos = 0; d[pos]; pos++) {
+		delete []d[pos];
 	}
 
-	delete[] data;
+	delete[] d;
 }
 
 bool readEnv(EnvData env, nat &pos, String &data) {
@@ -213,7 +218,7 @@ bool readEnv(EnvData env, nat &pos, String &data) {
 void writeEnv(EnvData env, nat &pos, const String &data) {
 	char **d = (char **)env;
 
-	data[pos] = createStr(data);
+	d[pos] = createStr(data);
 
 	pos++;
 }
@@ -222,7 +227,7 @@ static nat countEntries(char **in) {
 	nat at = 0;
 	while (in[at])
 		at++;
-	return at + 1;
+	return at;
 }
 
 EnvData getEnv() {

@@ -148,15 +148,16 @@ void Path::createDir() const {
 #else
 
 Path Path::cwd() {
-	char tmp[512];
-	getcwd(tmp, 512);
+	char tmp[512] = { 0 };
+	if (!getcwd(tmp, 512))
+		WARNING("Failed to get cwd!");
 	Path r(tmp);
 	r.makeDir();
 	return r;
 }
 
 Path Path::home() {
-	Path r(getEnv("HOME"));
+	Path r(getenv("HOME"));
 	r.makeDir();
 	return r;
 }
