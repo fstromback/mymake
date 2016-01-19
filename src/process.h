@@ -28,11 +28,14 @@ public:
 	// Release any resources associated with this process.
 	~Process();
 
+	// Start the process!
+	bool spawn();
+
 	// Wait until the process has terminated, and get its exit code.
 	int wait();
 
-	// Start the process!
-	bool spawn();
+	// Terminated?
+	inline bool terminated() const { return finished; }
 
 private:
 	// Parameters.
@@ -46,11 +49,24 @@ private:
 
 	// Owning group (may be null).
 	ProcGroup *owner;
+
+	// Result.
+	int result;
+
+	// Finished?
+	bool finished;
+
+
+	friend void waitProc();
 };
 
+
+typedef map<ProcId, Process *> ProcMap;
+
+
 /**
- * Process group. Globally limits the number of live processes active through this class.
- * It is assumed that, while using a ProcGroup, noone tries to call Process::wait.
+ * Process group. Globally limits the number of live processes active through this class. Once one
+ * process terminates with an error, the entire group will be put in a failure state.
  * TODO: Synchronize.
  */
 class ProcGroup : NoCopy {
@@ -58,28 +74,33 @@ public:
 	// Create.
 	ProcGroup();
 
+	// Destroy.
+	~ProcGroup();
+
 	// Set the global limit.
 	static void setLimit(nat limit);
 
-	// Spawn a new process when possible.
-	void spawn(Process *proc);
+	// Spawn a new process when possible. Waits until we're below the global maximum number of
+	// processes before spawning a new process. Returns false if any previous process exited with
+	// an error.
+	bool spawn(Process *proc);
 
-	// Wait until we can afford to start a new process. If an earlier of our processes have been
-	// terminated, return the result from that process.
-	int wait();
+	// Wait until all processes in this group has terminated. Returns 'false' if any of them exited
+	// with an error.
+	bool wait();
 
 private:
-	// Global process limit.
-	static nat limit;
+	// Any failures so far?
+	bool failed;
 
-	// Global active processes.
-	static map<ProcId, Process *> alive;
+	// Our processes.
+	ProcMap our;
 
-	// Return codes for this process group.
-	queue<int> errors;
+	// One of our processes has terminated!
+	void terminated(ProcId id, int result);
 
-	// Platform specific wait code.
-	void waitChild(ProcId &process, int &status);
+
+	friend void waitProc();
 };
 
 // Convenience functions.

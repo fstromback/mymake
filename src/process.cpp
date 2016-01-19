@@ -1,8 +1,57 @@
 #include "std.h"
 #include "process.h"
 
+/**
+ * Global process-synchronization variables.
+ * TODO: Synchronize these.
+ */
+
+// Global process limit.
+static nat procLimit = 1;
+
+// Global active processes.
+static ProcMap alive;
+
+// System-specific waiting logic. Returns the process id that terminated.
+static void systemWaitProc(ProcId &proc, int &result);
+
+// Wait for any process we're monitoring to terminate, and handle that event.
+void waitProc() {
+	ProcId exited;
+	int result;
+	systemWaitProc(exited, result);
+
+	ProcMap::const_iterator i = alive.find(exited);
+
+	if (i == alive.end())
+		return;
+
+	Process *p = i->second;
+	alive.erase(i);
+	if (!p)
+		return;
+
+	p->result = result;
+	p->finished = true;
+
+	if (p->owner)
+		p->owner->terminated(exited, result);
+}
+
+
+
 Process::Process(const Path &file, const vector<String> &args, const Path &cwd, const Env *env) :
-	file(file), args(args), cwd(cwd), env(env), process(invalidProc), owner(null) {}
+	file(file), args(args), cwd(cwd), env(env), process(invalidProc), owner(null), result(0), finished(false) {}
+
+int Process::wait() {
+	while (!finished) {
+		waitProc();
+	}
+
+	process = invalidProc;
+	return result;
+}
+
 
 #ifdef WINDOWS
 
@@ -10,7 +59,7 @@ const ProcId invalidProc = INVALID_HANDLE_VALUE;
 
 bool Process::spawn() {
 	ostringstream cmdline;
-	cmdline << binary;
+	cmdline << file;
 	for (nat i = 0; i < args.size(); i++)
 		cmdline << ' ' << args[i];
 
@@ -28,46 +77,39 @@ bool Process::spawn() {
 	PROCESS_INFORMATION pi;
 	zeroMem(pi);
 
-	BOOL ok = CreateProcess(toS(binary).c_str(),
+	BOOL ok = CreateProcess(toS(file).c_str(),
 							(char *)cmdline.str().c_str(),
 							NULL,
 							NULL,
 							TRUE,
-							0,
+							CREATE_SUSPENDED,
 							env ? env->data() : NULL,
 							toS(cwd).c_str(),
 							&si,
 							&pi);
 
 	if (!ok) {
-		WARNING("Failed to launch " << binary);
+		WARNING("Failed to launch " << file);
 		process = invalidProc;
 		return false;
 	}
 
 	process = pi.hProcess;
+
+	alive.insert(make_pair(process, this));
+
+	// Start the process!
+	ResumeThread(pi.hThread);
 	CloseHandle(pi.hThread);
 
 	return true;
 }
 
 Process::~Process() {
-	if (process != invalidProc)
+	if (process != invalidProc) {
+		alive.erase(process);
 		CloseHandle(process);
-}
-
-int Process::wait() {
-	if (process == invalidProc)
-		return 1;
-
-	DWORD code = 1;
-	WaitForSingleObject(process, INFINITE);
-	GetExitCodeProcess(process, &code);
-
-	CloseHandle(process);
-	process = invalidProc;
-
-	return int(code);
+	}
 }
 
 static String getEnv(const char *name) {
@@ -84,6 +126,34 @@ Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
 	args.push_back("/C");
 	args.push_back("\"" + command + "\"");
 	return new Process(Path(shell), args, cwd, env);
+}
+
+static void systemWaitProc(ProcId &proc, int &code) {
+	ProcId *ids = new ProcId[alive.size()];
+	nat size = 0;
+	for (ProcMap::const_iterator i = alive.begin(), end = alive.end(); i != end; ++i) {
+		if (!i->second->terminated())
+			ids[size++] = i->first;
+	}
+
+	DWORD result = WaitForMultipleObjects(size, ids, FALSE, INFINITE);
+
+	nat id = 0;
+	if (result >= WAIT_OBJECT_0 && result < WAIT_OBJECT_0 + size) {
+		id = result - WAIT_OBJECT_0;
+	} else if (result >= WAIT_ABANDONED_0 && result < WAIT_ABANDONED_0 + size) {
+		id = result - WAIT_ABANDONED_0;
+	} else {
+		WARNING("Failed to call WaitForMultipleObjects!");
+		exit(10);
+	}
+
+	proc = ids[id];
+	delete []ids;
+
+	DWORD c = 1;
+	GetExitCodeProcess(proc, &c);
+	code = int(c);
 }
 
 #else
@@ -119,6 +189,9 @@ bool Process::spawn() {
 			exit(1);
 		}
 
+		// Wait until our parent is ready...
+		raise(SIGSTOP);
+
 		if (env) {
 			execve(argv[0], argv, (char **)env->data());
 		} else {
@@ -128,13 +201,17 @@ bool Process::spawn() {
 		exit(1);
 	}
 
+	process = child;
+	alive.insert(make_pair(process, this));
+
+	// Start child again.
+	kill(child, SIGCONT);
+
 	// Clean up...
 	for (nat i = 0; i < argc; i++) {
 		delete []argv[i];
 	}
 	delete []argv;
-
-	process = child;
 
 	return true;
 }
@@ -142,21 +219,9 @@ bool Process::spawn() {
 Process::~Process() {
 	// We can not clean up a child without doing 'wait'. We let the system clear this when mymake
 	// exits.
-}
-
-int Process::wait() {
-	if (process == invalidProc)
-		return 1;
-
-	int status;
-	waitpid(process, &status, 0);
-	process = invalidProc;
-
-	if (WIFEXITED(status)) {
-		return WEXITSTATUS(status);
+	if (process != invalidProc) {
+		alive.erase(process);
 	}
-
-	return 1;
 }
 
 Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
@@ -167,89 +232,81 @@ Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
 	return new Process(Path("/bin/sh"), args, cwd, env);
 }
 
-#endif
-
-
-ProcGroup::ProcGroup() {}
-
-void ProcGroup::setLimit(nat l) {
-	if (l == 0)
-		return;
-	limit = l;
-}
-
-int ProcGroup::wait() {
-	// Someone terminated?
-	if (!errors.empty()) {
-		int r = errors.front(); errors.pop();
-		return r;
-	}
-
-	// No need to wait?
-	if (alive.size() < limit) {
-		return 0;
-	}
-
-	// Wait until someone exited.
-	ProcId proc;
-	int status = 0;
-	waitChild(proc, status);
-
-	// See their exit code and report appropriatly.
-	map<ProcId, Process *>::iterator i = alive.find(proc);
-	if (i == alive.end()) {
-		WARNING("ProcGroup::wait used alongside Process::wait!");
-		return 0;
-	}
-
-	// We may not be the rightful owner...
-	Process *p = i->second;
-	ProcGroup *owner = p->owner;
-	delete p;
-	alive.erase(i);
-
-	if (!owner) {
-		WARNING("Found a child without proper owner...");
-		return 0;
-	}
-
-	if (status != 0) {
-		owner->errors.push(status);
-	}
-
-	if (!errors.empty()) {
-		int r = errors.front(); errors.pop();
-		return r;
-	}
-
-	return 0;
-}
-
-void ProcGroup::spawn(Process *proc) {
-	proc->owner = this;
-	proc->spawn();
-
-	alive.insert(make_pair(proc->process, proc));
-}
-
-nat ProcGroup::limit = 1;
-
-map<ProcId, Process *> ProcGroup::alive;
-
-#ifdef WINDOWS
-
-
-#else
-
-void ProcGroup::waitChild(ProcId &process, int &e) {
+static void systemWaitProc(ProcId &proc, int &result) {
 	int status;
 	do {
-		process = waitpid(-1, &status, 0);
+		proc = waitpid(-1, &status, 0);
 	} while (!WIFEXITED(status));
-	e = WEXITSTATUS(status);
+
+	result = WEXITSTATUS(status);
 }
 
 #endif
+
+
+ProcGroup::ProcGroup() : failed(false) {}
+
+ProcGroup::~ProcGroup() {
+	for (ProcMap::iterator i = our.begin(), end = our.end(); i != end; ++i) {
+		alive.erase(i->first);
+		delete i->second;
+	}
+}
+
+void ProcGroup::setLimit(nat l) {
+	if (l >= 1)
+		procLimit = l;
+}
+
+bool ProcGroup::spawn(Process *p) {
+	if (failed) {
+		delete p;
+		return false;
+	}
+
+	p->owner = this;
+
+	// Wait until there is room for more...
+	while (alive.size() >= procLimit && !failed) {
+		waitProc();
+	}
+
+	if (failed) {
+		delete p;
+		return false;
+	}
+
+	p->spawn();
+	our.insert(make_pair(p->process, p));
+
+	// Make the output look more logical to the user when running on one thread.
+	if (procLimit == 1) {
+		return wait();
+	}
+
+	return true;
+}
+
+bool ProcGroup::wait() {
+	while (!failed && !alive.empty()) {
+		waitProc();
+	}
+
+	return !failed;
+}
+
+void ProcGroup::terminated(ProcId id, int result) {
+	ProcMap::iterator i = our.find(id);
+	if (i == our.end())
+		return;
+
+	if (result != 0)
+		failed = true;
+
+	delete i->second;
+	our.erase(i);
+}
+
 
 
 int exec(const Path &binary, const vector<String> &args, const Path &cwd, const Env *env) {

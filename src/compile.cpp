@@ -132,6 +132,8 @@ namespace compile {
 		if (!runSteps("preBuild", env))
 			return false;
 
+		ProcGroup group;
+
 		map<String, String> data;
 		data["file"] = "";
 		data["output"] = "";
@@ -184,8 +186,12 @@ namespace compile {
 				cmd = config.expandVars(cmd, data);
 
 				DEBUG("Command line: " << cmd, INFO);
-				if (shellExec(cmd.c_str(), wd, &env) != 0) {
-					// Abort!
+				if (!group.spawn(shellProcess(cmd, wd, &env))) {
+					return false;
+				}
+
+				// Wait for it to complete...
+				if (!group.wait()) {
 					return false;
 				}
 			}
@@ -208,18 +214,26 @@ namespace compile {
 			cmd = config.expandVars(cmd, data);
 
 			DEBUG("Command line: " << cmd, INFO);
-			if (shellExec(cmd, wd, &env) != 0) {
-				// Abort compilation.
+			if (!group.spawn(shellProcess(cmd, wd, &env)))
 				return false;
+
+			// If it is a pch, wait for it to finish.
+			if (src.isPch) {
+				if (!group.wait())
+					return false;
 			}
 
-			Timestamp mTime = output.mTime();
+			// Update 'last modified'
 			if (i == 0)
-				latestModified = mTime;
+				latestModified = lastModified;
 			else
-				latestModified = max(latestModified, mTime);
+				latestModified = max(latestModified, lastModified);
 
 		}
+
+		// Wait for compilation to terminate.
+		if (!group.wait())
+			return false;
 
 		vector<String> libs = config.getArray("localLibrary");
 		for (nat i = 0; i < libs.size(); i++) {
@@ -245,9 +259,11 @@ namespace compile {
 		String cmd = config.getVars("link", data);
 		DEBUG("Command line: " << cmd, INFO);
 
-		if (shellExec(cmd.c_str(), wd, &env) != 0) {
+		if (!group.spawn(shellProcess(cmd, wd, &env)))
 			return false;
-		}
+
+		if (!group.wait())
+			return false;
 
 		// Run post-compile steps.
 		map<String, String> stepData;
