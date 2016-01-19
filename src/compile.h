@@ -4,6 +4,7 @@
 #include "pathqueue.h"
 #include "includes.h"
 #include "wildcard.h"
+#include "env.h"
 
 namespace compile {
 
@@ -97,7 +98,7 @@ namespace compile {
 		vector<Compile> toCompile;
 
 		// Run steps.
-		bool runSteps(const String &key, const map<String, String> &options = map<String, String>());
+		bool runSteps(const String &key, const Env &env, const map<String, String> &options = map<String, String>());
 
 		// Add files to the queue of files to process.
 		void addFiles(CompileQueue &to, const vector<String> &src);

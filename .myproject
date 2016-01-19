@@ -4,6 +4,7 @@
 [project]
 input=src
 explicitTargets=yes
+execute=no
 
 [build]
 #How to build each target.
@@ -26,8 +27,6 @@ ext=cpp
 
 buildDir=build/
 execDir=../bin/
-
-execute=no
 
 [release]
 buildDir=release/

@@ -97,14 +97,18 @@ void MakeConfig::parseAssignment(String line, nat initialSize) {
 		return;
 
 	Assignment a = {
-		false,
+		mSet,
 		line.substr(0, eq),
 		line.substr(eq + 1),
 	};
 
-	if (a.key[a.key.size() - 1] == '+') {
+	char last = a.key[a.key.size() - 1];
+	if (last == '+') {
 		a.key = a.key.substr(0, a.key.size() - 1);
-		a.append = true;
+		a.mode = mAppend;
+	} else if (last == '-') {
+		a.key = a.key.substr(0, a.key.size() - 1);
+		a.mode = mDelete;
 	}
 
 	if (sections.size() <= initialSize) {
@@ -151,10 +155,17 @@ void MakeConfig::apply(set<String> options, Config &to) const {
 		for (nat i = 0; i < s.assignments.size(); i++) {
 			const Assignment &a = s.assignments[i];
 
-			if (a.append)
+			switch (a.mode) {
+			case mAppend:
 				to.add(a.key, a.value);
-			else
+				break;
+			case mSet:
 				to.set(a.key, a.value);
+				break;
+			case mDelete:
+				to.clear(a.key);
+				break;
+			}
 		}
 	}
 }
@@ -167,7 +178,19 @@ ostream &operator <<(ostream &to, const MakeConfig &c) {
 
 		for (nat i = 0; i < s.assignments.size(); i++) {
 			const MakeConfig::Assignment &a = s.assignments[i];
-			to << endl << a.key << (a.append ? "+=" : "=") << a.value;
+			to << endl << a.key;
+			switch (a.mode) {
+			case MakeConfig::mAppend:
+				to << "+=";
+				break;
+			case MakeConfig::mSet:
+				to << '=';
+				break;
+			case MakeConfig::mDelete:
+				to << '-';
+				break;
+			}
+			to << a.value;
 		}
 	}
 
@@ -195,6 +218,10 @@ void Config::add(const String &k, const vector<String> &v) {
 	vector<String> &to = data[k];
 	for (nat i = 0; i < v.size(); i++)
 		to << v[i];
+}
+
+void Config::clear(const String &k) {
+	data[k].clear();
 }
 
 bool Config::has(const String &k) const {

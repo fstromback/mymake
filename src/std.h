@@ -211,5 +211,10 @@ enum {
 // Null.
 #define null NULL
 
+// Zero memory.
+template <class T>
+void zeroMem(T &v) {
+	memset(&v, 0, sizeof(T));
+}
 
 #include "globals.h"

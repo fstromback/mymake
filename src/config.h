@@ -28,6 +28,9 @@ public:
 	void add(const String &key, const String &value);
 	void add(const String &key, const vector<String> &value);
 
+	// Remove a variable.
+	void clear(const String &key);
+
 
 	// Has variable?
 	bool has(const String &key) const;
@@ -85,10 +88,17 @@ public:
 	set<String> options() const;
 
 private:
+	// Mode for assignment.
+	enum Mode {
+		mAppend,
+		mSet,
+		mDelete,
+	};
+
 	// Assignment in a config file.
 	struct Assignment {
 		// Append?
-		bool append;
+		Mode mode;
 
 		// Key, value;
 		String key, value;

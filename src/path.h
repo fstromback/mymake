@@ -11,9 +11,6 @@ public:
 	// Current working directory.
 	static Path cwd();
 
-	// Set cwd.
-	static void cd(const Path &to);
-
 	// User's home directory.
 	static Path home();
 

@@ -126,13 +126,10 @@ namespace compile {
 	bool Target::compile() {
 		DEBUG("Compiling target in " << wd, INFO);
 
-		Path::cd(wd);
-		DEBUG("CD into: " << wd, VERBOSE);
-
 		Env env(config);
 
 		// Run pre-compile steps.
-		if (!runSteps("preBuild"))
+		if (!runSteps("preBuild", env))
 			return false;
 
 		map<String, String> data;
@@ -187,7 +184,7 @@ namespace compile {
 				cmd = config.expandVars(cmd, data);
 
 				DEBUG("Command line: " << cmd, INFO);
-				if (system(cmd.c_str()) != 0) {
+				if (shellExec(cmd.c_str(), wd, &env) != 0) {
 					// Abort!
 					return false;
 				}
@@ -211,7 +208,7 @@ namespace compile {
 			cmd = config.expandVars(cmd, data);
 
 			DEBUG("Command line: " << cmd, INFO);
-			if (system(cmd.c_str()) != 0) {
+			if (shellExec(cmd.c_str(), wd, &env) != 0) {
 				// Abort compilation.
 				return false;
 			}
@@ -248,14 +245,14 @@ namespace compile {
 		String cmd = config.getVars("link", data);
 		DEBUG("Command line: " << cmd, INFO);
 
-		if (system(cmd.c_str()) != 0) {
+		if (shellExec(cmd.c_str(), wd, &env) != 0) {
 			return false;
 		}
 
 		// Run post-compile steps.
 		map<String, String> stepData;
 		stepData["output"] = data["output"];
-		if (!runSteps("postBuild", stepData))
+		if (!runSteps("postBuild", env, stepData))
 			return false;
 
 		return true;
@@ -271,13 +268,13 @@ namespace compile {
 		return false;
 	}
 
-	bool Target::runSteps(const String &key, const map<String, String> &options) {
+	bool Target::runSteps(const String &key, const Env &env, const map<String, String> &options) {
 		vector<String> steps = config.getArray(key);
 
 		for (nat i = 0; i < steps.size(); i++) {
 			String expanded = config.expandVars(steps[i], options);
 			DEBUG("Running " << expanded, INFO);
-			if (system(expanded.c_str()) != 0) {
+			if (shellExec(expanded.c_str(), wd, &env) != 0) {
 				PLN("Failed running " << key << ": " << expanded);
 				return false;
 			}
@@ -295,9 +292,8 @@ namespace compile {
 			execPath = Path(config.getStr("execPath")).makeAbsolute(wd);
 		}
 
-		Path::cd(execPath);
 		DEBUG("Executing " << output.makeRelative(execPath) << " " << join(params) << " in " << execPath, INFO);
-		return exec(output.makeRelative(execPath), params);
+		return exec(output, params, execPath, null);
 	}
 
 	void Target::addLib(const Path &p) {

@@ -56,10 +56,6 @@ Path Path::cwd() {
 	return r;
 }
 
-void Path::cd(const Path &to) {
-	SetCurrentDirectory(toS(to).c_str());
-}
-
 Path Path::home() {
 	char tmp[MAX_PATH + 1] = { 0 };
 	SHGetFolderPath(NULL, CSIDL_PROFILE, NULL, 0, tmp);
@@ -157,10 +153,6 @@ Path Path::cwd() {
 	Path r(tmp);
 	r.makeDir();
 	return r;
-}
-
-void Path::cd(const Path &to) {
-	chdir(toS(to).c_str());
 }
 
 Path Path::home() {
