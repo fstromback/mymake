@@ -29,7 +29,7 @@ Lock::~Lock() {
 	pthread_mutex_destroy(&lock);
 }
 
-Lock::Guard::Guarrd(Lock &lock) : lock(lock) {
+Lock::Guard::Guard(Lock &lock) : lock(lock) {
 	pthread_mutex_lock(&lock.lock);
 }
 

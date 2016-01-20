@@ -9,4 +9,4 @@ fi
 mkdir -p bin
 g++ textinc/*.cpp -o bin/textinc
 bin/textinc bin/templates.h templates/*.txt
-g++ -O3 src/*.cpp -o $1
+g++ -std=c++11 -O3 src/*.cpp -lpthread -o $1

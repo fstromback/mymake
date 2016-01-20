@@ -1,5 +1,6 @@
 []
 input=mymake.cpp
+lib+=pthread
 
 #Precompiled header.
 pch=std.h
