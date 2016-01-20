@@ -156,9 +156,7 @@ pchCompileCombined=yes
 
 compile=*:cl <defines> <file> <includes> <flags> <warnings> <usePch*title|pch> <namePch*if|pch> /c /Fo<output>
 link=link <linkFlags> <libs> <files> /nologo /OUT:<output>
-
-[!lib]
-postBuild=mt -nologo -manifest <output>.manifest -outputresource:<output>;#<manifestId>
+link+=mt -nologo -manifest <output>.manifest -outputresource:<output>;#<manifestId>
 
 [windows,!64]
 #Environment variables for Visual Studio 2008. Replace these with your own. Find them by

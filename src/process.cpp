@@ -3,7 +3,6 @@
 
 /**
  * Global process-synchronization variables.
- * TODO: Synchronize these.
  */
 
 // Global process limit.
@@ -12,14 +11,23 @@ static nat procLimit = 1;
 // Global active processes.
 static ProcMap alive;
 
+// Global lock for 'alive'.
+static Lock aliveLock;
+
+// Global lock for waiting on processes.
+static Lock waitLock;
+
 // System-specific waiting logic. Returns the process id that terminated.
 static void systemWaitProc(ProcId &proc, int &result);
 
 // Wait for any process we're monitoring to terminate, and handle that event.
+// Assumes that 'waitLock' is taken when called.
 void waitProc() {
 	ProcId exited;
 	int result;
 	systemWaitProc(exited, result);
+
+	Lock::Guard z(aliveLock);
 
 	ProcMap::const_iterator i = alive.find(exited);
 
@@ -45,6 +53,12 @@ Process::Process(const Path &file, const vector<String> &args, const Path &cwd, 
 
 int Process::wait() {
 	while (!finished) {
+		Lock::Guard z(waitLock);
+
+		// Double-check the condition after we manage to take the lock!
+		if (finished)
+			break;
+
 		waitProc();
 	}
 
@@ -96,7 +110,10 @@ bool Process::spawn() {
 
 	process = pi.hProcess;
 
-	alive.insert(make_pair(process, this));
+	{
+		Lock::Guard z(aliveLock);
+		alive.insert(make_pair(process, this));
+	}
 
 	// Start the process!
 	ResumeThread(pi.hThread);
@@ -107,7 +124,10 @@ bool Process::spawn() {
 
 Process::~Process() {
 	if (process != invalidProc) {
-		alive.erase(process);
+		{
+			Lock::Guard z(aliveLock);
+			alive.erase(process);
+		}
 		CloseHandle(process);
 	}
 }
@@ -129,11 +149,17 @@ Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
 }
 
 static void systemWaitProc(ProcId &proc, int &code) {
-	ProcId *ids = new ProcId[alive.size()];
 	nat size = 0;
-	for (ProcMap::const_iterator i = alive.begin(), end = alive.end(); i != end; ++i) {
-		if (!i->second->terminated())
-			ids[size++] = i->first;
+	ProcId *ids = null;
+
+	{
+		Lock::Guard z(aliveLock);
+
+		ids = new ProcId[alive.size()];
+		for (ProcMap::const_iterator i = alive.begin(), end = alive.end(); i != end; ++i) {
+			if (!i->second->terminated())
+				ids[size++] = i->first;
+		}
 	}
 
 	DWORD result = WaitForMultipleObjects(size, ids, FALSE, INFINITE);
@@ -202,7 +228,11 @@ bool Process::spawn() {
 	}
 
 	process = child;
-	alive.insert(make_pair(process, this));
+
+	{
+		Lock::Guard z(aliveLock);
+		alive.insert(make_pair(process, this));
+	}
 
 	// Start child again.
 	kill(child, SIGCONT);
@@ -220,6 +250,7 @@ Process::~Process() {
 	// We can not clean up a child without doing 'wait'. We let the system clear this when mymake
 	// exits.
 	if (process != invalidProc) {
+		Lock::Guard z(aliveLock);
 		alive.erase(process);
 	}
 }
@@ -244,9 +275,14 @@ static void systemWaitProc(ProcId &proc, int &result) {
 #endif
 
 
-ProcGroup::ProcGroup() : failed(false) {}
+ProcGroup::ProcGroup(nat limit) : limit(limit), failed(false) {
+	if (limit == 0)
+		limit = 1;
+}
 
 ProcGroup::~ProcGroup() {
+	Lock::Guard z(aliveLock);
+
 	for (ProcMap::iterator i = our.begin(), end = our.end(); i != end; ++i) {
 		alive.erase(i->first);
 		delete i->second;
@@ -258,6 +294,11 @@ void ProcGroup::setLimit(nat l) {
 		procLimit = l;
 }
 
+bool ProcGroup::canSpawn() {
+	Lock::Guard z(aliveLock);
+	return alive.size() < procLimit && our.size() < limit;
+}
+
 bool ProcGroup::spawn(Process *p) {
 	if (failed) {
 		delete p;
@@ -267,7 +308,13 @@ bool ProcGroup::spawn(Process *p) {
 	p->owner = this;
 
 	// Wait until there is room for more...
-	while (alive.size() >= procLimit && !failed) {
+	while (!canSpawn() && !failed) {
+		Lock::Guard z(waitLock);
+
+		// Double check...
+		if (canSpawn() || failed)
+			break;
+
 		waitProc();
 	}
 
@@ -280,7 +327,7 @@ bool ProcGroup::spawn(Process *p) {
 	our.insert(make_pair(p->process, p));
 
 	// Make the output look more logical to the user when running on one thread.
-	if (procLimit == 1) {
+	if (limit == 1) {
 		return wait();
 	}
 
@@ -288,7 +335,24 @@ bool ProcGroup::spawn(Process *p) {
 }
 
 bool ProcGroup::wait() {
-	while (!failed && !alive.empty()) {
+	while (!failed) {
+		{
+			Lock::Guard z(aliveLock);
+			if (our.empty())
+				break;
+		}
+
+		Lock::Guard z(waitLock);
+
+		if (failed)
+			break;
+
+		{
+			Lock::Guard z(aliveLock);
+			if (our.empty())
+				break;
+		}
+
 		waitProc();
 	}
 

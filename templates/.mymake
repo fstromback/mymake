@@ -15,4 +15,4 @@ compile=*.txt:cp <file> <output>
 
 [windows]
 compile=*.txt:copy <file> <output>
-postBuild-=
+

@@ -106,9 +106,6 @@ void MakeConfig::parseAssignment(String line, nat initialSize) {
 	if (last == '+') {
 		a.key = a.key.substr(0, a.key.size() - 1);
 		a.mode = mAppend;
-	} else if (last == '-') {
-		a.key = a.key.substr(0, a.key.size() - 1);
-		a.mode = mDelete;
 	}
 
 	if (sections.size() <= initialSize) {
@@ -160,10 +157,10 @@ void MakeConfig::apply(set<String> options, Config &to) const {
 				to.add(a.key, a.value);
 				break;
 			case mSet:
-				to.set(a.key, a.value);
-				break;
-			case mDelete:
-				to.clear(a.key);
+				if (a.value.empty())
+					to.clear(a.key);
+				else
+					to.set(a.key, a.value);
 				break;
 			}
 		}
@@ -185,9 +182,8 @@ ostream &operator <<(ostream &to, const MakeConfig &c) {
 				break;
 			case MakeConfig::mSet:
 				to << '=';
-				break;
-			case MakeConfig::mDelete:
-				to << '-';
+				if (a.value.empty())
+					to << "<erase>";
 				break;
 			}
 			to << a.value;

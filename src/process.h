@@ -1,9 +1,7 @@
 #pragma once
 #include "env.h"
+#include "lock.h"
 
-#ifndef WINDOWS
-#include <unistd.h>
-#endif
 
 // Platform specific process handle.
 #ifdef WINDOWS
@@ -67,12 +65,11 @@ typedef map<ProcId, Process *> ProcMap;
 /**
  * Process group. Globally limits the number of live processes active through this class. Once one
  * process terminates with an error, the entire group will be put in a failure state.
- * TODO: Synchronize.
  */
 class ProcGroup : NoCopy {
 public:
-	// Create.
-	ProcGroup();
+	// Create, set local limit.
+	ProcGroup(nat limit = 1);
 
 	// Destroy.
 	~ProcGroup();
@@ -90,6 +87,9 @@ public:
 	bool wait();
 
 private:
+	// Our limit.
+	nat limit;
+
 	// Any failures so far?
 	bool failed;
 
@@ -98,6 +98,9 @@ private:
 
 	// One of our processes has terminated!
 	void terminated(ProcId id, int result);
+
+	// Check if we can spawn a new process.
+	bool canSpawn();
 
 
 	friend void waitProc();

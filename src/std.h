@@ -22,6 +22,11 @@
 #undef max
 #endif
 
+#else
+
+#include <unistd.h>
+#include <pthread.h>
+
 #endif
 
 /**

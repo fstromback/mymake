@@ -256,14 +256,18 @@ namespace compile {
 
 		data["files"] = intermediateFiles.str();
 		data["output"] = toS(output.makeRelative(wd));
-		String cmd = config.getVars("link", data);
-		DEBUG("Command line: " << cmd, INFO);
 
-		if (!group.spawn(shellProcess(cmd, wd, &env)))
-			return false;
+		vector<String> linkCmds = config.getArray("link");
+		for (nat i = 0; i < linkCmds.size(); i++) {
+			String cmd = config.expandVars(linkCmds[i], data);
+			DEBUG("Command line: " << cmd, INFO);
 
-		if (!group.wait())
-			return false;
+			if (!group.spawn(shellProcess(cmd, wd, &env)))
+				return false;
+
+			if (!group.wait())
+				return false;
+		}
 
 		// Run post-compile steps.
 		map<String, String> stepData;

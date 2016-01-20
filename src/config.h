@@ -92,7 +92,6 @@ private:
 	enum Mode {
 		mAppend,
 		mSet,
-		mDelete,
 	};
 
 	// Assignment in a config file.
