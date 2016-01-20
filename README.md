@@ -127,6 +127,27 @@ found, mymake uses that directory as the root directory when trying to compile.
 To pass parameters to the compiled program, use the `-a` parameter.
 
 
+## Parallel builds
+
+Mymake supports parallel builds by default. When you run `mm --config` for the first time, mymake
+asks for the number of threads you want to use when compiling by default. This is then written into
+your global `.mymake`-file. As it resides in the global `.mymake`-file, it can be overwritten in
+local configurations and even from the command line using `-j 3` or `-j 1` to disable parallel builds
+temporarily.
+
+When building projects in parallel, mymake analyzes the dependency graph of your targets and finds
+projects which can be compiled in parallel without breaking any dependencies between them. This can
+be disabled on a project-by-project basis by setting `parallel` to `no`.
+
+When building single targets, mymake assumes that all source files (except any precompiled headers)
+can be compiled in parallel. If this is not the case, disable parallel builds for those targets by
+setting `parallel` to `no` in that `.mymake`-file, or in a global section of your `.myproject`-file.
+Pre- and post build steps are never run in parallel.
+
+To limit how many compilation processes are spawned during compilation, mymake examines
+`maxThreads`. Mymake spawns maximum that many processes globally, even if two or more targets are
+compiled in parallel.
+
 ## Configuration files
 
 Configuration in mymake is done by assigning values to variables. Each variable is an array of
@@ -225,6 +246,12 @@ These variables are used by mymake to understand what should be done:
   with `value`, the second form prepends `value` to `variable` using the system's separator (`:` on unix and `;` on windows),
   the third form appends `value` to `variable`. The second and third forms are convenient when working with `PATH` for example.
 - `explicitTargets`: In projects: ignore any potential targets that do not have their own `.mymake`-file.
+- `parallel`: In projects, this indicates if projects that have all dependencies satisfied may be built in parallel. The default
+  value is `yes`, so projects not tolerating parallel builds may set it to `no`.
+  In targets, this indicates if files in targets may be built in parallel. If so, all input files, except precompiled headers,
+  are built in parallel using up to `maxThreads` threads globally. If specific targets do not tolerate this, set `parallel` to
+  `no`, and mymake will build those targets in serial.
+- `maxThreads`: Limits the global number of threads (actually processes) used to build the project/target globally.
 
 ## Variables in strings
 
