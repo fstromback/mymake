@@ -3,6 +3,7 @@
 #include "cmdline.h"
 #include "compile.h"
 #include "projectcompile.h"
+#include "process.h"
 
 // Compile a stand-alone .mymake-file.
 int compileTarget(const Path &wd, const CmdLine &cmdline) {
@@ -27,6 +28,9 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 	cmdline.apply(config.options(), params);
 
 	DEBUG("Configuration options: " << params, VERBOSE);
+
+	// Set max # threads.
+	ProcGroup::setLimit(to<nat>(params.getStr("maxThreads", "1")));
 
 	compile::Target c(wd, params);
 	if (cmdline.clean) {
@@ -68,6 +72,9 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	cmdline.apply(config.options(), params);
 
 	DEBUG("Configuration options: " << params, VERBOSE);
+
+	// Set max # threads.
+	ProcGroup::setLimit(to<nat>(params.getStr("maxThreads", "1")));
 
 	compile::Project c(wd, cmdline.names, config, params);
 	DEBUG("-- Finding dependencies --", NORMAL);

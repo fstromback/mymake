@@ -53,6 +53,11 @@ execute=yes
 #Defines.
 #define+=DEBUG
 
+#Compile this target in parallell?
+#parallel=yes
+
+#Use max this # of threads to compile this target.
+#maxThreads=4
 
 #Define command line. Should not need to be changed.
 defines=<defineCl*define>

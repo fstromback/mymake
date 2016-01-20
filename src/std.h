@@ -184,8 +184,17 @@ enum Tristate {
 
 // Output macros.
 
+#include "sync.h"
+
+// Synchronization for output.
+extern Lock outputLock;
+
 // Print line.
-#define PLN(x) std::cout << x << endl
+#define PLN(x)									\
+	do {										\
+		Lock::Guard _w(outputLock);				\
+		std::cout << x << endl;					\
+	} while (false)
 
 // Print x = <value of x>
 #define PVAR(x) PLN(#x << "=" << x)

@@ -1,6 +1,7 @@
 #include "std.h"
 #include "cmdline.h"
 #include "config.h"
+#include <limits>
 
 namespace templ {
 #include "../bin/templates.h"
@@ -19,6 +20,7 @@ static const pair<String, char> rawLongOptions[] = {
 	make_pair("target", '\2'),
 	make_pair("config", '\1'),
 	make_pair("help", '?'),
+	make_pair("threads", 'j'),
 };
 static const map<String, char> longOptions(rawLongOptions, rawLongOptions + ARRAY_COUNT(rawLongOptions));
 
@@ -42,14 +44,16 @@ static const char *helpStr =
 	"--not, -n       - put in front of --execute (or use -ne) to not execute.\n"
 	"--project       - generate a sample .myproject in cwd.\n"
 	"--target        - generate a sample .mymake in cwd.\n"
-	"--config        - write global config file.\n";
+	"--config        - write global config file.\n"
+	"--threads, -j   - compile in parallel if possible, using this many threads.\n";
 
 CmdLine::CmdLine(const vector<String> &params) :
 	errors(false),
 	exit(false),
 	execute(tUnset),
 	showHelp(false),
-	clean(false) {
+	clean(false),
+	threads(0) {
 
 	bool noOptions = false;
 	state = sNone;
@@ -110,10 +114,26 @@ static bool checkFile(const Path &file) {
 	return ans == 'y';
 }
 
+static nat askThreads() {
+	nat ans = 0;
+	while (true) {
+		std::cout << "Preferred number of threads to use during compilation? ";
+		if (std::cin >> ans)
+			return ans;
+
+		std::cin.clear();
+		std::cin.ignore(std::numeric_limits<size_t>::max());
+	}
+}
+
 static bool createGlobal() {
 	Path file = Path::home() + localConfig;
 	if (!checkFile(file))
 		return false;
+
+	nat defThreads = askThreads();
+	if (defThreads < 1)
+		defThreads = 1;
 
 	ofstream dest(toS(file).c_str());
 	if (!dest) {
@@ -122,6 +142,10 @@ static bool createGlobal() {
 	}
 
 	dest << templ::target;
+	dest << endl;
+	dest << "[]" << endl;
+	dest << "#Default number of threads for compilation on this machine." << endl;
+	dest << "maxThreads=" << defThreads << endl;
 	return true;
 }
 
@@ -201,6 +225,9 @@ bool CmdLine::parseOption(char opt) {
 	case '?':
 		showHelp = true;
 		break;
+	case 'j':
+		state = sParallel;
+		break;
 	case '\1':
 		if (!createGlobal())
 			errors = true;
@@ -241,6 +268,9 @@ bool CmdLine::optionParam(const String &v) {
 	case sExecPath:
 		execPath = Path(v).makeAbsolute();
 		return true;
+	case sParallel:
+		threads = to<int>(v);
+		return true;
 	default:
 		return false;
 	}
@@ -269,4 +299,8 @@ void CmdLine::apply(const set<String> &options, Config &config) const {
 		config.set("execute", "yes");
 	if (execute == tNo)
 		config.set("execute", "no");
+
+	if (threads > 0) {
+		config.set("maxThreads", toS(threads));
+	}
 }

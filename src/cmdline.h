@@ -65,6 +65,7 @@ private:
 		sArguments,
 		sDebug,
 		sExecPath,
+		sParallel,
 	};
 
 	State state;
@@ -74,6 +75,9 @@ private:
 
 	// Order of the files/options.
 	vector<String> order;
+
+	// Number of threads to use. 0 = no opinion.
+	nat threads;
 
 	// Parse options.
 	bool parseOptions(const String &opts);

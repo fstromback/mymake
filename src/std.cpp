@@ -45,3 +45,6 @@ String trim(const String &s) {
 		return "";
 	return s.substr(start, end - start + 1);
 }
+
+
+Lock outputLock;

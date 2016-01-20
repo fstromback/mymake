@@ -327,7 +327,7 @@ bool ProcGroup::spawn(Process *p) {
 	our.insert(make_pair(p->process, p));
 
 	// Make the output look more logical to the user when running on one thread.
-	if (limit == 1) {
+	if (limit == 1 || procLimit == 1) {
 		return wait();
 	}
 

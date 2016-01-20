@@ -132,7 +132,14 @@ namespace compile {
 		if (!runSteps("preBuild", env))
 			return false;
 
-		ProcGroup group;
+
+		nat threads = to<nat>(config.getStr("maxThreads", "1"));
+
+		// Force serial execution?
+		if (!config.getBool("parallel", "yes"))
+			threads = 1;
+
+		ProcGroup group(threads);
 
 		map<String, String> data;
 		data["file"] = "";

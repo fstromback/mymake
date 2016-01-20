@@ -2,6 +2,7 @@
 #include "compile.h"
 #include "pathqueue.h"
 #include "toposort.h"
+#include "sync.h"
 
 namespace compile {
 
@@ -76,6 +77,42 @@ namespace compile {
 		// Find dependencies to a target. May contain duplicates.
 		vector<Path> dependencies(const String &root, const TargetInfo &at) const;
 		void dependencies(const String &root, vector<Path> &out, const TargetInfo &at) const;
+
+		// Compile one target. This function may only _read_ from shared data.
+		bool compileOne(nat id);
+
+		// Compile single-threaded.
+		bool compileST();
+
+		// Shared state for the multithreaded compilation.
+		struct MTState : NoCopy {
+			// Owning project.
+			Project *p;
+
+			// Condition variables signaled when each target has been compiled.
+			map<String, Condition *> targetDone;
+
+			// Next target to process.
+			nat next;
+
+			// Compilation ok? (= no errors).
+			volatile bool ok;
+
+			// Create.
+			MTState(Project &p);
+
+			// Destroy.
+			~MTState();
+
+			// Launch.
+			void start();
+		};
+
+		// Compile multi-threaded (using N threads).
+		bool compileMT(nat threads);
+
+		// Main function for each thread in compileMT.
+		bool threadMain(MTState &state);
 	};
 
 }

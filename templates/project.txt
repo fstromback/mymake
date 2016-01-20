@@ -1,11 +1,13 @@
 #Sample project file for mymake.
 
-#Global things.
-[]
+#Global, project-specific things.
+[project]
 
 #Start with this project.
 #input=a
 
+#Compile targets in parallell?
+#parallel=yes
 
 #Note any options needed to build each target.
 [build]
@@ -19,3 +21,7 @@
 
 #Example:
 #a+=b
+
+
+#Global settings applied for all targets.
+[]

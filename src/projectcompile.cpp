@@ -1,5 +1,7 @@
 #include "std.h"
 #include "projectcompile.h"
+#include "thread.h"
+#include "atomic.h"
 
 namespace compile {
 
@@ -135,21 +137,124 @@ namespace compile {
 	}
 
 	bool Project::compile() {
+		nat threads = to<nat>(config.getStr("maxThreads", "1"));
+
+		// Force serial execution?
+		if (!config.getBool("parallel", "yes"))
+			threads = 1;
+
+		if (threads <= 1) {
+			return compileST();
+		} else {
+			return compileMT(threads);
+		}
+	}
+
+	bool Project::compileOne(nat id) {
+		TargetInfo &info = order[id];
+		Target *t = target[info.name];
+		DEBUG("-- Target " << info.name << " --", NORMAL);
+
+		vector<Path> d = dependencies(info.name, info);
+		d = removeDuplicates(d);
+		for (nat i = 0; i < d.size(); i++) {
+			t->addLib(d[i]);
+		}
+
+		if (!t->compile()) {
+			DEBUG("Compilation of " << info.name << " failed!", NORMAL);
+			return false;
+		}
+
+		return true;
+	}
+
+	bool Project::compileST() {
 		for (nat i = 0; i < order.size(); i++) {
-			TargetInfo &info = order[i];
-			Target *t = target[info.name];
-			DEBUG("-- Target " << info.name << " --", NORMAL);
-
-			vector<Path> d = dependencies(info.name, info);
-			d = removeDuplicates(d);
-			for (nat i = 0; i < d.size(); i++) {
-				t->addLib(d[i]);
-			}
-
-			if (!t->compile()) {
-				DEBUG("Compilation of " << info.name << " failed!", NORMAL);
+			if (!compileOne(i))
 				return false;
+		}
+
+		return true;
+	}
+
+	bool Project::compileMT(nat threadCount) {
+		MTState state(*this);
+
+		Thread *threads = new Thread[threadCount];
+		for (nat i = 0; i < threadCount; i++) {
+			threads[i].start(&MTState::start, state);
+		}
+
+		// Join all threads, and read result.
+		for (nat i = 0; i < threadCount; i++) {
+			threads[i].join();
+		}
+
+		return state.ok;
+	}
+
+	Project::MTState::MTState(Project &p) :
+		p(&p), next(0), ok(true) {
+
+		for (nat i = 0; i < p.order.size(); i++)
+			targetDone.insert(make_pair(p.order[i].name, new Condition()));
+	}
+
+	Project::MTState::~MTState() {
+		for (map<String, Condition *>::iterator i = targetDone.begin(), end = targetDone.end(); i != end; ++i) {
+			delete i->second;
+		}
+	}
+
+	void Project::MTState::start() {
+		if (!p->threadMain(*this)) {
+			if (!ok)
+				return;
+
+			// This does not matter too much if we do it more than once.
+			ok = false;
+
+			// Signal all condition variables to cause threads to exit.
+			for (map<String, Condition *>::iterator i = targetDone.begin(), end = targetDone.end(); i != end; ++i) {
+				i->second->signal();
 			}
+		}
+	}
+
+	bool Project::threadMain(MTState &state) {
+		while (true) {
+			nat work = atomicInc(state.next);
+
+			// Done?
+			if (work >= order.size())
+				break;
+
+			// Wait until all dependencies are satisfied.
+			TargetInfo &info = order[work];
+			for (set<String>::const_iterator i = info.dependsOn.begin(), end = info.dependsOn.end(); i != end; ++i) {
+				map<String, Condition *>::iterator f = state.targetDone.find(*i);
+				if (f == state.targetDone.end())
+					return false;
+
+				f->second->wait();
+			}
+
+			// Double-check so that something did not fail.
+			if (!state.ok)
+				return false;
+
+			if (!compileOne(work))
+				return false;
+
+			map<String, Condition *>::iterator f = state.targetDone.find(info.name);
+			if (f == state.targetDone.end())
+				return false;
+			f->second->signal();
+
+			// Once again, something failed?
+			if (!state.ok)
+				return false;
 		}
 
 		return true;

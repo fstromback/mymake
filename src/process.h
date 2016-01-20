@@ -1,6 +1,6 @@
 #pragma once
 #include "env.h"
-#include "lock.h"
+#include "sync.h"
 
 
 // Platform specific process handle.
@@ -49,10 +49,10 @@ private:
 	ProcGroup *owner;
 
 	// Result.
-	int result;
+	volatile int result;
 
 	// Finished?
-	bool finished;
+	volatile bool finished;
 
 
 	friend void waitProc();
