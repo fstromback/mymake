@@ -123,23 +123,24 @@ namespace compile {
 		return true;
 	}
 
-	bool Target::compile() {
-		DEBUG("Compiling target in " << wd, INFO);
-
-		Env env(config);
-
-		// Run pre-compile steps.
-		if (!runSteps("preBuild", env))
-			return false;
-
-
+	bool Target::compile(const String &prefix) {
 		nat threads = to<nat>(config.getStr("maxThreads", "1"));
 
 		// Force serial execution?
 		if (!config.getBool("parallel", "yes"))
 			threads = 1;
 
-		ProcGroup group(threads);
+		DEBUG("Using max " << threads << " threads.", VERBOSE);
+		ProcGroup group(threads, prefix);
+
+		DEBUG("Compiling target in " << wd, INFO);
+
+		Env env(config);
+
+		// Run pre-compile steps.
+		if (!runSteps("preBuild", group, env, map<String, String>()))
+			return false;
+
 
 		map<String, String> data;
 		data["file"] = "";
@@ -279,7 +280,7 @@ namespace compile {
 		// Run post-compile steps.
 		map<String, String> stepData;
 		stepData["output"] = data["output"];
-		if (!runSteps("postBuild", env, stepData))
+		if (!runSteps("postBuild", group, env, stepData))
 			return false;
 
 		return true;
@@ -295,13 +296,18 @@ namespace compile {
 		return false;
 	}
 
-	bool Target::runSteps(const String &key, const Env &env, const map<String, String> &options) {
+	bool Target::runSteps(const String &key, ProcGroup &group, const Env &env, const map<String, String> &options) {
 		vector<String> steps = config.getArray(key);
 
 		for (nat i = 0; i < steps.size(); i++) {
 			String expanded = config.expandVars(steps[i], options);
 			DEBUG("Running " << expanded, INFO);
-			if (shellExec(expanded.c_str(), wd, &env) != 0) {
+			if (!group.spawn(shellProcess(expanded, wd, &env))) {
+				PLN("Failed running " << key << ": " << expanded);
+				return false;
+			}
+
+			if (!group.wait()) {
 				PLN("Failed running " << key << ": " << expanded);
 				return false;
 			}

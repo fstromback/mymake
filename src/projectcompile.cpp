@@ -150,7 +150,10 @@ namespace compile {
 		}
 	}
 
-	bool Project::compileOne(nat id) {
+	bool Project::compileOne(nat id, bool mt) {
+		String prefix = toS(id + 1) + ">";
+		SetPrefix z(prefix.c_str());
+
 		TargetInfo &info = order[id];
 		Target *t = target[info.name];
 		DEBUG("-- Target " << info.name << " --", NORMAL);
@@ -161,7 +164,7 @@ namespace compile {
 			t->addLib(d[i]);
 		}
 
-		if (!t->compile()) {
+		if (!t->compile(prefix)) {
 			DEBUG("Compilation of " << info.name << " failed!", NORMAL);
 			return false;
 		}
@@ -171,7 +174,7 @@ namespace compile {
 
 	bool Project::compileST() {
 		for (nat i = 0; i < order.size(); i++) {
-			if (!compileOne(i))
+			if (!compileOne(i, false))
 				return false;
 		}
 
@@ -244,7 +247,7 @@ namespace compile {
 			if (!state.ok)
 				return false;
 
-			if (!compileOne(work))
+			if (!compileOne(work, true))
 				return false;
 
 			map<String, Condition *>::iterator f = state.targetDone.find(info.name);

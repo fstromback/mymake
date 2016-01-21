@@ -37,3 +37,9 @@
 #else
 #error "Unknown compiler!"
 #endif
+
+#if defined(VISUAL_STUDIO)
+#define THREAD __declspec(thread)
+#elif defined(GCC)
+#define THREAD __thread
+#endif

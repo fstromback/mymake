@@ -48,3 +48,7 @@ String trim(const String &s) {
 
 
 Lock outputLock;
+
+namespace p {
+	THREAD const char *prefix = null;
+}

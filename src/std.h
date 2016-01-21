@@ -189,11 +189,42 @@ enum Tristate {
 // Synchronization for output.
 extern Lock outputLock;
 
+namespace p {
+	// Thread-local prefix.
+	extern THREAD const char *prefix;
+}
+
+// Set prefix for this thread.
+class SetPrefix : NoCopy {
+public:
+	inline SetPrefix(const char *to) : old(p::prefix) {
+		p::prefix = to;
+	}
+
+	inline ~SetPrefix() {
+		p::prefix = old;
+	}
+
+private:
+	const char *old;
+};
+
 // Print line.
 #define PLN(x)									\
 	do {										\
 		Lock::Guard _w(outputLock);				\
+		if (p::prefix)							\
+			std::cout << p::prefix;				\
 		std::cout << x << endl;					\
+	} while (false)
+
+// Print line to stderr.
+#define PERROR(x)								\
+	do {										\
+		Lock::Guard _w(outputLock);				\
+		if (p::prefix)							\
+			std::cout << p::prefix;				\
+		std::cerr << x << endl;					\
 	} while (false)
 
 // Print x = <value of x>

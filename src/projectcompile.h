@@ -79,7 +79,7 @@ namespace compile {
 		void dependencies(const String &root, vector<Path> &out, const TargetInfo &at) const;
 
 		// Compile one target. This function may only _read_ from shared data.
-		bool compileOne(nat id);
+		bool compileOne(nat id, bool mt);
 
 		// Compile single-threaded.
 		bool compileST();

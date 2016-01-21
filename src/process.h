@@ -1,6 +1,7 @@
 #pragma once
 #include "env.h"
 #include "sync.h"
+#include "pipe.h"
 
 
 // Platform specific process handle.
@@ -26,8 +27,9 @@ public:
 	// Release any resources associated with this process.
 	~Process();
 
-	// Start the process!
-	bool spawn();
+	// Start the process! if 'manage' is true, we will serialize the ouput through ourselves and optionally
+	// add 'prefix'.
+	bool spawn(bool manage = false, const String &prefix = "");
 
 	// Wait until the process has terminated, and get its exit code.
 	int wait();
@@ -47,6 +49,9 @@ private:
 
 	// Owning group (may be null).
 	ProcGroup *owner;
+
+	// Pipes we need to close?
+	Pipe outPipe, errPipe;
 
 	// Result.
 	volatile int result;
@@ -69,7 +74,7 @@ typedef map<ProcId, Process *> ProcMap;
 class ProcGroup : NoCopy {
 public:
 	// Create, set local limit.
-	ProcGroup(nat limit = 1);
+	ProcGroup(nat limit = 1, const String &prefix = "");
 
 	// Destroy.
 	~ProcGroup();
@@ -87,6 +92,9 @@ public:
 	bool wait();
 
 private:
+	// Our prefix.
+	String prefix;
+
 	// Our limit.
 	nat limit;
 

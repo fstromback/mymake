@@ -1,5 +1,6 @@
 #include "std.h"
 #include "process.h"
+#include "outputmgr.h"
 
 /**
  * Global process-synchronization variables.
@@ -71,7 +72,7 @@ int Process::wait() {
 
 const ProcId invalidProc = INVALID_HANDLE_VALUE;
 
-bool Process::spawn() {
+bool Process::spawn(bool manage, const String &prefix) {
 	ostringstream cmdline;
 	cmdline << file;
 	for (nat i = 0; i < args.size(); i++)
@@ -83,10 +84,25 @@ bool Process::spawn() {
 	zeroMem(si);
 
 	si.cb = sizeof(STARTUPINFO);
-	si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-	si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
 	si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
 	si.dwFlags |= STARTF_USESTDHANDLES;
+
+	if (manage) {
+		Pipe readStderr, writeStderr;
+		createPipe(readStderr, writeStderr, true);
+		si.hStdError = writeStderr;
+		errPipe = readStderr;
+		OutputMgr::addError(readStderr, prefix);
+
+		Pipe readStdout, writeStdout;
+		createPipe(readStdout, writeStdout, true);
+		si.hStdOutput = writeStdout;
+		outPipe = readStdout;
+		OutputMgr::add(readStdout, prefix);
+	} else {
+		si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+		si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+	}
 
 	PROCESS_INFORMATION pi;
 	zeroMem(pi);
@@ -119,6 +135,11 @@ bool Process::spawn() {
 	ResumeThread(pi.hThread);
 	CloseHandle(pi.hThread);
 
+	if (manage) {
+		CloseHandle(si.hStdError);
+		CloseHandle(si.hStdOutput);
+	}
+
 	return true;
 }
 
@@ -129,6 +150,12 @@ Process::~Process() {
 			alive.erase(process);
 		}
 		CloseHandle(process);
+
+		if (outPipe != noPipe)
+			OutputMgr::remove(outPipe);
+
+		if (errPipe != noPipe)
+			OutputMgr::remove(errPipe);
 	}
 }
 
@@ -250,8 +277,16 @@ Process::~Process() {
 	// We can not clean up a child without doing 'wait'. We let the system clear this when mymake
 	// exits.
 	if (process != invalidProc) {
-		Lock::Guard z(aliveLock);
-		alive.erase(process);
+		{
+			Lock::Guard z(aliveLock);
+			alive.erase(process);
+		}
+
+		if (outPipe != noPipe)
+			OutputMgr::remove(outPipe);
+
+		if (errPipe != noPipe)
+			OutputMgr::remove(errPipe);
 	}
 }
 
@@ -275,7 +310,7 @@ static void systemWaitProc(ProcId &proc, int &result) {
 #endif
 
 
-ProcGroup::ProcGroup(nat limit) : limit(limit), failed(false) {
+ProcGroup::ProcGroup(nat limit, const String &prefix) : prefix(prefix), limit(limit), failed(false) {
 	if (limit == 0)
 		limit = 1;
 }
@@ -323,7 +358,7 @@ bool ProcGroup::spawn(Process *p) {
 		return false;
 	}
 
-	p->spawn();
+	p->spawn(true, prefix);
 	our.insert(make_pair(p->process, p));
 
 	// Make the output look more logical to the user when running on one thread.

@@ -4,6 +4,7 @@
 #include "pathqueue.h"
 #include "includes.h"
 #include "wildcard.h"
+#include "process.h"
 #include "env.h"
 
 namespace compile {
@@ -26,7 +27,7 @@ namespace compile {
 		bool find();
 
 		// Compile a directory with a .mymake file in.
-		bool compile();
+		bool compile(const String &prefix = "");
 
 		// Execute the final executable.
 		int execute(const vector<String> &params) const;
@@ -98,7 +99,7 @@ namespace compile {
 		vector<Compile> toCompile;
 
 		// Run steps.
-		bool runSteps(const String &key, const Env &env, const map<String, String> &options = map<String, String>());
+		bool runSteps(const String &key, ProcGroup &group, const Env &env, const map<String, String> &options);
 
 		// Add files to the queue of files to process.
 		void addFiles(CompileQueue &to, const vector<String> &src);
