@@ -223,7 +223,7 @@ static char *createStr(const String &str) {
 	return n;
 }
 
-bool Process::spawn() {
+bool Process::spawn(bool manage, const String &prefix) {
 	nat argc = args.size() + 1;
 	char **argv = new char *[argc + 1];
 
@@ -235,22 +235,53 @@ bool Process::spawn() {
 
 	argv[argc] = null;
 
+	Pipe writeStderr, writeStdout;
+	if (manage) {
+		Pipe readStderr, readStdout;
+		createPipe(readStderr, writeStderr, true);
+		errPipe = readStderr;
+		OutputMgr::addError(readStderr, prefix);
+
+		createPipe(readStdout, writeStdout, true);
+		outPipe = readStdout;
+		OutputMgr::add(readStdout, prefix);
+
+	}
+
 	pid_t child = fork();
 	if (child == 0) {
 		if (chdir(toS(cwd).c_str())) {
-			PLN("Failed to chdir to " << cwd);
+			perror("Failed to chdir: ");
 			exit(1);
 		}
 
+		// Redirect stderr/stdout.
+		if (manage) {
+			close(STDERR_FILENO);
+			dup2(writeStderr, STDERR_FILENO);
+			close(writeStderr);
+
+			close(STDOUT_FILENO);
+			dup2(writeStdout, STDOUT_FILENO);
+			close(writeStdout);
+		}
+
 		// Wait until our parent is ready...
-		raise(SIGSTOP);
+		int signal = 0;
+		sigset_t set;
+		sigemptyset(&set);
+		sigaddset(&set, SIGUSR1);
+		do {
+			sigwait(&set, &signal);
+		} while (signal != SIGUSR1);
 
 		if (env) {
 			execve(argv[0], argv, (char **)env->data());
 		} else {
 			execv(argv[0], argv);
 		}
-		PLN("Failed to exec!");
+
+		perror("Failed to exec: ");
 		exit(1);
 	}
 
@@ -262,7 +293,13 @@ bool Process::spawn() {
 	}
 
 	// Start child again.
-	kill(child, SIGCONT);
+	kill(child, SIGUSR1);
+
+	if (manage) {
+		// Close our ends of the pipes.
+		closePipe(writeStderr);
+		closePipe(writeStdout);
+	}
 
 	// Clean up...
 	for (nat i = 0; i < argc; i++) {

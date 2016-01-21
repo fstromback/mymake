@@ -59,7 +59,7 @@ void closePipe(Pipe end) {
 	CloseHandle(end);
 }
 
-bool writePipe(Pipe to, void *data, nat size) {
+bool writePipe(Pipe to, const void *data, nat size) {
 	// WriteFile on a pipe ensures that either all or none of the buffer is written.
 	DWORD written;
 	return WriteFile(to, data, size, &written, NULL) == TRUE;
@@ -157,6 +157,9 @@ void PipeSet::remove(Pipe p) {
 }
 
 void PipeSet::read(void *to, nat &written, Pipe &from) {
+	from = noPipe;
+	written = 0;
+
 	if (events.size() != data.size()) {
 		events.clear();
 		sources.clear();
@@ -206,6 +209,128 @@ void readPipeSet(PipeSet *pipes, void *to, nat &written, Pipe &from) {
 
 #else
 
-#error "Implement me!"
+#include <sys/select.h>
+
+const Pipe noPipe = -1;
+
+void createPipe(Pipe &read, Pipe &write, bool) {
+	Pipe out[2];
+	pipe(out);
+
+	read = out[0];
+	write = out[1];
+}
+
+void closePipe(Pipe end) {
+	close(end);
+}
+
+bool writePipe(Pipe to, const void *data, nat size) {
+	char *d = (char *)data;
+	nat at = 0;
+	while (at < size) {
+		ssize_t s = write(to, d + at, size - at);
+		if (s < 0)
+			return false;
+
+		at += s;
+	}
+
+	return true;
+}
+
+class PipeSet : NoCopy {
+public:
+	PipeSet(nat bufferSize);
+	~PipeSet();
+
+	nat bufferSize;
+	fd_set fds;
+	int maxFd;
+
+	void add(Pipe pipe);
+	void remove(Pipe pipe);
+	void read(void *to, nat &written, Pipe &from);
+};
+
+PipeSet::PipeSet(nat bufferSize) : bufferSize(bufferSize), maxFd(0) {
+	FD_ZERO(&fds);
+}
+
+PipeSet::~PipeSet() {}
+
+void PipeSet::add(Pipe p) {
+	FD_SET(p, &fds);
+	maxFd = max(maxFd, p + 1);
+}
+
+void PipeSet::remove(Pipe p) {
+	FD_CLR(p, &fds);
+	while (maxFd > 0) {
+		if (FD_ISSET(maxFd - 1, &fds))
+			break;
+		maxFd--;
+	}
+}
+
+void PipeSet::read(void *to, nat &written, Pipe &from) {
+	written = 0;
+	from = noPipe;
+
+	if (maxFd == 0) {
+		WARNING("No fds to read from!");
+		sleep(1);
+		return;
+	}
+
+	fd_set now = fds;
+	int ready = select(maxFd, &now, null, null, null);
+	if (ready == -1) {
+		if (errno != EINTR) {
+			perror("Failed to wait using select: ");
+			exit(11);
+		}
+
+		// No big deal if we happen to wake up...
+		return;
+	}
+
+	for (int i = 0; i < maxFd; i++) {
+		if (!FD_ISSET(i, &now))
+			continue;
+
+		// Found one! Read from it.
+		ssize_t r = ::read(i, to, bufferSize);
+		if (r < 0)
+			written = 0;
+		else
+			written = r;
+
+		// Done!
+		break;
+	}
+}
+
+
+
+PipeSet *createPipeSet(nat bufferSize) {
+	return new PipeSet(bufferSize);
+}
+
+void destroyPipeSet(PipeSet *pipes) {
+	delete pipes;
+}
+
+void addPipeSet(PipeSet *pipes, Pipe pipe) {
+	pipes->add(pipe);
+}
+
+void removePipeSet(PipeSet *pipes, Pipe pipe) {
+	pipes->remove(pipe);
+}
+
+void readPipeSet(PipeSet *pipes, void *to, nat &written, Pipe &from) {
+	pipes->read(to, written, from);
+}
 
 #endif

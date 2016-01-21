@@ -21,7 +21,7 @@ void createPipe(Pipe &read, Pipe &write, bool forChild);
 void closePipe(Pipe p);
 
 // Write to a pipe.
-bool writePipe(Pipe to, void *data, nat size);
+bool writePipe(Pipe to, const void *data, nat size);
 
 
 /**

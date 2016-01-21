@@ -145,7 +145,7 @@ static bool isBlank(const String &line) {
 void Includes::includesIn(const Path &firstFile, const Path &file, PathQueue &to, String *firstInclude) {
 	ifstream in(toS(file).c_str());
 	if (!in) {
-		PLN(in << ":1: Failed to open file.");
+		PLN(file << ":1: Failed to open file.");
 		return;
 	}
 
