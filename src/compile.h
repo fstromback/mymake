@@ -93,6 +93,9 @@ namespace compile {
 		// Combined pch generation+compilation.
 		bool combinedPch;
 
+		// Append extension to the names of intermediate files.
+		bool appendExt;
+
 		typedef UniqueQueue<Compile> CompileQueue;
 
 		// Files to compile in some valid order.
@@ -123,7 +126,7 @@ namespace compile {
 		CacheItem buildCache(const Path &dir) const;
 
 		// Find a valid extension for the given Path.
-		bool findExt(Path &to);
+		vector<Path> findExt(const Path &to);
 
 		// Choose a file to compile.
 		String chooseCompile(const String &file);

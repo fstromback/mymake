@@ -62,6 +62,9 @@ public:
 	// Set the file extension (always the last one).
 	void makeExt(const String &ext);
 
+	// Set the title (includes ext).
+	void makeTitle(const String &title);
+
 	// Does the file exist?
 	bool exists() const;
 

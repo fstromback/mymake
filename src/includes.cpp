@@ -144,6 +144,11 @@ static bool isBlank(const String &line) {
 
 void Includes::includesIn(const Path &firstFile, const Path &file, PathQueue &to, String *firstInclude) {
 	ifstream in(toS(file).c_str());
+	if (!in) {
+		PLN(in << ":1: Failed to open file.");
+		return;
+	}
+
 	bool first = true;
 
 	nat lineNr = 1;
@@ -175,10 +180,10 @@ static Path readPath(istream &from) {
 
 void Includes::load(const Path &from) {
 	ifstream src(toS(from).c_str());
-	if (!src) {
-		PLN(from << ":1: Failed to open file.");
+
+	// Cache did not exist. No problem!
+	if (!src)
 		return;
-	}
 
 	char type;
 

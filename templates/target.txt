@@ -44,6 +44,10 @@ execute=yes
 #Precompiled header.
 #pch=std.h
 
+#Append the file type to the name of the intermediate file? This is useful if
+#a target contains both eg. foo.cpp and foo.cc that should both be compiled.
+#appendExt=no
+
 #Pre-build steps.
 #preBuild=
 

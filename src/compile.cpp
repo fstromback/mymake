@@ -16,7 +16,8 @@ namespace compile {
 		intermediateExt(config.getStr("intermediateExt")),
 		pchHeader(config.getStr("pch")),
 		pchFile(buildDir + Path(config.getStr("pchFile"))),
-		combinedPch(config.getBool("pchCompileCombined")) {
+		combinedPch(config.getBool("pchCompileCombined")),
+		appendExt(config.getBool("appendExt", false)) {
 
 		buildDir.makeDir();
 
@@ -153,7 +154,13 @@ namespace compile {
 		for (nat i = 0; i < toCompile.size(); i++) {
 			const Compile &src = toCompile[i];
 			Path output = src.makeRelative(wd).makeAbsolute(buildDir);
-			output.makeExt(intermediateExt);
+
+			if (appendExt) {
+				String t = output.titleNoExt() + "_" + output.ext() + "." + intermediateExt;
+				output.makeTitle(t);
+			} else {
+				output.makeExt(intermediateExt);
+			}
 
 			output.parent().createDir();
 
@@ -356,7 +363,7 @@ namespace compile {
 		return r;
 	}
 
-	bool Target::findExt(Path &path) {
+	vector<Path> Target::findExt(const Path &path) {
 		// Earlier implementation did way too many queries for files, and has therefore been optimized.
 		// for (nat i = 0; i < validExts.size(); i++) {
 		// 	path.makeExt(validExts[i]);
@@ -367,6 +374,7 @@ namespace compile {
 		// This is faster since we do not need to ask the OS as many times in large projects.
 		Path title(path.titleNoExt());
 		Path parent = path.parent();
+		vector<Path> result;
 
 		CacheMap::const_iterator i = findExtCache.find(parent);
 		if (i == findExtCache.end()) {
@@ -377,19 +385,27 @@ namespace compile {
 
 		// No such file.
 		if (j == i->second.end())
-			return false;
+			return result;
 
 		const vector<String> &exts = j->second;
 		for (nat f = 0; f < exts.size(); f++) {
 			for (nat i = 0; i < validExts.size(); i++) {
 				if (Path::equal(exts[f], validExts[i])) {
-					path.makeExt(validExts[i]);
-					return true;
+					result.push_back(path);
+					result.back().makeExt(validExts[i]);
 				}
 			}
 		}
 
-		return false;
+		if (!appendExt && result.size() > 1) {
+			WARNING("Multiple files with the same name scheduled for compilation.");
+			PLN("This leads to a name collision in the temporary files, leading to");
+			PLN("incorrect compilation, and probably also linker errors.");
+			PLN("If you intend to compile all files below, add 'appendExt=yes' to this target.");
+			PLN("Colliding files:\n" << join(result, "\n"));
+		}
+
+		return result;
 	}
 
 	void Target::addFilesRecursive(CompileQueue &to, const Path &at) {
@@ -420,22 +436,24 @@ namespace compile {
 		Path path(src);
 		path = path.makeAbsolute(wd);
 
-		if (!findExt(path)) {
+		vector<Path> exts = findExt(path);
+		if (exts.empty()) {
 			WARNING("The file " << src << " does not exist with any of the extensions " << join(validExts));
 			return;
 		}
 
-		to.push(Compile(path, pch, false));
+		for (nat i = 0; i < exts.size(); i++) {
+			to.push(Compile(exts[i], pch, false));
+		}
 	}
 
 	void Target::addFile(CompileQueue &to, const Path &header) {
-		Path impl = header;
-		if (!findExt(impl)) {
-			// No cpp file for a header... No big deal.
-			return;
-		}
+		vector<Path> exts = findExt(header);
 
-		to.push(Compile(impl, false, true));
+		// No big deal if no cpp file is found for every h file.
+		for (nat i = 0; i < exts.size(); i++) {
+			to.push(Compile(exts[i], false, true));
+		}
 	}
 
 	String Target::chooseCompile(const String &file) {

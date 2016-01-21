@@ -404,6 +404,10 @@ void Path::makeExt(const String &str) {
 	}
 }
 
+void Path::makeTitle(const String &str) {
+	parts.back() = str;
+}
+
 bool Path::isDir() const {
 	return isDirectory;
 }

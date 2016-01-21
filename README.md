@@ -220,6 +220,10 @@ These variables are used by mymake to understand what should be done:
   what you want when you are compiling a library of some kind.
 - `output`: string specifying the name of the output file. If not specified, the name of the first input file
   is used instead.
+- `appendExt`: append the original extension of the original source file to the intermediate file when compiling.
+  This allows mymake to compile projects where there are multiple files with the same name, eg. `foo.cpp` and `foo.c`
+  without both trying to create `foo.o` and thereby causing compilation to fail. Mymake warns you if you might need to
+  add use this option.
 - `include`: array of paths that should be added to the include path of the compilation.
 - `includeCl`: flag to prepend all elements in `include`.
 - `library`: array of system libraries that should be linked to your executable.
