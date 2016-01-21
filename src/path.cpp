@@ -239,6 +239,10 @@ void Path::createDir() const {
 
 #endif
 
+bool Path::equal(const String &a, const String &b) {
+	return partEq(a, b);
+}
+
 Path::Path(const String &path) : isDirectory(false) {
 	parseStr(path);
 	simplify();
@@ -313,14 +317,20 @@ bool Path::operator ==(const Path &o) const {
 }
 
 bool Path::operator <(const Path &o) const {
-	if (isDirectory != o.isDirectory && parts == o.parts)
-		return o.isDirectory;
-
 	for (nat i = 0; i < parts.size(); i++) {
+		if (o.parts.size() <= i)
+			return false;
+
 		int r = partCmp(parts[i], o.parts[i]);
 		if (r != 0)
 			return r < 0;
 	}
+
+	if (parts.size() < o.parts.size())
+		return true;
+
+	if (isDirectory != o.isDirectory)
+		return o.isDirectory;
 
 	return false;
 }

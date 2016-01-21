@@ -175,6 +175,10 @@ static Path readPath(istream &from) {
 
 void Includes::load(const Path &from) {
 	ifstream src(toS(from).c_str());
+	if (!src) {
+		PLN(from << ":1: Failed to open file.");
+		return;
+	}
 
 	char type;
 

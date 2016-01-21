@@ -14,6 +14,9 @@ public:
 	// User's home directory.
 	static Path home();
 
+	// Are the string equal regarding the current OS?
+	static bool equal(const String &a, const String &b);
+
 	// Create an empty path.
 	Path();
 

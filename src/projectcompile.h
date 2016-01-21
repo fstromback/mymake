@@ -48,6 +48,9 @@ namespace compile {
 		// Ignore sub-directories without a .mymake-file in them.
 		bool explicitTargets;
 
+		// Use prefix when building in parallel?
+		bool usePrefix;
+
 		// Information about a target and all it dependencies.
 		typedef Node<String> TargetInfo;
 

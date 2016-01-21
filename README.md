@@ -148,6 +148,12 @@ To limit how many compilation processes are spawned during compilation, mymake e
 `maxThreads`. Mymake spawns maximum that many processes globally, even if two or more targets are
 compiled in parallel.
 
+When building in parallel, mymake automatically adds a string like `1>` in front of all output done
+in parallel. Each target gets a unique number, so that it is easy to see which target each error
+message originates from. The output `1>` is similar to what is used in Visual Studio, and Emacs
+recognizes error messages with prefixes like this. However, if it causes trouble, set `usePrefix=no`
+either in your project file, or in your global `.mymake`-file.
+
 ## Configuration files
 
 Configuration in mymake is done by assigning values to variables. Each variable is an array of
@@ -252,6 +258,7 @@ These variables are used by mymake to understand what should be done:
   are built in parallel using up to `maxThreads` threads globally. If specific targets do not tolerate this, set `parallel` to
   `no`, and mymake will build those targets in serial.
 - `maxThreads`: Limits the global number of threads (actually processes) used to build the project/target globally.
+- `usePrefix`: When building in parallel, add a prefix to the output corresponding to different targets. Defaults to yes.
 
 ## Variables in strings
 

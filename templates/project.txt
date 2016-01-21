@@ -6,8 +6,11 @@
 #Start with this project.
 #input=a
 
-#Compile targets in parallell?
+#Compile targets in parallel?
 #parallel=yes
+
+#Prefix the output when building in parallel?
+#usePrefix=yes
 
 #Note any options needed to build each target.
 [build]

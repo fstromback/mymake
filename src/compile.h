@@ -110,8 +110,20 @@ namespace compile {
 		// Add a file to the queue of files to process.
 		void addFile(CompileQueue &to, const Path &src);
 
+		// Cache of the directory contents for 'findExt'.
+
+		// Map of all file titles found along with their extension. Paths here are relative.
+		typedef map<Path, vector<String>> CacheItem;
+
+		// Map of all files in searched paths.
+		typedef map<Path, CacheItem> CacheMap;
+		CacheMap findExtCache;
+
+		// Build the cache for a specific directory.
+		CacheItem buildCache(const Path &dir) const;
+
 		// Find a valid extension for the given Path.
-		bool findExt(Path &to) const;
+		bool findExt(Path &to);
 
 		// Choose a file to compile.
 		String chooseCompile(const String &file);

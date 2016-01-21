@@ -19,6 +19,7 @@ namespace compile {
 		projectFile.apply(createSet("deps") + cmdline, depsConfig);
 		projectFile.apply(createSet("build") + cmdline, buildConfig);
 		explicitTargets = config.getBool("explicitTargets", false);
+		usePrefix = config.getBool("usePrefix", true);
 	}
 
 	Project::~Project() {
@@ -140,7 +141,7 @@ namespace compile {
 		nat threads = to<nat>(config.getStr("maxThreads", "1"));
 
 		// Force serial execution?
-		if (!config.getBool("parallel", "yes"))
+		if (!config.getBool("parallel", true))
 			threads = 1;
 
 		if (threads <= 1) {
@@ -151,7 +152,10 @@ namespace compile {
 	}
 
 	bool Project::compileOne(nat id, bool mt) {
-		String prefix = toS(id + 1) + ">";
+		String prefix;
+		if (mt && usePrefix)
+			prefix = toS(id + 1) + ">";
+
 		SetPrefix z(prefix.c_str());
 
 		TargetInfo &info = order[id];

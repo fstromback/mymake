@@ -127,7 +127,7 @@ namespace compile {
 		nat threads = to<nat>(config.getStr("maxThreads", "1"));
 
 		// Force serial execution?
-		if (!config.getBool("parallel", "yes"))
+		if (!config.getBool("parallel", true))
 			threads = 1;
 
 		DEBUG("Using max " << threads << " threads.", VERBOSE);
@@ -339,11 +339,54 @@ namespace compile {
 		}
 	}
 
-	bool Target::findExt(Path &path) const {
-		for (nat i = 0; i < validExts.size(); i++) {
-			path.makeExt(validExts[i]);
-			if (path.exists())
-				return true;
+	Target::CacheItem Target::buildCache(const Path &path) const {
+		CacheItem r;
+
+		vector<Path> children = path.children();
+		for (nat i = 0; i < children.size(); i++) {
+			Path &p = children[i];
+
+			if (p.isDir())
+				continue;
+
+			Path title(p.titleNoExt());
+			r[title] << p.ext();
+		}
+
+		return r;
+	}
+
+	bool Target::findExt(Path &path) {
+		// Earlier implementation did way too many queries for files, and has therefore been optimized.
+		// for (nat i = 0; i < validExts.size(); i++) {
+		// 	path.makeExt(validExts[i]);
+		// 	if (path.exists())
+		// 		return true;
+		// }
+
+		// This is faster since we do not need to ask the OS as many times in large projects.
+		Path title(path.titleNoExt());
+		Path parent = path.parent();
+
+		CacheMap::const_iterator i = findExtCache.find(parent);
+		if (i == findExtCache.end()) {
+			i = findExtCache.insert(make_pair(parent, buildCache(parent))).first;
+		}
+
+		CacheItem::const_iterator j = i->second.find(title);
+
+		// No such file.
+		if (j == i->second.end())
+			return false;
+
+		const vector<String> &exts = j->second;
+		for (nat f = 0; f < exts.size(); f++) {
+			for (nat i = 0; i < validExts.size(); i++) {
+				if (Path::equal(exts[f], validExts[i])) {
+					path.makeExt(validExts[i]);
+					return true;
+				}
+			}
 		}
 
 		return false;
