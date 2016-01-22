@@ -19,7 +19,13 @@ namespace compile {
 		projectFile.apply(createSet("deps") + cmdline, depsConfig);
 		projectFile.apply(createSet("build") + cmdline, buildConfig);
 		explicitTargets = config.getBool("explicitTargets", false);
-		usePrefix = config.getBool("usePrefix", true);
+
+#ifdef WINDOWS
+		usePrefix = "vc";
+#else
+		usePrefix = "gnu";
+#endif
+		usePrefix = config.getStr("usePrefix", usePrefix);
 	}
 
 	Project::~Project() {
@@ -153,8 +159,13 @@ namespace compile {
 
 	bool Project::compileOne(nat id, bool mt) {
 		String prefix;
-		if (mt && usePrefix)
-			prefix = toS(id + 1) + ">";
+		if (mt) {
+			if (usePrefix == "vc") {
+				prefix = toS(id + 1) + ">";
+			} else if (usePrefix == "gnu") {
+				prefix = "p" + toS(id + 1) + ": ";
+			}
+		}
 
 		SetPrefix z(prefix.c_str());
 

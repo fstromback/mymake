@@ -148,11 +148,12 @@ To limit how many compilation processes are spawned during compilation, mymake e
 `maxThreads`. Mymake spawns maximum that many processes globally, even if two or more targets are
 compiled in parallel.
 
-When building in parallel, mymake automatically adds a string like `1>` in front of all output done
-in parallel. Each target gets a unique number, so that it is easy to see which target each error
-message originates from. The output `1>` is similar to what is used in Visual Studio, and Emacs
-recognizes error messages with prefixes like this. However, if it causes trouble, set `usePrefix=no`
-either in your project file, or in your global `.mymake`-file.
+When building in parallel, mymake automatically adds a string like `1>` or `p1: ` in front of all
+output done in parallel. Each target gets a unique number, so that it is easy to see which target
+each error message originates from. The output `1>` is similar to what is used in Visual Studio,
+which works in Emacs when using the Visual Studio compiler. On GCC, mymake adds a string like `p1:`,
+which Emacs correctly recognizes. However, if it causes trouble, set `usePrefix=no` either in your
+project file, or in your global `.mymake`-file.
 
 ## Configuration files
 
@@ -262,7 +263,10 @@ These variables are used by mymake to understand what should be done:
   are built in parallel using up to `maxThreads` threads globally. If specific targets do not tolerate this, set `parallel` to
   `no`, and mymake will build those targets in serial.
 - `maxThreads`: Limits the global number of threads (actually processes) used to build the project/target globally.
-- `usePrefix`: When building in parallel, add a prefix to the output corresponding to different targets. Defaults to yes.
+- `usePrefix`: When building in parallel, add a prefix to the output corresponding to different targets. Defaults to either
+  `vc` or `gnu` (depending on your system). If you set it to `no`, no prefix is added. `vc` adds `n>` before output,
+  `gnu` adds `pn: ` before output. This is so that Emacs recognizes the error messages from the vc and the gnu compiler,
+  respectively.
 
 ## Variables in strings
 

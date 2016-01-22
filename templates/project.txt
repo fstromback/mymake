@@ -10,7 +10,7 @@
 #parallel=yes
 
 #Prefix the output when building in parallel?
-#usePrefix=yes
+#usePrefix=vc|gnu|no
 
 #Note any options needed to build each target.
 [build]
