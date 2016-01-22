@@ -19,6 +19,7 @@ static const pair<String, char> rawLongOptions[] = {
 	make_pair("project", '\3'),
 	make_pair("target", '\2'),
 	make_pair("config", '\1'),
+	make_pair("default-input", '\4'),
 	make_pair("help", '?'),
 	make_pair("threads", 'j'),
 };
@@ -45,7 +46,9 @@ static const char *helpStr =
 	"--project       - generate a sample .myproject in cwd.\n"
 	"--target        - generate a sample .mymake in cwd.\n"
 	"--config        - write global config file.\n"
-	"--threads, -j   - compile in parallel if possible, using this many threads.\n";
+	"--threads, -j   - compile in parallel if possible, using this many threads.\n"
+	"--default-input - add this file as an input if no other is specified on command-line\n"
+	"                  or in configuration. Useful when integrating with text editors.\n";
 
 CmdLine::CmdLine(const vector<String> &params) :
 	errors(false),
@@ -243,6 +246,9 @@ bool CmdLine::parseOption(char opt) {
 			errors = true;
 		exit = true;
 		break;
+	case '\4':
+		state = sDefaultInput;
+		break;
 	default:
 		return false;
 	}
@@ -271,6 +277,9 @@ bool CmdLine::optionParam(const String &v) {
 	case sParallel:
 		threads = to<int>(v);
 		return true;
+	case sDefaultInput:
+		defaultInput = v;
+		return true;
 	default:
 		return false;
 	}
@@ -293,6 +302,10 @@ void CmdLine::apply(const set<String> &options, Config &config) const {
 			Path file(order[i]);
 			config.add("input", toS(file.makeAbsolute()));
 		}
+	}
+
+	if (config.getArray("input").empty()) {
+		config.add("input", toS(Path(defaultInput).makeAbsolute()));
 	}
 
 	if (execute == tYes)

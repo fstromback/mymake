@@ -4,10 +4,9 @@
 ;; when executing mymake. If 'buildconfig' was found, its contents (except any commented
 ;; lines, using #) are used as a parameter to mymake.
 ;; If the 'buildconfig'-file is not found, emacs starts mymake in the buffer's directory,
-;; using the current buffer name as an input if it exists. This is to make it super-simple
+;; using the current buffer name as a last-resort input. This is to make it super-simple
 ;; to start compiling using mymake; create a .cpp-file, write some code and hit M-p.
-;; If you configure mymake to compile what you want automatically, create an empty 'buildconfig'-
-;; file and emacs will not add any parameters.
+;; If you are annoyed by this, set 'mymake-no-default-input' to 't'.
 ;; To force a recompile, you can prefix any mymake-command with C-u.
 ;; Release: C-c C-r. This will run mymake with 'release' as parameter.
 ;; Clean: C-c C-m.
@@ -22,6 +21,7 @@
 (defvar mymake-compilation-w 100 "Compilation window width")
 (defvar mymake-compilation-h 83 "Compilation window height")
 (defvar mymake-compilation-adjust 10 "Compilation window adjustment")
+(defvar mymake-no-default-input nil "Do not try to compile the current buffer if no buildconfig file is found.")
 
 ;; Keybindings
 (global-set-key (kbd "M-p") 'mymake-compile)
@@ -59,7 +59,7 @@
   (interactive "P")
   (mymake-run :force force :replace "release 64"))
 
-(defvar mymake-last-command "" "Last command used in 'mymake-command'.")
+(defvar mymake-last-command "" "Last command used in the function 'mymake-command'.")
 
 (defun mymake-command (command)
   "Run custom mymake command."
@@ -134,9 +134,9 @@
 	;; No config file, we probably want to add the buffer file name as well.
 	(list
 	 buffer-dir
-	 (if (endp (buffer-file-name))
+	 (if (or mymake-no-default-input (endp (buffer-file-name)))
 	     ""
-	   (file-name-nondirectory (buffer-file-name))))
+	   (concat "--default-input " (file-name-nondirectory (buffer-file-name)))))
       (list
        dir
        (mymake-load-config-file (concat dir "buildconfig"))))))

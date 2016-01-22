@@ -66,6 +66,7 @@ private:
 		sDebug,
 		sExecPath,
 		sParallel,
+		sDefaultInput,
 	};
 
 	State state;
@@ -75,6 +76,9 @@ private:
 
 	// Order of the files/options.
 	vector<String> order;
+
+	// Add this file to input if none other exists. empty = do nothing.
+	String defaultInput;
 
 	// Number of threads to use. 0 = no opinion.
 	nat threads;
