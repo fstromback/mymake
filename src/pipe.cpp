@@ -215,7 +215,10 @@ const Pipe noPipe = -1;
 
 void createPipe(Pipe &read, Pipe &write, bool) {
 	Pipe out[2];
-	pipe(out);
+	if (pipe(out)) {
+		perror("Failed to create pipe: ");
+		exit(10);
+	}
 
 	read = out[0];
 	write = out[1];
