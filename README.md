@@ -1,6 +1,6 @@
 # mymake
 
-## overview
+## Overview
 
 Mymake is a tool to build C/C++-programs that requires close to no configuration.
 
@@ -195,7 +195,7 @@ The following options are pre-defined by mymake or the default configuration:
 - `lib`: build a static library.
 - `sharedlib`: build a shared library.
 - `project`: defined when a project file is evaluated in the project-context.
-- `windows`: Defined when running on a windows system, expected to be using CL.exe as the compiler.
+- `windows`: Defined when running on a windows system, expected to be using `cl.exe` as the compiler.
 - `unix`: Defined when running on an unix system, or when running in MinGW.
 
 
@@ -234,7 +234,7 @@ These variables are used by mymake to understand what should be done:
 - `define`: preprocessor defines.
 - `defineCl`: preprocessor define flag.
 - `exceute`: yes or no, telling if mymake should execute the program after a successful compilation. This can be
-  overridden on the commandline using `-e` or `-ne`.
+  overridden on the command line using `-e` or `-ne`.
 - `showTime`: yes or no, telling if mymake should show the total compilation time when done (not implemented).
 - `pch`: the precompiled header file name that should be used. If you are using the default configuration, you only
   need to set this variable to use precompiled headers. If you are using `#pragma once` in gcc, you will sadly get a
