@@ -248,12 +248,14 @@ public:
 	fd_set fds;
 	int maxFd;
 
+	int lastFd;
+
 	void add(Pipe pipe);
 	void remove(Pipe pipe);
 	void read(void *to, nat &written, Pipe &from);
 };
 
-PipeSet::PipeSet(nat bufferSize) : bufferSize(bufferSize), maxFd(0) {
+PipeSet::PipeSet(nat bufferSize) : bufferSize(bufferSize), maxFd(0), lastFd(0) {
 	FD_ZERO(&fds);
 }
 
@@ -295,16 +297,30 @@ void PipeSet::read(void *to, nat &written, Pipe &from) {
 		return;
 	}
 
-	for (int i = 0; i < maxFd; i++) {
-		if (!FD_ISSET(i, &now))
+	if (ready == 0) {
+		printf("Something wrong with select...\n");
+		sleep(1);
+		return;
+	}
+
+	while (true) {
+		if (++lastFd >= maxFd)
+			lastFd = 0;
+
+		if (!FD_ISSET(lastFd, &now))
 			continue;
 
 		// Found one! Read from it.
-		ssize_t r = ::read(i, to, bufferSize);
-		if (r < 0)
+		from = lastFd;
+		ssize_t r = ::read(from, to, bufferSize);
+		if (r == 0) {
+			// Closed fd. Ignore it until the manager detects it is closed.
+			remove(lastFd);
+		} else if (r < 0) {
 			written = 0;
-		else
+		} else {
 			written = r;
+		}
 
 		// Done!
 		break;

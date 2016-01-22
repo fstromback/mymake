@@ -50,7 +50,8 @@ void waitProc() {
 
 
 Process::Process(const Path &file, const vector<String> &args, const Path &cwd, const Env *env) :
-	file(file), args(args), cwd(cwd), env(env), process(invalidProc), owner(null), result(0), finished(false) {}
+	file(file), args(args), cwd(cwd), env(env), process(invalidProc),
+	owner(null), outPipe(noPipe), errPipe(noPipe), result(0), finished(false) {}
 
 int Process::wait() {
 	while (!finished) {
@@ -245,12 +246,23 @@ bool Process::spawn(bool manage, const String &prefix) {
 		createPipe(readStdout, writeStdout, true);
 		outPipe = readStdout;
 		OutputMgr::add(readStdout, prefix);
-
 	}
+
+	// Prepare everything so we do not have to do potential mallocs in the child.
+	String wdStr = toS(cwd);
+	const char *wdCStr = wdStr.c_str();
+
+	sigset_t waitFor;
+	sigemptyset(&waitFor);
+	sigaddset(&waitFor, SIGCONT);
+
+	// Make sure we do not consume SIGCONT too early in the child.
+	sigset_t oldMask;
+	pthread_sigmask(SIG_BLOCK, &waitFor, &oldMask);
 
 	pid_t child = fork();
 	if (child == 0) {
-		if (chdir(toS(cwd).c_str())) {
+		if (chdir(wdCStr)) {
 			perror("Failed to chdir: ");
 			exit(1);
 		}
@@ -267,13 +279,13 @@ bool Process::spawn(bool manage, const String &prefix) {
 		}
 
 		// Wait until our parent is ready...
-		int signal = 0;
-		sigset_t set;
-		sigemptyset(&set);
-		sigaddset(&set, SIGUSR1);
+		int signal;
 		do {
-			sigwait(&set, &signal);
-		} while (signal != SIGUSR1);
+			if (sigwait(&waitFor, &signal)) {
+				perror("Sigwait: ");
+				exit(4);
+			}
+		} while (signal != SIGCONT);
 
 		if (env) {
 			execve(argv[0], argv, (char **)env->data());
@@ -285,6 +297,9 @@ bool Process::spawn(bool manage, const String &prefix) {
 		exit(1);
 	}
 
+	// Restore mask.
+	pthread_sigmask(SIG_SETMASK, &oldMask, null);
+
 	process = child;
 
 	{
@@ -293,7 +308,7 @@ bool Process::spawn(bool manage, const String &prefix) {
 	}
 
 	// Start child again.
-	kill(child, SIGUSR1);
+	kill(child, SIGCONT);
 
 	if (manage) {
 		// Close our ends of the pipes.

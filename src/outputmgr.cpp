@@ -1,7 +1,7 @@
 #include "std.h"
 #include "outputmgr.h"
 
-OutputMgr::OutputMgr() {
+OutputMgr::OutputMgr() : ack(0) {
 	createPipe(selfRead, selfWrite, false);
 	thread.start(&OutputMgr::threadMain, *this);
 }
@@ -23,20 +23,26 @@ OutputMgr::~OutputMgr() {
 }
 
 void OutputMgr::addPipe(Pipe pipe, const String &prefix, bool errorStream) {
-	Lock::Guard z(editsLock);
-	PipeData *data = new PipeData(pipe, prefix, errorStream);
-	toAdd.push(data);
+	{
+		Lock::Guard z(editsLock);
+		PipeData *data = new PipeData(pipe, prefix, errorStream);
+		toAdd.push(data);
+	}
 
 	// Notify.
 	writePipe(selfWrite, "U", 1);
+	ack.down();
 }
 
 void OutputMgr::removePipe(Pipe pipe) {
-	Lock::Guard z(editsLock);
-	toRemove.push(pipe);
+	{
+		Lock::Guard z(editsLock);
+		toRemove.push(pipe);
+	}
 
 	// Notify.
 	writePipe(selfWrite, "U", 1);
+	ack.down();
 }
 
 void OutputMgr::threadMain() {
@@ -55,15 +61,16 @@ void OutputMgr::threadMain() {
 		PipeMap::iterator it = pipes.find(from);
 		if (it == pipes.end()) {
 			// From selfRead.
-			bool update = false;
+			nat update = 0;
 			for (nat i = 0; i < written; i++) {
-				if (buffer[i] == 'E')
+				if (buffer[i] == 'E') {
 					exit = true;
-				else if (buffer[i] == 'U')
-					update = true;
+				} else if (buffer[i] == 'U') {
+					update++;
+				}
 			}
 
-			if (update) {
+			if (update > 0) {
 				Lock::Guard z(editsLock);
 
 				while (!toAdd.empty()) {
@@ -83,6 +90,9 @@ void OutputMgr::threadMain() {
 						pipes.erase(i);
 					}
 				}
+
+				for (nat i = 0; i < update; i++)
+					ack.up();
 			}
 		} else {
 			it->second->add(buffer, written);

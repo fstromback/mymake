@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * Platform agnostic lock.
+ * Platform agnostic lock. Handles recursive locks.
  */
 class Lock : NoCopy {
 public:
