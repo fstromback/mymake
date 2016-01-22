@@ -49,7 +49,7 @@ namespace compile {
 		bool explicitTargets;
 
 		// Use prefix when building in parallel?
-		string usePrefix;
+		String usePrefix;
 
 		// Information about a target and all it dependencies.
 		typedef Node<String> TargetInfo;

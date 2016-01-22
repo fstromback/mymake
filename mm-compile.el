@@ -1,4 +1,17 @@
 ;; Emacs integration.
+;; Use M-p to compile using mymake. If a parent directory (or the current directory)
+;; contains a file named 'buildconfig', that directory is used as a current directory
+;; when executing mymake. If 'buildconfig' was found, its contents (except any commented
+;; lines, using #) are used as a parameter to mymake.
+;; If the 'buildconfig'-file is not found, emacs starts mymake in the buffer's directory,
+;; using the current buffer name as an input if it exists. This is to make it super-simple
+;; to start compiling using mymake; create a .cpp-file, write some code and hit M-p.
+;; If you configure mymake to compile what you want automatically, create an empty 'buildconfig'-
+;; file and emacs will not add any parameters.
+;; To force a recompile, you can prefix any mymake-command with C-u.
+;; Release: C-c C-r. This will run mymake with 'release' as parameter.
+;; Clean: C-c C-m.
+;; Custom command: C-c q
 
 (require 'cl)
 
@@ -113,11 +126,17 @@
     (mymake-list-to-str lines)))
 
 (defun mymake-load-config ()
-  (let ((dir (mymake-find-config (buffer-file-name))))
+  (let* ((buffer-dir (if (endp (buffer-file-name))
+			 default-directory
+		       (parent-directory (buffer-file-name))))
+	 (dir (mymake-find-config buffer-dir)))
     (if (endp dir)
+	;; No config file, we probably want to add the buffer file name as well.
 	(list
-	 (parent-directory (buffer-file-name))
-	 "")
+	 buffer-dir
+	 (if (endp (buffer-file-name))
+	     ""
+	   (file-name-nondirectory (buffer-file-name))))
       (list
        dir
        (mymake-load-config-file (concat dir "buildconfig"))))))
