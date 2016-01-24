@@ -11,6 +11,19 @@
 ;; Release: C-c C-r. This will run mymake with 'release' as parameter.
 ;; Clean: C-c C-m.
 ;; Custom command: C-c q
+;;
+;; Buildconfig syntax:
+;; Lines starting with # are comments
+;; Lines starting with : are directives to this emacs mode
+;; All other lines are concatenated to form a command-line when running mymake.
+;;
+;; Directives are as follows:
+;; :template yes     - add a template to cpp/h-files:
+;; :pch foo.h        - include the precompiled header in cpp-files in templates
+;; :namespace yes    - add "namespace <x> { }" to files, where <x> is the subdirectory the
+;;                     current file is in with regards to the buildconfig file.
+;; :template-headers - regex matching headers to apply template to.
+;; :template-sources - regex matching source files to apply template to.
 
 (require 'cl)
 
@@ -22,6 +35,9 @@
 (defvar mymake-compilation-h 83 "Compilation window height")
 (defvar mymake-compilation-adjust 10 "Compilation window adjustment")
 (defvar mymake-no-default-input nil "Do not try to compile the current buffer if no buildconfig file is found.")
+
+(defvar mymake-default-headers "\\(\\.h\\|\\.hh\\|\\.hpp\\)$" "Default regex for matching header files.")
+(defvar mymake-default-sources "\\(\\.cpp\\|\\.cc\\|\\.cxx\\)$" "Default regex for matching source files.")
 
 ;; Keybindings
 (global-set-key (kbd "M-p") 'mymake-compile)
@@ -74,7 +90,8 @@
   (interactive)
   (if (yes-or-no-p (concat "Really delete " buffer-file-name "? "))
       (progn
-	(delete-file buffer-file-name)
+	(if (file-exists-p buffer-file-name)
+	    (delete-file buffer-file-name))
 	(kill-buffer))))
 
 (defun mymake-rename-file ()
@@ -109,23 +126,58 @@
     (split-string (buffer-string) "\n")))
 
 (defun mymake-remove-comments (lines)
+  "Removes any lines starting with #, : or empty lines"
   (remove-if (lambda (x)
 	       (or
 		(= (length x) 0)
-		(= (string-to-char x) ?#))) lines))
+		(= (string-to-char x) ?:)
+		(= (string-to-char x) ?#)))
+	     lines))
 
 (defun mymake-list-to-str (lines)
   (cond ((stringp lines) lines)
 	((consp lines) (reduce (lambda (a b) (concat a " " b)) lines))
 	(t "")))
 
-(mymake-list-to-str '())
+(defun mymake-option (line)
+  "Extract a single option from a line, if it is a valid option."
+  (cond ((string= line "") 'nil)
+	((not (= (string-to-char line) ?:)) 'nil)
+	(t
+	 (let ((parts (split-string (substring line 1))))
+	   (if (> (length parts) 1)
+	       (cons (intern (first parts))
+		     (mymake-list-to-str (rest parts)))
+	     'nil)))))
+
+(defun mymake-assoc (value options &optional default)
+  "Find a configuration option."
+  (let ((r (assoc value options)))
+    (if (endp r)
+	default
+      (cdr r))))
+
+(defun mymake-options (lines)
+  "Find options (starting with : )"
+  (if (endp lines)
+      '()
+    (let ((opt (mymake-option (first lines))))
+      (if (endp opt)
+	  (mymake-options (rest lines))
+	(cons opt (mymake-options (rest lines)))))))
 
 (defun mymake-load-config-file (file)
-  (let ((lines (mymake-remove-comments (mymake-file-to-lines file))))
-    (mymake-list-to-str lines)))
+  "Returns an alist with the configuration"
+  (let* ((file-lines (mymake-file-to-lines file))
+	 (cmdline (mymake-list-to-str (mymake-remove-comments file-lines)))
+	 (options (mymake-options file-lines)))
+
+    (cons
+     (cons 'cmdline cmdline)
+     options)))
 
 (defun mymake-load-config ()
+  "Returns an alist with configuration + current directory as 'dir'"
   (let* ((buffer-dir (if (endp (buffer-file-name))
 			 default-directory
 		       (parent-directory (buffer-file-name))))
@@ -133,12 +185,13 @@
     (if (endp dir)
 	;; No config file, we probably want to add the buffer file name as well.
 	(list
-	 buffer-dir
-	 (if (or mymake-no-default-input (endp (buffer-file-name)))
-	     ""
-	   (concat "--default-input " (file-name-nondirectory (buffer-file-name)))))
-      (list
-       dir
+	 (cons 'dir buffer-dir)
+	 (cons 'cmdline
+	       (if (or mymake-no-default-input (endp (buffer-file-name)))
+		   ""
+		 (concat "--default-input " (file-name-nondirectory (buffer-file-name))))))
+      (cons
+       (cons 'dir dir)
        (mymake-load-config-file (concat dir "buildconfig"))))))
 
 (defun mymake-args-str (prepend replace config)
@@ -150,14 +203,67 @@
 
 (cl-defun mymake-run (&optional &key force &key prepend &key replace)
   (let* ((config (mymake-load-config))
-	 (wd (first config))
+	 (wd (mymake-assoc 'dir config))
 	 (default-directory wd)
-	 (args (mymake-args-str prepend replace (second config))))
+	 (args (mymake-args-str prepend replace (mymake-assoc 'cmdline config))))
     (compile (concat
 	      mymake-command " "
 	      (if (endp force)
 		  args
 		(concat "-f " args))))))
+
+;; Add template if desired.
+(add-hook 'find-file-hooks 'mymake-maybe-add-template)
+(defun mymake-maybe-add-template ()
+  "Check to see if we want to add templates to a newly-created file."
+  (if (file-exists-p buffer-file-name)
+      'nil
+    (let ((config (mymake-load-config)))
+      (cond ((not (string= (mymake-assoc 'template config "no") "yes")) 'nil)
+	    ((string-match (mymake-assoc 'template-source config mymake-default-sources) buffer-file-name)
+	     (mymake-add-source-template config))
+	    ((string-match (mymake-assoc 'template-header config mymake-default-headers) buffer-file-name)
+	     (mymake-add-header-template config))
+	    (t 'nil)))))
+
+(defun mymake-add-source-template (config)
+  (let ((pch (mymake-assoc 'pch config 'nil)))
+    ;; Syntax highlighting works _way_ better when one string is inserted instead of in different parts...
+    (if (not (endp pch))
+	(insert (concat "#include \"" pch "\"\n"))))
+  (let* ((header (mymake-assoc 'header-ext config "h"))
+	 (fn (concat (file-name-base buffer-file-name) "." header)))
+    (insert (concat "#include \"" fn "\"\n")))
+
+  (insert "\n")
+
+  (mymake-insert-namespace config))
+
+(defun mymake-add-header-template (config)
+  (insert "#pragma once\n\n")
+  (mymake-insert-namespace config))
+
+(defun mymake-insert-namespace (config)
+  (if (string= (mymake-assoc 'namespace config "no") "yes")
+      (let ((name (mymake-target-name config)))
+	(if name
+	    (progn
+	      (insert "namespace " (downcase name) " {\n\n")
+	      (let ((pos (point)))
+		(insert "\n\n}\n")
+		(goto-char pos)
+		(indent-for-tab-command)))))))
+
+(defun mymake-target-name (config)
+  (let* ((wd (downcase (mymake-assoc 'dir config)))
+	 (left (downcase (substring buffer-file-name 0 (length wd))))
+	 (right (downcase (substring buffer-file-name (length wd)))))
+    (if (string= left wd)
+	(let ((parts (split-string right "/")))
+	  (if (> (length parts) 1)
+	      (first parts)
+	    'nil))
+      'nil)))
 
 
 ;; Compilation buffer management.
