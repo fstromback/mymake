@@ -122,7 +122,7 @@ usePch=-include <noExt|pchFile>
 compile=*:g++ <defines> <flags> <warnings> <usePch*if|pch> <file> -c <includes> -o <output>
 
 #Link all files
-link=g++ <files> <libs> -o <output>
+link=g++ <files> <linkFlags> <libs> -o <output>
 
 [unix,!release]
 flags+=-g
@@ -139,7 +139,23 @@ link=ar rcs <output> <files>
 
 [unix,sharedlib]
 execExt=so
-link=g++ -shared <files> <libs> -o <output>
+linkFlags+=-shared
+
+#Sample configuration for compiling Qt5 applications on Unix.
+[unix,qt]
+qtLibCl=-I/usr/include/qt5/Qt
+qtLibFlag=-lQt5
+flags+=-fPIC -I/usr/include/qt5/ <qtLibCl*qtLib>
+linkFlags+=<qtLibFlag*qtLib>
+
+#Qt libraries.
+qtLib+=Core
+qtLib+=Gui
+qtLib+=Widgets
+
+ext+=h
+appendExt=yes
+compile+=*.h:touch <output>.cpp && moc <file> -o <output>.cpp && g++ <defines> <flags> <warnings> <output>.cpp -c -o <output>
 
 [windows]
 
@@ -220,7 +236,7 @@ execExt=dll
 linkFlags+=/DLL
 manifestId=2
 
-[!winMain,!sharedlib,!lib]
+[windows,!winMain,!sharedlib,!lib]
 #Windows applications have a special entry point...
 linkFlags+=/SUBSYSTEM:CONSOLE
 define+=_CONSOLE
