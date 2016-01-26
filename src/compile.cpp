@@ -10,7 +10,6 @@ namespace compile {
 		wd(wd),
 		config(config),
 		includes(wd, config),
-		validExts(config.getArray("ext")),
 		compileVariants(config.getArray("compile")),
 		buildDir(wd + Path(config.getStr("buildDir"))),
 		intermediateExt(config.getStr("intermediateExt")),
@@ -23,6 +22,16 @@ namespace compile {
 
 		linkOutput = config.getBool("linkOutput", false);
 		forwardDeps = config.getBool("forwardDeps", false);
+
+		// Add unique file extensions.
+		vector<String> ext = config.getArray("ext");
+		set<String> extSet;
+		for (nat i = 0; i < ext.size(); i++) {
+			if (extSet.count(ext[i]) == 0) {
+				extSet.insert(ext[i]);
+				validExts << ext[i];
+			}
+		}
 
 		vector<String> ign = config.getArray("ignore");
 		for (nat i = 0; i < ign.size(); i++)

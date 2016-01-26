@@ -28,15 +28,19 @@ void waitProc() {
 	int result;
 	systemWaitProc(exited, result);
 
-	Lock::Guard z(aliveLock);
+	Process *p = null;
 
-	ProcMap::const_iterator i = alive.find(exited);
+	{
+		Lock::Guard z(aliveLock);
+		ProcMap::const_iterator i = alive.find(exited);
 
-	if (i == alive.end())
-		return;
+		if (i == alive.end())
+			return;
 
-	Process *p = i->second;
-	alive.erase(i);
+		p = i->second;
+		alive.erase(i);
+	}
+
 	if (!p)
 		return;
 

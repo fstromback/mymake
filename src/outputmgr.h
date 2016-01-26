@@ -30,9 +30,6 @@ private:
 	// Pipe to ourselves, used for communicating to the worker thread.
 	Pipe selfWrite, selfRead;
 
-	// Wait for the pipe thread to acknowledge requests on the pipe. All 'U' events are acked by upping this sema.
-	Sema ack;
-
 	// Data for one pipe.
 	struct PipeData {
 		// Pipe.
@@ -75,6 +72,9 @@ private:
 	// Queue for edits to 'pipes'.
 	queue<PipeData *> toAdd;
 	queue<Pipe> toRemove;
+
+	// Queue for wakes from 'pipes'.
+	queue<Sema *> wake;
 
 	// Lock for 'toAdd' and 'toRemove'.
 	Lock editsLock;
