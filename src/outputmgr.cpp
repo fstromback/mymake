@@ -143,19 +143,16 @@ void OutputMgr::PipeData::flush() {
 	bufferCount = 0;
 }
 
-OutputMgr &OutputMgr::me() {
-	static OutputMgr me;
-	return me;
-}
+OutputMgr OutputMgr::me;
 
 void OutputMgr::add(Pipe pipe, const String &prefix) {
-	me().addPipe(pipe, prefix, false);
+	me.addPipe(pipe, prefix, false);
 }
 
 void OutputMgr::addError(Pipe pipe, const String &prefix) {
-	me().addPipe(pipe, prefix, true);
+	me.addPipe(pipe, prefix, true);
 }
 
 void OutputMgr::remove(Pipe pipe) {
-	me().removePipe(pipe);
+	me.removePipe(pipe);
 }

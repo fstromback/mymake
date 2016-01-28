@@ -79,8 +79,8 @@ private:
 	// Lock for 'toAdd' and 'toRemove'.
 	Lock editsLock;
 
-	// Get global instance.
-	static OutputMgr &me();
+	// Our global instance.
+	static OutputMgr me;
 
 	// Helpers for add and remove.
 	void addPipe(Pipe pipe, const String &prefix, bool errorStream);
