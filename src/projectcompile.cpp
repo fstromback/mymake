@@ -167,11 +167,14 @@ namespace compile {
 			}
 		}
 
-		SetPrefix z(prefix.c_str());
-
 		TargetInfo &info = order[id];
 		Target *t = target[info.name];
-		DEBUG("-- Target " << info.name << " --", NORMAL);
+
+		String banner;
+		if (debugLevel >= dbg_NORMAL)
+			banner = "-- Target " + info.name + " --";
+		SetBanner w(banner.c_str());
+		SetPrefix z(prefix.c_str());
 
 		vector<Path> d = dependencies(info.name, info);
 		d = removeDuplicates(d);
@@ -179,7 +182,7 @@ namespace compile {
 			t->addLib(d[i]);
 		}
 
-		if (!t->compile(prefix)) {
+		if (!t->compile()) {
 			DEBUG("Compilation of " << info.name << " failed!", NORMAL);
 			return false;
 		}

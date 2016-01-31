@@ -49,6 +49,18 @@ String trim(const String &s) {
 
 Lock outputLock;
 
-namespace p {
-	THREAD const char *prefix = null;
+THREAD OutputState outputState;
+
+void OutputState::output(ostream &to) {
+	if (banner) {
+		if (prefix)
+			to << prefix;
+
+		to << banner << endl;
+		banner = null;
+	}
+
+	if (prefix) {
+		to << prefix;
+	}
 }

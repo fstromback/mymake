@@ -29,7 +29,7 @@ public:
 
 	// Start the process! if 'manage' is true, we will serialize the ouput through ourselves and optionally
 	// add 'prefix'.
-	bool spawn(bool manage = false, const String &prefix = "");
+	bool spawn(bool manage = false, OutputState *state = null);
 
 	// Wait until the process has terminated, and get its exit code.
 	int wait();
@@ -74,7 +74,7 @@ typedef map<ProcId, Process *> ProcMap;
 class ProcGroup : NoCopy {
 public:
 	// Create, set local limit.
-	ProcGroup(nat limit = 1, const String &prefix = "");
+	ProcGroup(nat limit, OutputState &state);
 
 	// Destroy.
 	~ProcGroup();
@@ -92,8 +92,8 @@ public:
 	bool wait();
 
 private:
-	// Our prefix.
-	String prefix;
+	// Our output state.
+	OutputState &state;
 
 	// Our limit.
 	nat limit;

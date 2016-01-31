@@ -14,8 +14,8 @@ public:
 	~OutputMgr();
 
 	// Add pipe.
-	static void add(Pipe pipe, const String &prefix);
-	static void addError(Pipe pipe, const String &prefix);
+	static void add(Pipe pipe, OutputState *state);
+	static void addError(Pipe pipe, OutputState *state);
 
 	// Remove pipe.
 	static void remove(Pipe pipe);
@@ -35,8 +35,8 @@ private:
 		// Pipe.
 		Pipe pipe;
 
-		// Prefix.
-		String prefix;
+		// Output state.
+		OutputState *state;
 
 		// To standard error?
 		bool errorStream;
@@ -53,7 +53,7 @@ private:
 		nat bufferCount;
 
 		// Create.
-		inline PipeData(Pipe pipe, const String &prefix, bool errorStream);
+		inline PipeData(Pipe pipe, OutputState *state, bool errorStream);
 
 		// Destroy.
 		~PipeData();
@@ -83,7 +83,7 @@ private:
 	static OutputMgr me;
 
 	// Helpers for add and remove.
-	void addPipe(Pipe pipe, const String &prefix, bool errorStream);
+	void addPipe(Pipe pipe, OutputState *state, bool errorStream);
 	void removePipe(Pipe pipe);
 
 	// Main function for the thread.

@@ -1,6 +1,5 @@
 #pragma once
 #include "path.h"
-#include "pathqueue.h"
 #include "config.h"
 #include "wildcard.h"
 
@@ -34,7 +33,7 @@ public:
 	// All files included from this file.
 	set<Path> includes;
 
-	// Is this file ignored?
+	// Is this file ignored? (ie. not useful to look for headers inside?)
 	bool ignored;
 
 	// Compute the last modified date of all includes.
@@ -57,7 +56,7 @@ public:
 	IncludeInfo info(const Path &file);
 
 	// Resolve an include string given the include path(s).
-	Path resolveInclude(const Path &first, const Path &fromFile, nat lineNr, const String &inc) const;
+	Path resolveInclude(const Path &file, nat lineNr, const String &inc) const;
 
 	// Load the cache from file.
 	void load(const Path &from);
@@ -78,30 +77,40 @@ private:
 	// Include search paths. The root is always first.
 	vector<Path> includePaths;
 
-	// Information about a single file (+ time added to cache).
+	// Internal representation of a single file, both headers and cpp-files are stored this way.
+	// This makes it possible to only look for includes in a header once, and re-use that
+	// information for other files.
 	struct Info {
 		Info();
-		Info(const IncludeInfo &info, const Timestamp &time);
-		Info(const Path &file, const Timestamp &time);
+		Info(const Path &file);
 
-		// Regular info.
-		IncludeInfo info;
+		// File name.
+		Path file;
 
-		// Last modified as seen by the cache.
+		// First file included (if any).
+		String firstInclude;
+
+		// All files included from this file.
+		set<Path> includes;
+
+		// The timestamp of the file last time we looked at it.
 		Timestamp lastModified;
 
-		// Up to date?
-		bool upToDate() const;
+		// Is this file ignored? Ie, we did not even try too look for headers here?
+		bool ignored;
+
+		// Valid?
+		bool valid;
 	};
 
-	// Information about each file.
+	// Information about each file. If a file is in the cache, it is valid (ie. it is not too old).
 	typedef map<Path, Info> InfoMap;
 	InfoMap cache;
 
-	// Find includes in file, and all files included from there.
-	IncludeInfo recursiveIncludesIn(const Path &file);
+	// Get an Info struct for a specific entry, creating it if it does not already exist.
+	const Info &fileInfo(const Path &file);
 
-	// Find includes in file.
-	void includesIn(const Path &firstFile, const Path &file, PathQueue &to, String *firstInclude);
+	// Create the file info to be inserted into the cache.
+	Info createFileInfo(const Path &file);
 
 };

@@ -77,7 +77,7 @@ int Process::wait() {
 
 const ProcId invalidProc = INVALID_HANDLE_VALUE;
 
-bool Process::spawn(bool manage, const String &prefix) {
+bool Process::spawn(bool manage, OutputState *state) {
 	ostringstream cmdline;
 	cmdline << file;
 	for (nat i = 0; i < args.size(); i++)
@@ -97,13 +97,13 @@ bool Process::spawn(bool manage, const String &prefix) {
 		createPipe(readStderr, writeStderr, true);
 		si.hStdError = writeStderr;
 		errPipe = readStderr;
-		OutputMgr::addError(readStderr, prefix);
+		OutputMgr::addError(readStderr, state);
 
 		Pipe readStdout, writeStdout;
 		createPipe(readStdout, writeStdout, true);
 		si.hStdOutput = writeStdout;
 		outPipe = readStdout;
-		OutputMgr::add(readStdout, prefix);
+		OutputMgr::add(readStdout, state);
 	} else {
 		si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 		si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -366,7 +366,7 @@ static void systemWaitProc(ProcId &proc, int &result) {
 #endif
 
 
-ProcGroup::ProcGroup(nat limit, const String &prefix) : prefix(prefix), limit(limit), failed(false) {
+ProcGroup::ProcGroup(nat limit, OutputState &state) : state(state), limit(limit), failed(false) {
 	if (limit == 0)
 		limit = 1;
 }
@@ -414,7 +414,7 @@ bool ProcGroup::spawn(Process *p) {
 		return false;
 	}
 
-	p->spawn(true, prefix);
+	p->spawn(true, &state);
 	our.insert(make_pair(p->process, p));
 
 	// Make the output look more logical to the user when running on one thread.

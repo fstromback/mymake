@@ -1,6 +1,6 @@
 #pragma once
 #include "compile.h"
-#include "pathqueue.h"
+#include "uniquequeue.h"
 #include "toposort.h"
 #include "sync.h"
 

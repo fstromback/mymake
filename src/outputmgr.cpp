@@ -22,12 +22,12 @@ OutputMgr::~OutputMgr() {
 	}
 }
 
-void OutputMgr::addPipe(Pipe pipe, const String &prefix, bool errorStream) {
+void OutputMgr::addPipe(Pipe pipe, OutputState *state, bool errorStream) {
 	Sema ack(0);
 
 	{
 		Lock::Guard z(editsLock);
-		PipeData *data = new PipeData(pipe, prefix, errorStream);
+		PipeData *data = new PipeData(pipe, state, errorStream);
 		toAdd.push(data);
 		wake.push(&ack);
 	}
@@ -110,8 +110,8 @@ void OutputMgr::threadMain() {
 	destroyPipeSet(pipeSet);
 }
 
-OutputMgr::PipeData::PipeData(Pipe pipe, const String &prefix, bool errorStream) :
-	pipe(pipe), prefix(prefix), errorStream(errorStream), bufferCount(0) {}
+OutputMgr::PipeData::PipeData(Pipe pipe, OutputState *state, bool errorStream) :
+	pipe(pipe), state(state), errorStream(errorStream), bufferCount(0) {}
 
 OutputMgr::PipeData::~PipeData() {
 	closePipe(pipe);
@@ -135,22 +135,30 @@ void OutputMgr::PipeData::add(const char *src, nat size) {
 
 void OutputMgr::PipeData::flush() {
 	buffer[bufferCount] = 0;
-	if (errorStream) {
-		PERROR(prefix << buffer);
+	if (state) {
+		if (errorStream) {
+			PERROR_THREAD(*state, buffer);
+		} else {
+			PLN_THREAD(*state, buffer);
+		}
 	} else {
-		PLN(prefix << buffer);
+		if (errorStream) {
+			PERROR(buffer);
+		} else {
+			PLN(buffer);
+		}
 	}
 	bufferCount = 0;
 }
 
 OutputMgr OutputMgr::me;
 
-void OutputMgr::add(Pipe pipe, const String &prefix) {
-	me.addPipe(pipe, prefix, false);
+void OutputMgr::add(Pipe pipe, OutputState *state) {
+	me.addPipe(pipe, state, false);
 }
 
-void OutputMgr::addError(Pipe pipe, const String &prefix) {
-	me.addPipe(pipe, prefix, true);
+void OutputMgr::addError(Pipe pipe, OutputState *state) {
+	me.addPipe(pipe, state, true);
 }
 
 void OutputMgr::remove(Pipe pipe) {

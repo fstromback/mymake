@@ -190,43 +190,73 @@ enum Tristate {
 // Synchronization for output.
 extern Lock outputLock;
 
-namespace p {
-	// Thread-local prefix.
-	extern THREAD const char *prefix;
-}
+// State for output (prefix + banner).
+struct OutputState {
+	// Banner, something written before the first output.
+	const char *banner;
 
-// Set prefix for this thread.
+	// Prefix, written before each line.
+	const char *prefix;
+
+	// Output any needed prefixes.
+	void output(ostream &to);
+};
+
+extern THREAD OutputState outputState;
+
+// Set prefix for this thread. (NOTE: not recursive, eg. if we have a prefix, SetPrefix replaces the
+// current one, it does not add another one).
 class SetPrefix : NoCopy {
 public:
-	inline SetPrefix(const char *to) : old(p::prefix) {
-		p::prefix = to;
+	inline SetPrefix(const char *to) : old(outputState.prefix) {
+		outputState.prefix = to;
 	}
 
 	inline ~SetPrefix() {
-		p::prefix = old;
+		outputState.prefix = old;
 	}
 
 private:
 	const char *old;
 };
 
-// Print line.
-#define PLN(x)									\
+// Set banner for this thread. (NOTE: not recursive, eg. if a banner is set, that banner is delayed
+// until after this banner is out of scope, they do not appar in order as could be expected).
+class SetBanner : NoCopy {
+public:
+	inline SetBanner(const char *to) : old(outputState.banner) {
+		outputState.banner = to;
+	}
+
+	inline ~SetBanner() {
+		outputState.banner = old;
+	}
+
+private:
+	const char *old;
+};
+
+// Print line in the context of another thread.
+#define PLN_THREAD(threadState, x)				\
 	do {										\
 		Lock::Guard _w(outputLock);				\
-		if (p::prefix)							\
-			std::cout << p::prefix;				\
+		(threadState).output(std::cout);		\
 		std::cout << x << endl;					\
 	} while (false)
 
-// Print line to stderr.
-#define PERROR(x)								\
+// Print line.
+#define PLN(x) PLN_THREAD(outputState, x)
+
+// Print line to stderr in the context of another thread.
+#define PERROR_THREAD(threadState, x)			\
 	do {										\
 		Lock::Guard _w(outputLock);				\
-		if (p::prefix)							\
-			std::cout << p::prefix;				\
+		(threadState).output(std::cerr);		\
 		std::cerr << x << endl;					\
 	} while (false)
+
+// Print line to stderr.
+#define PERROR(x) PERROR_THREAD(outputState, x)
 
 // Print x = <value of x>
 #define PVAR(x) PLN(#x << "=" << x)

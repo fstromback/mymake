@@ -133,7 +133,7 @@ namespace compile {
 		return true;
 	}
 
-	bool Target::compile(const String &prefix) {
+	bool Target::compile() {
 		nat threads = to<nat>(config.getStr("maxThreads", "1"));
 
 		// Force serial execution?
@@ -141,7 +141,7 @@ namespace compile {
 			threads = 1;
 
 		DEBUG("Using max " << threads << " threads.", VERBOSE);
-		ProcGroup group(threads, prefix);
+		ProcGroup group(threads, outputState);
 
 		DEBUG("Compiling target in " << wd, INFO);
 

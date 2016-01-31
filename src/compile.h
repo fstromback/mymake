@@ -1,7 +1,7 @@
 #pragma once
 #include "path.h"
 #include "config.h"
-#include "pathqueue.h"
+#include "uniquequeue.h"
 #include "includes.h"
 #include "wildcard.h"
 #include "process.h"
@@ -27,7 +27,7 @@ namespace compile {
 		bool find();
 
 		// Compile a directory with a .mymake file in.
-		bool compile(const String &prefix = "");
+		bool compile();
 
 		// Execute the final executable.
 		int execute(const vector<String> &params) const;
