@@ -267,6 +267,8 @@ These variables are used by mymake to understand what should be done:
   `vc` or `gnu` (depending on your system). If you set it to `no`, no prefix is added. `vc` adds `n>` before output,
   `gnu` adds `pn: ` before output. This is so that Emacs recognizes the error messages from the vc and the gnu compiler,
   respectively.
+- `absolutePath`: send absolute paths to the compiler, this helps emacs find proper source files in projects with multiple
+  targets.
 
 ## Variables in strings
 

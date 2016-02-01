@@ -35,7 +35,6 @@ IncludeInfo Includes::info(const Path &file) {
 
 	// TODO? We may want to cache the result of this little search as well, but only until mymake
 	// terminates, not more than that.
-	bool first = true;
 	UniqueQueue<Path> toExplore;
 	toExplore << file;
 

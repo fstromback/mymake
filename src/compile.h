@@ -96,6 +96,12 @@ namespace compile {
 		// Append extension to the names of intermediate files.
 		bool appendExt;
 
+		// Absolute paths to the compiler.
+		bool absolutePath;
+
+		// Transform the path to absolute/relative as set up by the config.
+		String preparePath(const Path &path);
+
 		typedef UniqueQueue<Compile> CompileQueue;
 
 		// Files to compile in some valid order.

@@ -6,6 +6,7 @@ bin/
 release/
 
 mymake
+mymake_v2
 
 *.exe
 *.lib

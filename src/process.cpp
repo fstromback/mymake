@@ -228,7 +228,7 @@ static char *createStr(const String &str) {
 	return n;
 }
 
-bool Process::spawn(bool manage, const String &prefix) {
+bool Process::spawn(bool manage, OutputState *state) {
 	nat argc = args.size() + 1;
 	char **argv = new char *[argc + 1];
 
@@ -245,11 +245,11 @@ bool Process::spawn(bool manage, const String &prefix) {
 		Pipe readStderr, readStdout;
 		createPipe(readStderr, writeStderr, true);
 		errPipe = readStderr;
-		OutputMgr::addError(readStderr, prefix);
+		OutputMgr::addError(readStderr, state);
 
 		createPipe(readStdout, writeStdout, true);
 		outPipe = readStdout;
-		OutputMgr::add(readStdout, prefix);
+		OutputMgr::add(readStdout, state);
 	}
 
 	// Prepare everything so we do not have to do potential mallocs in the child.

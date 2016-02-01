@@ -112,6 +112,9 @@ warnings=-Wall -Wextra
 pchFile=stdafx.h.gch
 usePch=-include <pchFile>
 
+#Send absolute paths to the compiler (better with Emacs).
+absolutePath=yes
+
 #Compile the precompiled header.
 pchFile=stdafx.h.gch
 pchCompile=g++ <defines> <flags> <warnings> <file> -c <includes> -o <output>
@@ -167,7 +170,8 @@ libraryCl=
 localLibraryCl=
 defineCl=/D
 
-flags=/nologo /EHsc
+#/EHsc - exception handling, /FC - full paths in diagnostics
+flags=/nologo /EHsc /FC
 warnings=/W3
 linkFlags=/MANIFEST /NXCOMPAT
 manifestId=1

@@ -16,7 +16,8 @@ namespace compile {
 		pchHeader(config.getStr("pch")),
 		pchFile(buildDir + Path(config.getStr("pchFile"))),
 		combinedPch(config.getBool("pchCompileCombined")),
-		appendExt(config.getBool("appendExt", false)) {
+		appendExt(config.getBool("appendExt", false)),
+		absolutePath(config.getBool("absolutePath", false)) {
 
 		buildDir.makeDir();
 
@@ -205,7 +206,7 @@ namespace compile {
 			if (!combinedPch && src.isPch) {
 				DEBUG("Compiling header " << src.makeRelative(wd) << "...", NORMAL);
 				String cmd = config.getStr("pchCompile");
-				data["file"] = pchHeader;
+				data["file"] = preparePath(Path(pchHeader));
 				data["output"] = data["pchFile"];
 				cmd = config.expandVars(cmd, data);
 
@@ -233,7 +234,7 @@ namespace compile {
 				return false;
 			}
 
-			data["file"] = file;
+			data["file"] = preparePath(src);
 			data["output"] = out;
 			cmd = config.expandVars(cmd, data);
 
@@ -300,6 +301,14 @@ namespace compile {
 			return false;
 
 		return true;
+	}
+
+	String Target::preparePath(const Path &file) {
+		if (absolutePath) {
+			return toS(file.makeAbsolute(wd));
+		} else {
+			return toS(file.makeRelative(wd));
+		}
 	}
 
 	bool Target::ignored(const String &file) {
