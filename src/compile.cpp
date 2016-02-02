@@ -214,7 +214,7 @@ namespace compile {
 			if (!combinedPch && src.isPch) {
 				DEBUG("Compiling header " << src.makeRelative(wd) << "...", NORMAL);
 				String cmd = config.getStr("pchCompile");
-				data["file"] = preparePath(Path(pchHeader));
+				data["file"] = preparePath(Path(pchHeader).makeAbsolute(wd));
 				data["output"] = data["pchFile"];
 				cmd = config.expandVars(cmd, data);
 
