@@ -269,6 +269,9 @@ These variables are used by mymake to understand what should be done:
   respectively.
 - `absolutePath`: send absolute paths to the compiler, this helps emacs find proper source files in projects with multiple
   targets.
+- `implicitDeps`: (defaults to `yes`), if set, mymake tries to figure out dependencies between targets by looking at includes.
+  Sometimes, this results in unneeded circular dependencies, causing compilation to fail, so sometimes it is neccessary to set
+  this to `no`.
 
 ## Variables in strings
 

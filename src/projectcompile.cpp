@@ -19,6 +19,7 @@ namespace compile {
 		projectFile.apply(createSet("deps") + cmdline, depsConfig);
 		projectFile.apply(createSet("build") + cmdline, buildConfig);
 		explicitTargets = config.getBool("explicitTargets", false);
+		implicitDependencies = config.getBool("implicitDeps", true);
 
 #ifdef WINDOWS
 		usePrefix = "vc";
@@ -59,9 +60,11 @@ namespace compile {
 			TargetInfo info = { now, set<String>() };
 
 			// Add any dependent projects.
-			for (set<String>::const_iterator i = target->dependsOn.begin(); i != target->dependsOn.end(); ++i) {
-				q << *i;
-				info.dependsOn << *i;
+			if (implicitDependencies) {
+				for (set<String>::const_iterator i = target->dependsOn.begin(); i != target->dependsOn.end(); ++i) {
+					q << *i;
+					info.dependsOn << *i;
+				}
 			}
 
 			// Add any explicit dependent projects.
@@ -73,6 +76,8 @@ namespace compile {
 
 			order << info;
 			targetInfo[info.name] = info;
+
+			DEBUG("Done. " << now << " depends on " << join(info.dependsOn, ", "), INFO);
 		}
 
 		if (order.empty()) {
@@ -84,6 +89,7 @@ namespace compile {
 			order = topoSort(order);
 		} catch (const TopoError &e) {
 			PLN("Error: " << e.what());
+			return false;
 		}
 
 		return true;

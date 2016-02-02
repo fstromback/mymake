@@ -48,6 +48,9 @@ namespace compile {
 		// Ignore sub-directories without a .mymake-file in them.
 		bool explicitTargets;
 
+		// Use implicit dependencies.
+		bool implicitDependencies;
+
 		// Use prefix when building in parallel?
 		String usePrefix;
 

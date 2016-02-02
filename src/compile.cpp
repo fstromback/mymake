@@ -24,6 +24,14 @@ namespace compile {
 		linkOutput = config.getBool("linkOutput", false);
 		forwardDeps = config.getBool("forwardDeps", false);
 
+		if (absolutePath) {
+			vector<String> inc = this->config.getArray("include");
+			this->config.clear("include");
+			for (nat i = 0; i < inc.size(); i++) {
+				this->config.add("include", toS(Path(inc[i]).makeAbsolute(wd)));
+			}
+		}
+
 		// Add unique file extensions.
 		vector<String> ext = config.getArray("ext");
 		set<String> extSet;
