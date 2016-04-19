@@ -1,6 +1,7 @@
 #include "std.h"
 #include "timespan.h"
 
+#include <cmath>
 #include <sstream>
 #include <iomanip>
 
@@ -23,7 +24,7 @@ void Timespan::save(void *to) const {
 	*((int64 *)to) = time;
 }
 
-static int64 abs(int64 v) {
+static int64 my_abs(int64 v) {
 	if (v < 0)
 		return -v;
 	else
@@ -31,7 +32,7 @@ static int64 abs(int64 v) {
 }
 
 ostream &operator <<(ostream &output, const Timespan &t) {
-	int64 time = ::abs(t.time);
+	int64 time = my_abs(t.time);
 
 	if (time < 1000) {
 		output << t.time << L" us";
@@ -49,7 +50,7 @@ ostream &operator <<(ostream &output, const Timespan &t) {
 String Timespan::format() const {
 	std::ostringstream output;
 
-	int64 seconds = ::abs(this->time) / (1000 * 1000);
+	int64 seconds = my_abs(this->time) / (1000 * 1000);
 	int64 minutes = seconds / 60;
 	seconds = seconds % 60;
 	output << minutes << ":" <<std::setw(2) << std::setfill('0') << seconds;
@@ -57,5 +58,5 @@ String Timespan::format() const {
 }
 
 Timespan abs(const Timespan &time) {
-	return Timespan(::abs(time.micros()));
+	return Timespan(my_abs(time.micros()));
 }
