@@ -21,9 +21,9 @@ ostream &operator <<(ostream &to, const IncludeInfo &i) {
 	return to;
 }
 
-Includes::Includes(const vector<Path> &ip) : includePaths(ip) {}
+Includes::Includes(const Path &wd, const vector<Path> &ip) : wd(wd), includePaths(ip) {}
 
-Includes::Includes(const Path &wd, const Config &config) {
+Includes::Includes(const Path &wd, const Config &config) : wd(wd) {
 	vector<String> paths = config.getArray("include");
 	for (nat i = 0; i < paths.size(); i++) {
 		includePaths << Path(paths[i]).makeAbsolute(wd);
@@ -273,8 +273,10 @@ void Includes::ignore(const vector<String> &patterns) {
 }
 
 bool Includes::ignored(const Path &path) const {
+	String t = toS(path.makeRelative(wd));
+
 	for (nat i = 0; i < ignorePatterns.size(); i++) {
-		if (ignorePatterns[i].matches(path.title())) {
+		if (ignorePatterns[i].matches(t)) {
 			DEBUG(path << " ignored as per " << ignorePatterns[i], VERBOSE);
 			return true;
 		}

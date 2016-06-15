@@ -49,7 +49,7 @@ ostream &operator <<(ostream &to, const IncludeInfo &i);
 class Includes {
 public:
 	// Give information on include paths.
-	Includes(const vector<Path> &includePaths);
+	Includes(const Path &wd, const vector<Path> &includePaths);
 	Includes(const Path &wd, const Config &config);
 
 	// Get includes, and latest modified time from one include.
@@ -73,6 +73,9 @@ private:
 
 	// Check if a path is ignored.
 	bool ignored(const Path &path) const;
+
+	// Current working directory.
+	Path wd;
 
 	// Include search paths. The root is always first.
 	vector<Path> includePaths;

@@ -212,7 +212,7 @@ These variables are used by mymake to understand what should be done:
   Relative to the root directory of the target.
 - `ignore`: array of patterns (like in the shell) that determines if a certain file should be ignored. Useful
   when working with templates sometimes.
-- `noIncludes`: array of patterns (like in the shell) that determines if a certain file should not be scanned for
+- `noIncludes`: array of patterns (like in the shell) that determines if a certain path should not be scanned for
   headers. Useful when you want to parts of the code that is not C/C++, where it is not meaningful to look for
   `#include`.
 - `input`: array of file names to use as roots when looking for files that needs to be compiled. Anything that

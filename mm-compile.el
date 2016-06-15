@@ -210,7 +210,7 @@
 	      mymake-command " "
 	      (if (endp force)
 		  args
-		(concat "-f " args))))))
+		(concat "-f " args))) t)))
 
 ;; Add template if desired.
 (add-hook 'find-file-hooks 'mymake-maybe-add-template)
