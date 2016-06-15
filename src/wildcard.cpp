@@ -19,6 +19,12 @@ bool Wildcard::matches(nat strAt, const String &str, nat patternAt) const {
 		case '?':
 			strAt++;
 			break;
+		case '/':
+			// / matches both / and \ for simplicity
+			if (str[strAt] != '/' && str[strAt] != '\\')
+				return false;
+			strAt++;
+			break;
 		default:
 			if (pattern[patternAt] != str[strAt])
 				return false;

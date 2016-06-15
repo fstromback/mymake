@@ -198,6 +198,11 @@ The following options are pre-defined by mymake or the default configuration:
 - `windows`: Defined when running on a windows system, expected to be using `cl.exe` as the compiler.
 - `unix`: Defined when running on an unix system, or when running in MinGW.
 
+## Wildcard patterns in mymake
+
+Wildcard patterns (containing * and ?) work as expected in mymake, with one exception: the character
+`/` matches both `/` and `\`, to ease compatibility between systems. Hence, always write your
+patterns as if `/` is the path delimiter.
 
 ## Variables used by mymake
 
