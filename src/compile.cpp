@@ -103,6 +103,7 @@ namespace compile {
 				}
 
 				// No need to follow further!
+				DEBUG(L"Ignoring file outside of working directory: " << now.makeRelative(wd), PEDANTIC);
 				continue;
 			}
 
@@ -200,7 +201,7 @@ namespace compile {
 
 			if (!force && pchValid && output.exists() && output.mTime() >= lastModified) {
 				DEBUG("Skipping " << src.makeRelative(wd) << "...", INFO);
-				DEBUG("Source modified: " << lastModified << ", output modified " << output.mTime(), VERBOSE);
+				DEBUG("Source modified: " << lastModified << ", output modified " << output.mTime(), DEBUG);
 
 				Timestamp mTime = output.mTime();
 				if (i == 0)
@@ -281,7 +282,7 @@ namespace compile {
 		// Link the output.
 		if (!force && output.exists() && output.mTime() >= latestModified) {
 			DEBUG("Skipping linking.", INFO);
-			DEBUG("Output modified " << output.mTime() << ", input modified " << latestModified, VERBOSE);
+			DEBUG("Output modified " << output.mTime() << ", input modified " << latestModified, DEBUG);
 			return true;
 		}
 
@@ -438,12 +439,12 @@ namespace compile {
 		vector<Path> children = at.children();
 		for (nat i = 0; i < children.size(); i++) {
 			if (children[i].isDir()) {
-				DEBUG("Found directory " << children[i], VERBOSE);
+				DEBUG("Found directory " << children[i], DEBUG);
 				addFilesRecursive(to, children[i]);
 			} else {
-				DEBUG("Found file " << children[i], VERBOSE);
+				DEBUG("Found file " << children[i], DEBUG);
 				if (std::find(validExts.begin(), validExts.end(), children[i].ext()) != validExts.end()) {
-					DEBUG("Adding file " << children[i], INFO);
+					DEBUG("Adding file " << children[i], VERBOSE);
 					to << Compile(children[i], false, true);
 				}
 			}
@@ -496,7 +497,7 @@ namespace compile {
 			if (w.matches(file))
 				return variant.substr(colon + 1);
 
-			DEBUG("No match for " << file << " using " << variant, VERBOSE);
+			DEBUG("No match for " << file << " using " << variant, INFO);
 		}
 
 		return "";

@@ -130,9 +130,9 @@ inline set<T> operator +(set<T> a, const set<T> &b) {
 
 // Convert to number.
 template <class T>
-T to(const String &s) {
+T to(const String &s, const T &def = T()) {
 	std::istringstream ss(s);
-	T t = T();
+	T t = def;
 	ss >> t;
 	return t;
 }
@@ -271,16 +271,21 @@ private:
 // Debug level.
 enum {
 	dbg_QUIET = 0,
-	dbg_NORMAL = 1,
-	dbg_INFO = 2,
-	dbg_VERBOSE = 3,
-	dbg_DEBUG = 4,
+	dbg_NORMAL,
+	dbg_PEDANTIC,
+	dbg_INFO,
+	dbg_VERBOSE,
+	dbg_DEBUG,
 };
 
 #define DEBUG(x, level)							\
 	do {										\
 		if (debugLevel >= dbg_ ## level) {		\
-			PLN(x);								\
+			if (dbg_ ## level > dbg_NORMAL) {	\
+				PLN(#level ": " << x);			\
+			} else {							\
+				PLN(x);							\
+			}									\
 		}										\
 	} while (false)
 

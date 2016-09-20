@@ -35,7 +35,13 @@ static const char *helpStr =
 	"[option]        - use the corresponding section in the config file.\n"
 	"[file]          - input files in addition to those specified in the config.\n"
 	"--output, -o    - specify the name of the output file.\n"
-	"--debug, -d     - specify debug level. 0 = silent, 3 = verbose.\n"
+	"--debug, -d     - specify debug level. One of the following values, or its numerical value:\n"
+	"   QUIET    = 0 - no output except for hard errors.\n"
+	"   NORMAL   = 1 - standard. Outputs progress information.\n"
+	"   PEDANTIC = 2 - warns about suspicious things, which could be errors.\n"
+	"   INFO     = 3 - information about decisions made during the build. Good for debugging.\n"
+	"   VERBOSE  = 4 - all information you will possibly need when debugging your configurations.\n"
+	"   DEBUG    = 5 - information usually only needed when debugging mymake itself.\n"
 	"--exec-path, -p - specify the cwd when running the output.\n"
 	"--help, -?      - show this help.\n"
 	"--force, -f     - always recompile everything.\n"
@@ -256,6 +262,38 @@ bool CmdLine::parseOption(char opt) {
 	return true;
 }
 
+static bool strEq(const String &a, const char *b) {
+	for (nat i = 0; i < a.size(); i++) {
+		if (b[i] == 0)
+			return false;
+
+		if (tolower(a[i]) != tolower(b[i]))
+			return false;
+	}
+
+	if (b[a.size()] != 0)
+		return false;
+
+	return true;
+}
+
+static int findDebugLevel(const String &name) {
+	if (strEq(name, "QUIET"))
+		return dbg_QUIET;
+	if (strEq(name, "NORMAL"))
+		return dbg_NORMAL;
+	if (strEq(name, "PEDANTIC"))
+		return dbg_PEDANTIC;
+	if (strEq(name, "INFO"))
+		return dbg_INFO;
+	if (strEq(name, "VERBOSE"))
+		return dbg_VERBOSE;
+	if (strEq(name, "DEBUG"))
+		return dbg_DEBUG;
+
+	return to<int>(name, -1);
+}
+
 bool CmdLine::optionParam(const String &v) {
 	State s = state;
 	state = sNone;
@@ -269,7 +307,11 @@ bool CmdLine::optionParam(const String &v) {
 		state = sArguments;
 		return true;
 	case sDebug:
-		debugLevel = to<int>(v);
+		debugLevel = findDebugLevel(v);
+		if (debugLevel < 0) {
+			PLN("Invalid value for debug level!");
+			errors = true;
+		}
 		return true;
 	case sExecPath:
 		execPath = Path(v).makeAbsolute();

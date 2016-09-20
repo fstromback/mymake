@@ -1,4 +1,9 @@
 * Things to do
+
+  Make sure we process all input from a process that has died. Currently, if a process prints
+  lots of things to stdout and then crashes, sometimes we do not get all of it through mymake.
+  This may be either because mymake exits, or because mymake decides the process is dead and do
+  not need more output.
   
   Move constants used with Config into string constants somewhere.
 

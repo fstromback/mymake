@@ -12,14 +12,14 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 	// Load the system-global file.
 	Path globalFile(Path::home() + localConfig);
 	if (globalFile.exists()) {
-		DEBUG("Global file found: " << globalFile, INFO);
+		DEBUG("Global file found: " << globalFile, VERBOSE);
 		config.load(globalFile);
 	}
 
 	Path localFile(wd + localConfig);
 	if (localFile.exists()) {
 		config.load(localFile);
-		DEBUG("Local file found: " << localFile, INFO);
+		DEBUG("Local file found: " << localFile, VERBOSE);
 	}
 
 	// Compile plain .mymake-file.
@@ -58,11 +58,11 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 
 	Path globalFile(Path::home() + localConfig);
 	if (globalFile.exists()) {
-		DEBUG("Global file found: " << globalFile, INFO);
+		DEBUG("Global file found: " << globalFile, VERBOSE);
 		config.load(globalFile);
 	}
 
-	DEBUG("Project file found: " << projectFile, INFO);
+	DEBUG("Project file found: " << projectFile, VERBOSE);
 	config.load(projectFile);
 
 	Config params;
