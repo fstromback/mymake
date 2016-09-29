@@ -103,7 +103,7 @@ namespace compile {
 				}
 
 				// No need to follow further!
-				DEBUG(L"Ignoring file outside of working directory: " << now.makeRelative(wd), PEDANTIC);
+				DEBUG("Ignoring file outside of working directory: " << now.makeRelative(wd), PEDANTIC);
 				continue;
 			}
 
