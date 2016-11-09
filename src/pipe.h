@@ -42,5 +42,6 @@ void addPipeSet(PipeSet *pipes, Pipe pipe);
 // Remove a pipe from a pipe set.
 void removePipeSet(PipeSet *pipes, Pipe pipe);
 
-// Read data from one of the pipes.
+// Read data from one of the pipes. If we return with 'written = 0', that means 'from' is at the end
+// of stream.
 void readPipeSet(PipeSet *pipes, void *to, nat &written, Pipe &from);

@@ -13,11 +13,11 @@ public:
 	// Clean up.
 	~OutputMgr();
 
-	// Add pipe.
+	// Add pipe. The pipe will be closed eventually.
 	static void add(Pipe pipe, OutputState *state);
 	static void addError(Pipe pipe, OutputState *state);
 
-	// Remove pipe.
+	// Remove pipe. Waits until all output from the pipe is properly flushed (= the other end is closed).
 	static void remove(Pipe pipe);
 
 private:
@@ -65,13 +65,22 @@ private:
 		void flush();
 	};
 
-	// All current pipes.
+	// Queued items for 'toRemove'.
+	struct RemoveData {
+		// Pipe to remove.
+		Pipe pipe;
+
+		// Semaphore used to signal when deletion is complete.
+		Sema *wake;
+	};
+
+	// All current pipes. Only used from our thread.
 	typedef map<Pipe, PipeData *> PipeMap;
 	PipeMap pipes;
 
 	// Queue for edits to 'pipes'.
 	queue<PipeData *> toAdd;
-	queue<Pipe> toRemove;
+	queue<RemoveData> toRemove;
 
 	// Queue for wakes from 'pipes'.
 	queue<Sema *> wake;

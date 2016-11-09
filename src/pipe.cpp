@@ -76,6 +76,7 @@ public:
 		HANDLE event;
 		nat size;
 		char *buffer;
+		bool error;
 
 		Data(Pipe pipe, nat buf);
 		~Data();
@@ -102,7 +103,8 @@ PipeSet::Data::Data(Pipe pipe, nat buf) :
 	pipe(pipe),
 	event(CreateEvent(NULL, TRUE, FALSE, NULL)),
 	size(buf),
-	buffer(new char[buf]) {
+	buffer(new char[buf]),
+	error(false) {
 
 	startRead();
 }
@@ -115,21 +117,34 @@ PipeSet::Data::~Data() {
 }
 
 void PipeSet::Data::startRead() {
+	if (error)
+		return;
+
 	zeroMem(overlapped);
 	overlapped.hEvent = event;
 
 	ResetEvent(event);
-	ReadFile(pipe, buffer, size, NULL, &overlapped);
+	if (ReadFile(pipe, buffer, size, NULL, &overlapped) == FALSE) {
+		if (GetLastError() != ERROR_IO_PENDING) {
+			// Arrange so that we're in a signaling state and will report 0 bytes next time.
+			error = true;
+			SetEvent(event);
+		}
+	}
 }
 
 void PipeSet::Data::read(void *to, nat &written) {
-	DWORD read;
-	GetOverlappedResult(pipe, &overlapped, &read, TRUE);
+	if (error) {
+		written = 0;
+	} else {
+		DWORD read;
+		GetOverlappedResult(pipe, &overlapped, &read, TRUE);
 
-	memcpy_s(to, size, buffer, read);
-	written = read;
+		memcpy_s(to, size, buffer, read);
+		written = read;
 
-	startRead();
+		startRead();
+	}
 }
 
 PipeSet::PipeSet(nat bufSize) : bufSize(bufSize) {}

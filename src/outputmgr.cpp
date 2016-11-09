@@ -42,8 +42,8 @@ void OutputMgr::removePipe(Pipe pipe) {
 
 	{
 		Lock::Guard z(editsLock);
-		toRemove.push(pipe);
-		wake.push(&ack);
+		RemoveData r = { pipe, &ack };
+		toRemove.push(r);
 	}
 
 	// Notify and wait.
@@ -55,6 +55,12 @@ void OutputMgr::threadMain() {
 	bool exit = false;
 	PipeSet *pipeSet = createPipeSet(PipeData::bufferSize);
 	addPipeSet(pipeSet, selfRead);
+
+	// Remember which threads have terminated recently.
+	set<Pipe> terminated;
+
+	// Remember which threads will be terminated soon.
+	map<Pipe, Sema *> terminate;
 
 	// Output buffer.
 	char buffer[PipeData::bufferSize];
@@ -87,13 +93,16 @@ void OutputMgr::threadMain() {
 				}
 
 				while (!toRemove.empty()) {
-					Pipe e = toRemove.front();
+					RemoveData e = toRemove.front();
 					toRemove.pop();
-					removePipeSet(pipeSet, e);
-					PipeMap::iterator i = pipes.find(e);
-					if (i != pipes.end()) {
-						delete i->second;
-						pipes.erase(i);
+
+					if (terminated.count(e.pipe)) {
+						// Already terminated, wake the thread.
+						terminated.erase(e.pipe);
+						e.wake->up();
+					} else {
+						// Wait for termination.
+						terminate.insert(make_pair(e.pipe, e.wake));
 					}
 				}
 
@@ -102,8 +111,25 @@ void OutputMgr::threadMain() {
 					wake.pop();
 				}
 			}
-		} else {
+		} else if (written != 0) {
+			// We got some data!
 			it->second->add(buffer, written);
+		} else {
+			// End of stream!
+			removePipeSet(pipeSet, from);
+			delete it->second;
+			pipes.erase(it);
+
+			// Someone waiting for us?
+			map<Pipe, Sema *>::iterator i = terminate.find(from);
+			if (i != terminate.end()) {
+				// Yes, wake them up.
+				i->second->up();
+				terminate.erase(i);
+			} else {
+				// No, but someone will come eventually!
+				terminated.insert(from);
+			}
 		}
 	}
 
