@@ -2,3 +2,6 @@
 :template yes
 :pch std.h
 :namespace no
+
+#Test so that no output is lost.
+#-e -p test/output -a -f

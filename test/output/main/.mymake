@@ -1,0 +1,4 @@
+[]
+input=main.cpp
+pre=pre
+preBuild=<execpath|pre>

@@ -12,3 +12,5 @@ mymake_v2
 *.lib
 *.pch
 *.gch
+*.manifest
+*.pdb
