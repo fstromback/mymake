@@ -34,6 +34,7 @@
 (defvar mymake-compilation-w 100 "Compilation window width")
 (defvar mymake-compilation-h 83 "Compilation window height")
 (defvar mymake-compilation-adjust 10 "Compilation window adjustment")
+(defvar mymake-compilation-font-height 'nil "Compilation window font height")
 (defvar mymake-no-default-input nil "Do not try to compile the current buffer if no buildconfig file is found.")
 
 (defvar mymake-default-headers "\\(\\.h\\|\\.hh\\|\\.hpp\\)$" "Default regex for matching header files.")
@@ -278,6 +279,8 @@
 	 (height (cdr (assoc 'height current-params)))
 	 (created (make-frame (list (cons 'width mymake-compilation-w)
 				    (cons 'height mymake-compilation-h)))))
+    (if (numberp mymake-compilation-font-height)
+	(set-face-attribute 'default created :height mymake-compilation-font-height))
     (setq mymake-compilation-frame created)
     (setq mymake-compilation-window (frame-selected-window created))
     (let ((created-w (frame-pixel-width created)))
