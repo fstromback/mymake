@@ -98,6 +98,9 @@ public:
 	// Create this path as directory if it does not already exist.
 	void createDir() const;
 
+	// Hash.
+	size_t hash() const;
+
 private:
 
 	// Internal representation is a list of strings, one for each part of the pathname.

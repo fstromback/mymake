@@ -102,7 +102,7 @@ namespace compile {
 		// Transform the path to absolute/relative as set up by the config.
 		String preparePath(const Path &path);
 
-		typedef UniqueQueue<Compile> CompileQueue;
+		typedef UniqueQueue<Compile, Path> CompileQueue;
 
 		// Files to compile in some valid order.
 		vector<Compile> toCompile;

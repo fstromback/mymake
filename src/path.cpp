@@ -18,6 +18,13 @@ static int partCmp(const String &a, const String &b) {
 	return _stricmp(a.c_str(), b.c_str());
 }
 
+static size_t partHash(const String &part) {
+	size_t r = 5381;
+	for (nat i = 0; i < part.size(); i++)
+		r = ((r << 5) + r) + tolower(part[i]);
+	return r;
+}
+
 static const char separator = '\\';
 static const char *separatorStr = "\\";
 
@@ -35,6 +42,13 @@ static bool partEq(const String &a, const String &b) {
 
 static int partCmp(const String &a, const String &b) {
 	return strcmp(a.c_str(), b.c_str());
+}
+
+static size_t partHash(const String &part) {
+	size_t r = 5381;
+	for (nat i = 0; i < part.size(); i++)
+		r = ((r << 5) + r) + part[i];
+	return r;
 }
 
 static const char separator = '/';
@@ -337,6 +351,15 @@ bool Path::operator <(const Path &o) const {
 
 bool Path::operator >(const Path &o) const {
 	return o < *this;
+}
+
+size_t Path::hash() const {
+	// djb2-inspired hash
+	size_t r = 5381;
+	for (nat i = 0; i < parts.size(); i++)
+		r = ((r << 5) + r) + partHash(parts[i]);
+
+	return r;
 }
 
 

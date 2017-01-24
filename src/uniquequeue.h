@@ -1,11 +1,14 @@
 #pragma once
 #include "path.h"
+#include "hash.h"
 
 /**
  * Ensures no items are inserted twice.
+ *
+ * If 'K' is set, values are compared for equality using type K instead of type V.
  */
 
-template <class T>
+template <class V, class K = V>
 class UniqueQueue {
 public:
 	// Empty?
@@ -18,31 +21,31 @@ public:
 	}
 
 	// Pop top element.
-	T pop() {
-		T r = q.front();
+	V pop() {
+		V r = q.front();
 		q.pop();
 		return r;
 	}
 
 	// Push element, discards it if it has ever been in the queue before.
-	void push(const T &elem) {
+	void push(const V &elem) {
 		if (s.count(elem) == 0) {
 			s.insert(elem);
 			q.push(elem);
 		}
 	}
 
-	UniqueQueue<T> &operator <<(const T &elem) {
+	UniqueQueue<V, K> &operator <<(const V &elem) {
 		push(elem);
 		return *this;
 	}
 
 private:
 	// Files in the queue.
-	set<T> s;
+	hash_set<K> s;
 
 	// Queue of files.
-	queue<T> q;
+	queue<V> q;
 };
 
 
