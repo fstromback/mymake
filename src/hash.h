@@ -44,7 +44,7 @@ namespace std {
 		size_t operator ()(const Path &p) const {
 			return p.hash();
 		}
-	}
+	};
 
 }
 
