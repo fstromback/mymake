@@ -3,6 +3,10 @@
 
 #ifdef WINDOWS
 
+// When defined, uses the file handle for synchronization instead of creating a separate
+// event. Mainly used for investigating the cause of a weird race condition.
+//#define NO_SEPARATE_EVENT
+
 const Pipe noPipe = INVALID_HANDLE_VALUE;
 
 volatile LONG pipeSerialNr;
@@ -101,7 +105,11 @@ public:
 
 PipeSet::Data::Data(Pipe pipe, nat buf) :
 	pipe(pipe),
+#ifdef NO_SEPARATE_EVENT
+	event(pipe),
+#else
 	event(CreateEvent(NULL, TRUE, FALSE, NULL)),
+#endif
 	size(buf),
 	buffer(new char[buf]),
 	error(false) {
@@ -113,7 +121,9 @@ PipeSet::Data::~Data() {
 	CancelIo(pipe);
 
 	delete []buffer;
+#ifndef NO_SEPARATE_EVENT
 	CloseHandle(event);
+#endif
 }
 
 void PipeSet::Data::startRead() {
@@ -121,14 +131,18 @@ void PipeSet::Data::startRead() {
 		return;
 
 	zeroMem(overlapped);
+#ifndef NO_SEPARATE_EVENT
 	overlapped.hEvent = event;
-
 	ResetEvent(event);
+#endif
+
 	if (ReadFile(pipe, buffer, size, NULL, &overlapped) == FALSE) {
 		if (GetLastError() != ERROR_IO_PENDING) {
 			// Arrange so that we're in a signaling state and will report 0 bytes next time.
 			error = true;
+#ifndef NO_SEPARATE_EVENT
 			SetEvent(event);
+#endif
 		}
 	}
 }
