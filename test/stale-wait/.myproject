@@ -1,0 +1,6 @@
+[]
+input=main
+execDir=../bin
+
+[deps]
+main+=pre

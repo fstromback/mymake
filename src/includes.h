@@ -1,5 +1,6 @@
 #pragma once
 #include "path.h"
+#include "hash.h"
 #include "config.h"
 #include "wildcard.h"
 
@@ -31,7 +32,7 @@ public:
 	String firstInclude;
 
 	// All files included from this file.
-	set<Path> includes;
+	hash_set<Path> includes;
 
 	// Is this file ignored? (ie. not useful to look for headers inside?)
 	bool ignored;

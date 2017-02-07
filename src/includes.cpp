@@ -8,7 +8,7 @@ IncludeInfo::IncludeInfo(const Path &file, bool ignored) : file(file), ignored(i
 
 Timestamp IncludeInfo::lastModified() const {
 	Timestamp r = file.mTime();
-	for (set<Path>::const_iterator i = includes.begin(); i != includes.end(); ++i)
+	for (hash_set<Path>::const_iterator i = includes.begin(); i != includes.end(); ++i)
 		r = max(r, i->mTime());
 	return r;
 }

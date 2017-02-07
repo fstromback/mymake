@@ -119,6 +119,10 @@ namespace compile {
 		// Add a file to the queue of files to process.
 		void addFile(CompileQueue &to, const Path &src);
 
+		// Add files created by the pre-build steps. These might not exist yet.
+		void addPreBuildFiles(CompileQueue &to, const vector<String> &src);
+		void addPreBuildFile(CompileQueue &to, const String &src);
+
 		// Cache of the directory contents for 'findExt'.
 
 		// Map of all file titles found along with their extension. Paths here are relative.

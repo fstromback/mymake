@@ -248,6 +248,9 @@ These variables are used by mymake to understand what should be done:
 - `pchCompile`: command line for compiling the precompiled header file.
 - `pchCompileCombined`: if set to yes, `pchCompile` is expected to generate both the pch-file and compile a .cpp-file.
 - `preBuild`: array of command-lines that should be executed before the build is started. Expands variables.
+- `preBuildCreates`: array of files created by the pre-build step which should also be included in the compilation.
+  These are expected not to introduce any additional dependencies into the project, as they are not available at the
+  point where mymake resolves dependencies between files and targets.
 - `postBuild`: array of command-lines that should be executed after the build is completed. Expands variables.
 - `compile`: array of command lines to use when compiling files. Each command line starts with a pattern
   (ending in `:`) that is matched against the file name to be compiled. The command line added last is checked

@@ -5,3 +5,6 @@
 
 #Test so that no output is lost.
 #-e -p test/output -a -f
+
+#Test freezing when there are many compiler errors (will not 'compile').
+#-e -p test/stale-wait -a -f

@@ -55,3 +55,10 @@ template <class K>
 using hash_set = std::unordered_set<K>;
 
 #endif
+
+template <class T>
+inline hash_set<T> &operator <<(hash_set<T> &to, const T &elem) {
+	to.insert(elem);
+	return to;
+}
+

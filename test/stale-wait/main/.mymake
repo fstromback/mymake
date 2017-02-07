@@ -1,0 +1,8 @@
+[]
+input=*
+
+# 'compile' the txt files using the 'pre' program which just prints text.
+ext+=txt
+pre=pre
+compile+=*.txt:<execpath|pre> <file>
+

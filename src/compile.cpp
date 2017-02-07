@@ -120,7 +120,7 @@ namespace compile {
 				return false;
 			}
 
-			for (set<Path>::const_iterator i = info.includes.begin(); i != info.includes.end(); ++i) {
+			for (hash_set<Path>::const_iterator i = info.includes.begin(); i != info.includes.end(); ++i) {
 				DEBUG(now << " depends on " << *i, VERBOSE);
 				addFile(q, *i);
 			}
@@ -129,6 +129,14 @@ namespace compile {
 		if (toCompile.empty()) {
 			PLN("No input files.");
 			return false;
+		}
+
+		// Try to add the files which should be created by the pre-build step (if any).
+		addPreBuildFiles(q, config.getArray("preBuildCreates"));
+		while (q.any()) {
+			Compile now = q.pop();
+			DEBUG("Adding file created by pre-build step currently not existing: " << now.makeRelative(wd), INFO);
+			toCompile << now;
 		}
 
 		if (outputName.empty())
@@ -367,12 +375,6 @@ namespace compile {
 		config.add("localLibrary", toS(p));
 	}
 
-	void Target::addFiles(CompileQueue &to, const vector<String> &src) {
-		for (nat i = 0; i < src.size(); i++) {
-			addFile(to, src[i], false);
-		}
-	}
-
 	Target::CacheItem Target::buildCache(const Path &path) const {
 		CacheItem r;
 
@@ -435,6 +437,12 @@ namespace compile {
 		return result;
 	}
 
+	void Target::addFiles(CompileQueue &to, const vector<String> &src) {
+		for (nat i = 0; i < src.size(); i++) {
+			addFile(to, src[i], false);
+		}
+	}
+
 	void Target::addFilesRecursive(CompileQueue &to, const Path &at) {
 		vector<Path> children = at.children();
 		for (nat i = 0; i < children.size(); i++) {
@@ -481,6 +489,16 @@ namespace compile {
 		for (nat i = 0; i < exts.size(); i++) {
 			to.push(Compile(exts[i], false, true));
 		}
+	}
+
+	void Target::addPreBuildFiles(CompileQueue &to, const vector<String> &src) {
+		for (nat i = 0; i < src.size(); i++)
+			addPreBuildFile(to, src[i]);
+	}
+
+	void Target::addPreBuildFile(CompileQueue &to, const String &src) {
+		Path path = Path(src).makeAbsolute(wd);
+		to.push(Compile(path, false, true));
 	}
 
 	String Target::chooseCompile(const String &file) {

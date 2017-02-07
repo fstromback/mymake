@@ -137,7 +137,7 @@ void PipeSet::Data::read(void *to, nat &written) {
 	if (error) {
 		written = 0;
 	} else {
-		DWORD read;
+		DWORD read = 0;
 		GetOverlappedResult(pipe, &overlapped, &read, TRUE);
 
 		memcpy_s(to, size, buffer, read);
