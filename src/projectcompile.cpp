@@ -261,8 +261,10 @@ namespace compile {
 			TargetInfo &info = order[work];
 			for (set<String>::const_iterator i = info.dependsOn.begin(), end = info.dependsOn.end(); i != end; ++i) {
 				map<String, Condition *>::iterator f = state.targetDone.find(*i);
+
+				// Note: some dependencies are ignored. That is fine!
 				if (f == state.targetDone.end())
-					return false;
+					continue;
 
 				f->second->wait();
 			}
@@ -331,8 +333,10 @@ namespace compile {
 			DEBUG("Found local config: " << configFile, INFO);
 			config.load(configFile);
 		} else if (explicitTargets) {
-			DEBUG("No config in " << dir << ", ignoring.", INFO);
+			DEBUG("No config in " << dir << ", ignoring it since 'explicitTargets=1'.", PEDANTIC);
 			return null;
+		} else {
+			DEBUG("No config in " << dir << ", using it anyway since 'explicitTargets=0'.", PEDANTIC);
 		}
 
 		Config opt;
