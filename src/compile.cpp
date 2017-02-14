@@ -96,14 +96,8 @@ namespace compile {
 
 			// Check if 'now' is inside the working directory.
 			if (!now.isChild(wd)) {
-				// Maybe a reference to another target from the same project?
-				Path parentRel = now.makeRelative(wd.parent());
-				if (parentRel.first() != "..") {
-					dependsOn << parentRel.first();
-				}
-
 				// No need to follow further!
-				DEBUG("Ignoring file outside of working directory: " << now.makeRelative(wd), PEDANTIC);
+				DEBUG("Ignoring file outside of working directory: " << now.makeRelative(wd), VERBOSE);
 				continue;
 			}
 
@@ -123,6 +117,14 @@ namespace compile {
 			for (hash_set<Path>::const_iterator i = info.includes.begin(); i != info.includes.end(); ++i) {
 				DEBUG(now << " depends on " << *i, VERBOSE);
 				addFile(q, *i);
+
+				// Is this a reference to another sub-project?
+				if (!i->isChild(wd)) {
+					Path parentRel = i->makeRelative(wd.parent());
+					if (parentRel.first() != "..") {
+						dependsOn << parentRel.first();
+					}
+				}
 			}
 		}
 
