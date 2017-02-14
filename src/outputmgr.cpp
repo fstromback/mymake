@@ -100,6 +100,12 @@ void OutputMgr::threadMain() {
 						// Already terminated, wake the thread.
 						terminated.erase(e.pipe);
 						e.wake->up();
+						// Close the pipe. Now it is safe!
+						PipeMap::iterator i = pipes.find(e.pipe);
+						if (i == pipes.end())
+							WARNING(L"The pipe " << e.pipe << L" was removed too early!");
+						delete i->second;
+						pipes.erase(i);
 					} else {
 						// Wait for termination.
 						terminate.insert(make_pair(e.pipe, e.wake));
@@ -117,8 +123,6 @@ void OutputMgr::threadMain() {
 		} else {
 			// End of stream!
 			removePipeSet(pipeSet, from);
-			delete it->second;
-			pipes.erase(it);
 
 			// Someone waiting for us?
 			map<Pipe, Sema *>::iterator i = terminate.find(from);
@@ -126,9 +130,16 @@ void OutputMgr::threadMain() {
 				// Yes, wake them up.
 				i->second->up();
 				terminate.erase(i);
+
+				// Remove the pipe.
+				delete it->second;
+				pipes.erase(it);
 			} else {
 				// No, but someone will come eventually!
 				terminated.insert(from);
+				// Note: We're not closing the pipe until someone has waited on the pipe, as the
+				// pipe's identifier could be reused by the operating system, which causes us to
+				// deadlock.
 			}
 		}
 	}

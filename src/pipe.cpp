@@ -171,6 +171,7 @@ PipeSet::~PipeSet() {
 
 void PipeSet::add(Pipe p) {
 	events.clear();
+	sources.clear();
 	data.insert(make_pair(p, new Data(p, bufSize)));
 }
 
@@ -180,6 +181,7 @@ void PipeSet::remove(Pipe p) {
 		return;
 
 	events.clear();
+	sources.clear();
 
 	delete i->second;
 	data.erase(i);
@@ -205,7 +207,7 @@ void PipeSet::read(void *to, nat &written, Pipe &from) {
 	} else if (r >= WAIT_ABANDONED_0 && r < WAIT_ABANDONED_0 + events.size()) {
 		src = sources[r - WAIT_ABANDONED_0];
 	} else {
-		WARNING("Failed to wait!");
+		WARNING("Failed to wait: " << GetLastError());
 		exit(11);
 	}
 
