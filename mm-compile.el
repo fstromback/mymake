@@ -107,7 +107,7 @@
 ;; Get parent directory or nil if none.
 (defun parent-directory (dir)
   (let ((r (file-name-directory (directory-file-name dir))))
-    (cond ((endp r) 'nil)
+    (cond ((eq nil r) 'nil)
 	  ((< (length r) (length dir)) r)
 	  (t 'nil))))
 
@@ -117,7 +117,7 @@
     (if (file-exists-p file)
 	(file-name-as-directory dir)
       (let ((parent (parent-directory dir)))
-	(if (endp parent)
+	(if (eq nil parent)
 	    'nil
 	  (mymake-find-config parent))))))
 
@@ -163,7 +163,7 @@
   (if (endp lines)
       '()
     (let ((opt (mymake-option (first lines))))
-      (if (endp opt)
+      (if (eq nil opt)
 	  (mymake-options (rest lines))
 	(cons opt (mymake-options (rest lines)))))))
 
@@ -179,16 +179,16 @@
 
 (defun mymake-load-config ()
   "Returns an alist with configuration + current directory as 'dir'"
-  (let* ((buffer-dir (if (endp (buffer-file-name))
+  (let* ((buffer-dir (if (eq nil (buffer-file-name))
 			 default-directory
 		       (parent-directory (buffer-file-name))))
 	 (dir (mymake-find-config buffer-dir)))
-    (if (endp dir)
+    (if (eq nil dir)
 	;; No config file, we probably want to add the buffer file name as well.
 	(list
 	 (cons 'dir buffer-dir)
 	 (cons 'cmdline
-	       (if (or mymake-no-default-input (endp (buffer-file-name)))
+	       (if (or mymake-no-default-input (eq nil (buffer-file-name)))
 		   ""
 		 (concat "--default-input " (file-name-nondirectory (buffer-file-name))))))
       (cons
@@ -209,7 +209,7 @@
 	 (args (mymake-args-str prepend replace (mymake-assoc 'cmdline config))))
     (compile (concat
 	      mymake-command " "
-	      (if (endp force)
+	      (if (eq nil force)
 		  args
 		(concat "-f " args))) t)))
 
@@ -230,7 +230,7 @@
 (defun mymake-add-source-template (config)
   (let ((pch (mymake-assoc 'pch config 'nil)))
     ;; Syntax highlighting works _way_ better when one string is inserted instead of in different parts...
-    (if (not (endp pch))
+    (if (not (eq nil pch))
 	(insert (concat "#include \"" pch "\"\n"))))
   (let* ((header (mymake-assoc 'header-ext config "h"))
 	 (fn (concat (file-name-base buffer-file-name) "." header)))
