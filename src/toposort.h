@@ -105,7 +105,7 @@ vector<Node<T>> topoSort(const InputIt &begin, const InputIt &end) {
 	result.reserve(order.size());
 	for (nat i = 0; i < order.size(); i++) {
 		// Note: something may depend on a thing which was not in the original set. Just ignore those.
-		map<T, Node<T>>::const_iterator found = lookup.find(order[i]);
+		typename map<T, Node<T>>::const_iterator found = lookup.find(order[i]);
 		if (found != lookup.end())
 			result << found->second;
 	}
