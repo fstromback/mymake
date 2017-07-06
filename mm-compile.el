@@ -33,7 +33,8 @@
 (defvar mymake-compile-frame nil "Use a new frame when compiling.")
 (defvar mymake-compilation-w 100 "Compilation window width")
 (defvar mymake-compilation-h 83 "Compilation window height")
-(defvar mymake-compilation-adjust 10 "Compilation window adjustment")
+(defvar mymake-compilation-adjust-x 10 "Compilation window adjustment")
+(defvar mymake-compilation-adjust-y 0 "Compilation window adjustment")
 (defvar mymake-compilation-font-height 'nil "Compilation window font height")
 (defvar mymake-no-default-input nil "Do not try to compile the current buffer if no buildconfig file is found.")
 
@@ -276,6 +277,7 @@
   (let* ((current-params (frame-parameters))
 	 (old-frame (selected-frame))
 	 (left-pos (cdr (assoc 'left current-params)))
+	 (top-pos (cdr (assoc 'top current-params)))
 	 (height (cdr (assoc 'height current-params)))
 	 (created (make-frame (list (cons 'width mymake-compilation-w)
 				    (cons 'height mymake-compilation-h)))))
@@ -284,7 +286,9 @@
     (setq mymake-compilation-frame created)
     (setq mymake-compilation-window (frame-selected-window created))
     (let ((created-w (frame-pixel-width created)))
-      (set-frame-position created (- left-pos created-w mymake-compilation-adjust) 0))
+      (set-frame-position created
+			  (- left-pos created-w mymake-compilation-adjust-x)
+			  (+ top-pos mymake-compilation-adjust-y)))
     (select-frame-set-input-focus old-frame)))
 
 
