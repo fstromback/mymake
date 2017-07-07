@@ -273,11 +273,16 @@
 (setq mymake-compilation-window 'nil)
 (setq mymake-compilation-frame 'nil)
 
+(defun mymake-fix-pos (pos)
+  (if (consp pos)
+      (second pos)
+    pos))
+
 (defun mymake-create-compilation-frame ()
   (let* ((current-params (frame-parameters))
 	 (old-frame (selected-frame))
-	 (left-pos (cdr (assoc 'left current-params)))
-	 (top-pos (cdr (assoc 'top current-params)))
+	 (left-pos (mymake-fix-pos (cdr (assoc 'left current-params))))
+	 (top-pos (mymake-fix-pos (cdr (assoc 'top current-params))))
 	 (height (cdr (assoc 'height current-params)))
 	 (created (make-frame (list (cons 'width mymake-compilation-w)
 				    (cons 'height mymake-compilation-h)))))
@@ -287,8 +292,8 @@
     (setq mymake-compilation-window (frame-selected-window created))
     (let ((created-w (frame-pixel-width created)))
       (set-frame-position created
-			  (- left-pos created-w mymake-compilation-adjust-x)
-			  (+ top-pos mymake-compilation-adjust-y)))
+			  (max 0 (- left-pos created-w mymake-compilation-adjust-x))
+			  (max 0 (+ top-pos mymake-compilation-adjust-y))))
     (select-frame-set-input-focus old-frame)))
 
 
