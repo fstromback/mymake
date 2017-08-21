@@ -355,12 +355,22 @@ Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
 }
 
 static void systemWaitProc(ProcId &proc, int &result) {
-	int status;
-	do {
+	while (true) {
+		int status;
 		proc = waitpid(-1, &status, 0);
-	} while (!WIFEXITED(status));
+		if (proc < 0) {
+			perror("waitpid: ");
+			continue;
+		}
 
-	result = WEXITSTATUS(status);
+		if (WIFEXITED(status)) {
+			result = WEXITSTATUS(status);
+			break;
+		} else if (WIFSIGNALED(status)) {
+			result = -WTERMSIG(status);
+			break;
+		}
+	}
 }
 
 #endif
