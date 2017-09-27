@@ -62,6 +62,11 @@
   (interactive "P")
   (mymake-run :force force))
 
+(defun mymake-kill ()
+  "Kill current compilation process."
+  (interactive)
+  (kill-compilation))
+
 (defun mymake-clean ()
   "Clean project."
   (interactive)
