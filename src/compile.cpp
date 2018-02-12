@@ -168,9 +168,12 @@ namespace compile {
 		Env env(config);
 
 		// Run pre-compile steps.
-		if (!runSteps("preBuild", group, env, map<String, String>()))
-			return false;
-
+		{
+			map<String, String> stepData;
+			stepData["output"] = toS(output.makeRelative(wd));
+			if (!runSteps("preBuild", group, env, stepData))
+				return false;
+		}
 
 		map<String, String> data;
 		data["file"] = "";
@@ -313,11 +316,13 @@ namespace compile {
 				return false;
 		}
 
-		// Run post-compile steps.
-		map<String, String> stepData;
-		stepData["output"] = data["output"];
-		if (!runSteps("postBuild", group, env, stepData))
-			return false;
+		{
+			// Run post-build steps.
+			map<String, String> stepData;
+			stepData["output"] = data["output"];
+			if (!runSteps("postBuild", group, env, stepData))
+				return false;
+		}
 
 		return true;
 	}
