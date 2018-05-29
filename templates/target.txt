@@ -110,8 +110,11 @@ libraryCl=-l
 localLibraryCl=
 defineCl=-D 
 
-flags=-std=c++11
+flags=<useStandard*standard>
 warnings=-Wall -Wextra
+
+standard=c++11
+useStandard=-std=
 
 pchFile=stdafx.h.gch
 usePch=-include <pchFile>
