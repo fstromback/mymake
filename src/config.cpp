@@ -305,8 +305,8 @@ vector<String> Config::replacement(String var, const map<String, String> &specia
 	if (var == "includes") {
 		return addStr(getVars("includeCl", special), replacement("path|include", special));
 	} else if (var == "libs") {
-		return addStr(getVars("libraryCl", special), replacement("path|library", special)) +
-			addStr(getVars("localLibraryCl", special), replacement("path|localLibrary", special));
+		return addStr(getVars("localLibraryCl", special), replacement("path|localLibrary", special))
+			+ addStr(getVars("libraryCl", special), replacement("path|library", special));
 	}
 
 	{
