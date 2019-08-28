@@ -148,6 +148,14 @@ link=rm -- <output> 2>/dev/null; ar rcs <output> <files>
 execExt=so
 linkFlags+=-shared
 
+[unix,sharedlib,!pic]
+# We need PIC on unix.
+flags+=-fPIC
+
+[pic,unix]
+# We need PIC on unix.
+flags+=-fPIC
+
 #Sample configuration for compiling Qt5 applications on Unix.
 [unix,qt]
 qtLibCl=-I/usr/include/qt5/Qt
