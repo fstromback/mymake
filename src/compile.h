@@ -114,7 +114,7 @@ namespace compile {
 		void addFiles(CompileQueue &to, const vector<String> &src);
 
 		// Add a file to the queue of files to process.
-		void addFile(CompileQueue &to, const String &src, bool pch);
+		bool addFile(CompileQueue &to, const String &src, bool pch);
 
 		// Add a file to the queue of files to process.
 		void addFile(CompileQueue &to, const Path &src);

@@ -79,7 +79,13 @@ namespace compile {
 
 		// Compile pre-compiled header first.
 		String pchStr = config.getStr("pch");
-		addFile(q, pchStr, true);
+		if (!pchStr.empty()) {
+			if (!addFile(q, pchStr, true)) {
+				PLN("Failed to find an implementation file for the precompiled header.");
+				PLN("Make sure to create both a header file '" << pchStr << "' and a corresponding implementation file.");
+				return false;
+			}
+		}
 
 		// Add initial files.
 		addFiles(q, config.getArray("input"));
@@ -466,13 +472,13 @@ namespace compile {
 		}
 	}
 
-	void Target::addFile(CompileQueue &to, const String &src, bool pch) {
+	bool Target::addFile(CompileQueue &to, const String &src, bool pch) {
 		if (src.empty())
-			return;
+			return false;
 
 		if (src == "*") {
 			addFilesRecursive(to, wd);
-			return;
+			return true;
 		}
 
 		Path path(src);
@@ -481,12 +487,14 @@ namespace compile {
 		vector<Path> exts = findExt(path);
 		if (exts.empty()) {
 			WARNING("The file " << src << " does not exist with any of the extensions " << join(validExts));
-			return;
+			return false;
 		}
 
 		for (nat i = 0; i < exts.size(); i++) {
 			to.push(Compile(exts[i], pch, false));
 		}
+
+		return true;
 	}
 
 	void Target::addFile(CompileQueue &to, const Path &header) {
