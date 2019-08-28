@@ -116,17 +116,14 @@ warnings=-Wall -Wextra
 standard=c++11
 useStandard=-std=
 
-pchFile=stdafx.h.gch
-usePch=-include <pchFile>
-
 #Send absolute paths to the compiler (better with Emacs).
 absolutePath=yes
 
 #Compile the precompiled header.
-pchFile=stdafx.h.gch
+pchFile=<pch>.gch
+usePch=-include <noExt|pchFile>
 pchCompile=g++ <defines> <flags> <warnings> <file> -c <includes> -o <output>
 pchCompileCombined=no
-usePch=-include <noExt|pchFile>
 
 #Compile a single file.
 compile=*:g++ <defines> <flags> <warnings> <usePch*if|pch> <file> -c <includes> -o <output>
@@ -183,7 +180,7 @@ warnings=/W3
 linkFlags=/MANIFEST /NXCOMPAT
 manifestId=1
 
-pchFile=stdafx.pch
+pchFile=<pch|noExt>.pch
 usePch=/Yu
 namePch=/Fp<pchFile>
 

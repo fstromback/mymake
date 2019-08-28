@@ -1,9 +1,9 @@
 #!/bin/sh
 
 echo "Compiling mymake..."
-if [ -e mymake ]
+if [ -e $1 ]
 then
-    rm mymake
+    rm $1
 fi
 
 mkdir -p bin

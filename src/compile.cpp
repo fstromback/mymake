@@ -14,7 +14,7 @@ namespace compile {
 		buildDir(wd + Path(config.getStr("buildDir"))),
 		intermediateExt(config.getStr("intermediateExt")),
 		pchHeader(config.getStr("pch")),
-		pchFile(buildDir + Path(config.getStr("pchFile"))),
+		pchFile(buildDir + Path(config.getVars("pchFile"))),
 		combinedPch(config.getBool("pchCompileCombined")),
 		appendExt(config.getBool("appendExt", false)),
 		absolutePath(config.getBool("absolutePath", false)) {
