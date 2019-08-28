@@ -345,9 +345,9 @@ pair<bool, String> Config::applyFn(const String &op, const String &src) const {
 	} else if (op == "path") {
 		return make_pair(true, toS(Path(src)));
 	} else if (op == "buildpath") {
-		return make_pair(true, toS(Path(getStr("buildDir")) + Path(src)));
+		return make_pair(true, toS(Path(getVars("buildDir")) + Path(src)));
 	} else if (op == "execpath") {
-		return make_pair(true, toS(Path(getStr("execDir")) + Path(src)));
+		return make_pair(true, toS(Path(getVars("execDir")) + Path(src)));
 	} else if (op == "dir") {
 		Path p(src);
 		if (p.isEmpty())

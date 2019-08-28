@@ -11,7 +11,7 @@ namespace compile {
 		config(config),
 		includes(wd, config),
 		compileVariants(config.getArray("compile")),
-		buildDir(wd + Path(config.getStr("buildDir"))),
+		buildDir(wd + Path(config.getVars("buildDir"))),
 		intermediateExt(config.getStr("intermediateExt")),
 		pchHeader(config.getStr("pch")),
 		pchFile(buildDir + Path(config.getVars("pchFile"))),
@@ -64,7 +64,7 @@ namespace compile {
 		DEBUG("Cleaning " << buildDir.makeRelative(wd) << "...", NORMAL);
 		buildDir.recursiveDelete();
 
-		Path e = wd + Path(config.getStr("execDir"));
+		Path e = wd + Path(config.getVars("execDir"));
 		e.makeDir();
 		DEBUG("Cleaning " << e.makeRelative(wd) << "...", NORMAL);
 		e.recursiveDelete();
@@ -150,7 +150,7 @@ namespace compile {
 		if (outputName.empty())
 			outputName = wd.title();
 
-		Path execDir = wd + Path(config.getStr("execDir"));
+		Path execDir = wd + Path(config.getVars("execDir"));
 		execDir.createDir();
 
 		output = execDir + Path(outputName).titleNoExt();
