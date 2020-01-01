@@ -12,8 +12,8 @@ namespace compile {
 		includes(wd, config),
 		compileVariants(config.getArray("compile")),
 		buildDir(wd + Path(config.getVars("buildDir"))),
-		intermediateExt(config.getStr("intermediateExt")),
-		pchHeader(config.getStr("pch")),
+		intermediateExt(config.getVars("intermediateExt")),
+		pchHeader(config.getVars("pch")),
 		pchFile(buildDir + Path(config.getVars("pchFile"))),
 		combinedPch(config.getBool("pchCompileCombined")),
 		appendExt(config.getBool("appendExt", false)),
@@ -75,10 +75,10 @@ namespace compile {
 		toCompile.clear();
 
 		CompileQueue q;
-		String outputName = config.getStr("output");
+		String outputName = config.getVars("output");
 
 		// Compile pre-compiled header first.
-		String pchStr = config.getStr("pch");
+		String pchStr = config.getVars("pch");
 		if (!pchStr.empty()) {
 			if (!addFile(q, pchStr, true)) {
 				PLN("Failed to find an implementation file for the precompiled header.");
