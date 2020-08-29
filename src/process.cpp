@@ -55,16 +55,23 @@ void waitProc() {
 
 class WaitCond {
 public:
-	WaitCond() : sema(0), manager(false) {}
+	WaitCond() : next(null), sema(0), manager(false) {}
 
+	// Next in the list.
+	WaitCond *next;
+
+	// Semaphore used for waiting.
 	Sema sema;
+
+	// Is this the manager at the moment?
 	bool manager;
 
+	// Are we done?
 	virtual bool done() = 0;
 };
 
 // All conditions currently being waited for.
-static set<WaitCond *> waiters;
+static WaitCond *waiters = null;
 
 // Lock for the waiters.
 static Lock waitersLock;
@@ -79,8 +86,9 @@ void waitFor(WaitCond &cond) {
 			return;
 
 		// Need to wait.
-		cond.manager = waiters.empty();
-		waiters.insert(&cond);
+		cond.manager = waiters == null;
+		cond.next = waiters;
+		waiters = &cond;
 	}
 
 	if (!cond.manager) {
@@ -97,33 +105,38 @@ void waitFor(WaitCond &cond) {
 			Lock::Guard w(waitersLock);
 
 			// Check the other conditions, possibly waking them.
-			for (set<WaitCond *>::iterator i = waiters.begin(), end = waiters.end(); i != end; ++i) {
-				if (*i == &cond)
-					continue;
-
-				// Wake it if it is done.
-				if ((*i)->done())
-					(*i)->sema.up();
+			WaitCond **i = &waiters;
+			while (*i) {
+				WaitCond *curr = *i;
+				if (*i == &cond) {
+					// This is us, remove it!
+					*i = curr->next;
+				} else if ((*i)->done()) {
+					// Done. Remove it.
+					curr->sema.up();
+					*i = curr->next;
+				} else {
+					// Skip ahead.
+					i = &curr->next;
+				}
 			}
 
 			// If we're done, we might need to hand over to someone else.
 			if (cond.done()) {
-				waiters.erase(&cond);
-
-				if (!waiters.empty()) {
+				if (waiters) {
 					// Pick the first one, and wake it. It will become the new master since it is
 					// not done.
-					WaitCond *f = *waiters.begin();
-					f->manager = true;
-					f->sema.up();
+					waiters->manager = true;
+					waiters->sema.up();
 				}
 
 				return;
+			} else {
+				// We removed ourselves earlier, add us back to the list.
+				cond.next = waiters;
+				waiters = &cond;
 			}
 		}
-	} else {
-		Lock::Guard z(waitersLock);
-		waiters.erase(&cond);
 	}
 }
 
@@ -143,7 +156,8 @@ int Process::wait() {
 		}
 	};
 
-	waitFor(Finished(this));
+	Finished c(this);
+	waitFor(c);
 
 	process = invalidProc;
 	return result;
@@ -537,7 +551,8 @@ bool ProcGroup::spawn(Process *p) {
 		}
 	};
 
-	waitFor(CanSpawn(this));
+	CanSpawn c(this);
+	waitFor(c);
 
 	if (failed) {
 		delete p;
@@ -565,7 +580,8 @@ bool ProcGroup::wait() {
 		}
 	};
 
-	waitFor(Failed(this));
+	Failed c(this);
+	waitFor(c);
 
 	return !failed;
 }
