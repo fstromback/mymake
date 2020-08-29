@@ -113,8 +113,8 @@ void waitFor(WaitCond &cond) {
 					*i = curr->next;
 				} else if ((*i)->done()) {
 					// Done. Remove it.
-					curr->sema.up();
 					*i = curr->next;
+					curr->sema.up();
 				} else {
 					// Skip ahead.
 					i = &curr->next;
