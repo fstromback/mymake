@@ -1,0 +1,12 @@
+[project]
+input+=a
+input+=b
+
+[]
+compile=*:echo <file> && sleep 1 && echo <file> done
+compile=*:sleep 1 && echo <file> done
+link=echo Linking... && sleep 5 && echo Done!
+execute=no
+
+
+maxThreads=2

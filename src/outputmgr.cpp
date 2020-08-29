@@ -44,6 +44,7 @@ void OutputMgr::removePipe(Pipe pipe) {
 		Lock::Guard z(editsLock);
 		RemoveData r = { pipe, &ack };
 		toRemove.push(r);
+		wake.push(&ack);
 	}
 
 	// Notify and wait.

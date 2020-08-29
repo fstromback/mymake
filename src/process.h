@@ -102,10 +102,10 @@ private:
 	bool failed;
 
 	// Our processes.
-	ProcMap our;
+	set<Process *> our;
 
 	// One of our processes has terminated!
-	void terminated(ProcId id, int result);
+	void terminated(Process *p, int result);
 
 	// Check if we can spawn a new process.
 	bool canSpawn();

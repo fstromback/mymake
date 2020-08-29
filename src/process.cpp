@@ -15,18 +15,20 @@ static ProcMap alive;
 // Global lock for 'alive'.
 static Lock aliveLock;
 
-// Global lock for waiting on processes.
-static Lock waitLock;
+// System-specific logic to re-try the waiting (e.g. when a new process should be added to the list
+// of waiting processes).
+static void systemNewProc();
 
 // System-specific waiting logic. Returns the process id that terminated.
-static void systemWaitProc(ProcId &proc, int &result);
+static bool systemWaitProc(ProcId &proc, int &result);
 
 // Wait for any process we're monitoring to terminate, and handle that event.
-// Assumes that 'waitLock' is taken when called.
+// Assumes that it is not called from multiple threads. Use 'waitFor' to ensure this.
 void waitProc() {
 	ProcId exited;
 	int result;
-	systemWaitProc(exited, result);
+	if (!systemWaitProc(exited, result))
+		return;
 
 	Process *p = null;
 
@@ -48,7 +50,81 @@ void waitProc() {
 	p->finished = true;
 
 	if (p->owner)
-		p->owner->terminated(exited, result);
+		p->owner->terminated(p, result);
+}
+
+class WaitCond {
+public:
+	WaitCond() : sema(0), manager(false) {}
+
+	Sema sema;
+	bool manager;
+
+	virtual bool done() = 0;
+};
+
+// All conditions currently being waited for.
+static set<WaitCond *> waiters;
+
+// Lock for the waiters.
+static Lock waitersLock;
+
+// Wait until 'cond' returns true. The condition may be evaluated both when 'waitLock' is held and
+// when it is not held.
+void waitFor(WaitCond &cond) {
+	{
+		Lock::Guard z(waitersLock);
+
+		if (cond.done())
+			return;
+
+		// Need to wait.
+		cond.manager = waiters.empty();
+		waiters.insert(&cond);
+	}
+
+	if (!cond.manager) {
+		// Sleep until it is either our turn to become the manager, or until we're done.
+		cond.sema.down();
+	}
+
+	// Either, we were the manager from the start, or we have become the new manager.
+	if (cond.manager) {
+		// The first thread is responsible for calling 'waitProc'.
+		while (true) {
+			waitProc();
+
+			Lock::Guard w(waitersLock);
+
+			// Check the other conditions, possibly waking them.
+			for (set<WaitCond *>::iterator i = waiters.begin(), end = waiters.end(); i != end; ++i) {
+				if (*i == &cond)
+					continue;
+
+				// Wake it if it is done.
+				if ((*i)->done())
+					(*i)->sema.up();
+			}
+
+			// If we're done, we might need to hand over to someone else.
+			if (cond.done()) {
+				waiters.erase(&cond);
+
+				if (!waiters.empty()) {
+					// Pick the first one, and wake it. It will become the new master since it is
+					// not done.
+					WaitCond *f = *waiters.begin();
+					f->manager = true;
+					f->sema.up();
+				}
+
+				return;
+			}
+		}
+	} else {
+		Lock::Guard z(waitersLock);
+		waiters.erase(&cond);
+	}
 }
 
 
@@ -58,15 +134,16 @@ Process::Process(const Path &file, const vector<String> &args, const Path &cwd, 
 	owner(null), outPipe(noPipe), errPipe(noPipe), result(0), finished(false) {}
 
 int Process::wait() {
-	while (!finished) {
-		Lock::Guard z(waitLock);
+	class Finished : public WaitCond {
+	public:
+		Process *me;
+		Finished(Process *p) : me(p) {}
+		virtual bool done() {
+			return me->finished;
+		}
+	};
 
-		// Double-check the condition after we manage to take the lock!
-		if (finished)
-			break;
-
-		waitProc();
-	}
+	waitFor(Finished(this));
 
 	process = invalidProc;
 	return result;
@@ -134,6 +211,7 @@ bool Process::spawn(bool manage, OutputState *state) {
 	{
 		Lock::Guard z(aliveLock);
 		alive.insert(make_pair(process, this));
+		systemNewProc();
 	}
 
 	// Start the process!
@@ -180,18 +258,40 @@ Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
 	return new Process(Path(shell), args, cwd, env);
 }
 
-static void systemWaitProc(ProcId &proc, int &code) {
+// Event notified whenever we have a new process that we want to wait for. Used to cause the systemWaitProc to restart.
+static HANDLE selfEvent = NULL;
+
+static void systemNewProc() {
+	Lock::Guard z(aliveLock);
+
+	if (!selfEvent)
+		return;
+
+	SetEvent(selfEvent);
+}
+
+static bool systemWaitProc(ProcId &proc, int &code) {
 	nat size = 0;
 	ProcId *ids = null;
 
 	{
 		Lock::Guard z(aliveLock);
 
-		ids = new ProcId[alive.size()];
+		if (!selfEvent)
+			selfEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+		ids = new ProcId[1 + alive.size()];
+		ids[size++] = selfEvent;
 		for (ProcMap::const_iterator i = alive.begin(), end = alive.end(); i != end; ++i) {
-			if (!i->second->terminated())
+			if (!i->second->terminated()) {
 				ids[size++] = i->first;
+			}
 		}
+	}
+
+	if (size <= 1) {
+		delete []ids;
+		return false;
 	}
 
 	DWORD result = WaitForMultipleObjects(size, ids, FALSE, INFINITE);
@@ -202,8 +302,14 @@ static void systemWaitProc(ProcId &proc, int &code) {
 	} else if (result >= WAIT_ABANDONED_0 && result < WAIT_ABANDONED_0 + size) {
 		id = result - WAIT_ABANDONED_0;
 	} else {
-		WARNING("Failed to call WaitForMultipleObjects!");
+		WARNING("Failed to call WaitForMultipleObjects while waiting: " << GetLastError());
 		exit(10);
+	}
+
+	if (id == 0) {
+		// It was the 'selfEvent'.
+		delete []ids;
+		return false;
 	}
 
 	proc = ids[id];
@@ -212,6 +318,7 @@ static void systemWaitProc(ProcId &proc, int &code) {
 	DWORD c = 1;
 	GetExitCodeProcess(proc, &c);
 	code = int(c);
+	return true;
 }
 
 #else
@@ -309,6 +416,7 @@ bool Process::spawn(bool manage, OutputState *state) {
 	{
 		Lock::Guard z(aliveLock);
 		alive.insert(make_pair(process, this));
+		systemNewProc();
 	}
 
 	// Start child again.
@@ -354,7 +462,17 @@ Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
 	return new Process(Path("/bin/sh"), args, cwd, env);
 }
 
-static void systemWaitProc(ProcId &proc, int &result) {
+static void systemNewProc() {
+	// Not needed on Linux, waitpid will catch the new child anyway.
+}
+
+static bool systemWaitProc(ProcId &proc, int &result) {
+	{
+		Lock::Guard z(aliveLock);
+		if (alive.empty())
+			return false;
+	}
+
 	while (true) {
 		int status;
 		proc = waitpid(-1, &status, 0);
@@ -371,6 +489,8 @@ static void systemWaitProc(ProcId &proc, int &result) {
 			break;
 		}
 	}
+
+	return true;
 }
 
 #endif
@@ -384,9 +504,9 @@ ProcGroup::ProcGroup(nat limit, OutputState &state) : state(state), limit(limit)
 ProcGroup::~ProcGroup() {
 	Lock::Guard z(aliveLock);
 
-	for (ProcMap::iterator i = our.begin(), end = our.end(); i != end; ++i) {
-		alive.erase(i->first);
-		delete i->second;
+	for (set<Process *>::iterator i = our.begin(), end = our.end(); i != end; ++i) {
+		alive.erase((*i)->process);
+		delete *i;
 	}
 }
 
@@ -408,24 +528,24 @@ bool ProcGroup::spawn(Process *p) {
 
 	p->owner = this;
 
-	// Wait until there is room for more...
-	while (!canSpawn() && !failed) {
-		Lock::Guard z(waitLock);
+	class CanSpawn : public WaitCond {
+	public:
+		ProcGroup *me;
+		CanSpawn(ProcGroup *me) : me(me) {}
+		virtual bool done() {
+			return me->canSpawn() || me->failed;
+		}
+	};
 
-		// Double check...
-		if (canSpawn() || failed)
-			break;
-
-		waitProc();
-	}
+	waitFor(CanSpawn(this));
 
 	if (failed) {
 		delete p;
 		return false;
 	}
 
+	our.insert(p);
 	p->spawn(true, &state);
-	our.insert(make_pair(p->process, p));
 
 	// Make the output look more logical to the user when running on one thread.
 	if (limit == 1 || procLimit == 1) {
@@ -436,40 +556,29 @@ bool ProcGroup::spawn(Process *p) {
 }
 
 bool ProcGroup::wait() {
-	while (!failed) {
-		{
-			Lock::Guard z(aliveLock);
-			if (our.empty())
-				break;
+	class Failed : public WaitCond {
+	public:
+		ProcGroup *me;
+		Failed(ProcGroup *me) : me(me) {}
+		virtual bool done() {
+			return me->failed || me->our.empty();
 		}
+	};
 
-		Lock::Guard z(waitLock);
-
-		if (failed)
-			break;
-
-		{
-			Lock::Guard z(aliveLock);
-			if (our.empty())
-				break;
-		}
-
-		waitProc();
-	}
+	waitFor(Failed(this));
 
 	return !failed;
 }
 
-void ProcGroup::terminated(ProcId id, int result) {
-	ProcMap::iterator i = our.find(id);
-	if (i == our.end())
+void ProcGroup::terminated(Process *p, int result) {
+	// Not our process?
+	if (our.erase(p) == 0)
 		return;
 
 	if (result != 0)
 		failed = true;
 
-	delete i->second;
-	our.erase(i);
+	delete p;
 }
 
 
