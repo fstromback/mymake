@@ -350,6 +350,7 @@ void PipeSet::read(void *to, nat &written, Pipe &from) {
 		if (r == 0) {
 			// Closed fd. Ignore it until the manager detects it is closed.
 			remove(lastFd);
+			written = 0;
 		} else if (r < 0) {
 			written = 0;
 		} else {

@@ -4,9 +4,15 @@
 OutputMgr::OutputMgr() {
 	createPipe(selfRead, selfWrite, false);
 	thread.start(&OutputMgr::threadMain, *this);
+	running = true;
 }
 
 OutputMgr::~OutputMgr() {
+	if (running)
+		shutdownMe();
+}
+
+void OutputMgr::shutdownMe() {
 	// Notify exit.
 	writePipe(selfWrite, "E", 1);
 	thread.join();
@@ -20,6 +26,8 @@ OutputMgr::~OutputMgr() {
 		delete toAdd.front();
 		toAdd.pop();
 	}
+
+	running = false;
 }
 
 void OutputMgr::addPipe(Pipe pipe, OutputState *state, bool errorStream) {
@@ -42,7 +50,7 @@ void OutputMgr::removePipe(Pipe pipe) {
 
 	{
 		Lock::Guard z(editsLock);
-		RemoveData r = { pipe, &ack };
+		RemoveData r = { pipe };
 		toRemove.push(r);
 		wake.push(&ack);
 	}
@@ -60,15 +68,16 @@ void OutputMgr::threadMain() {
 	// Remember which threads have terminated recently.
 	set<Pipe> terminated;
 
-	// Remember which threads will be terminated soon.
-	map<Pipe, Sema *> terminate;
+	// Remember which pipes shall be closed soon.
+	set<Pipe> terminate;
 
 	// Output buffer.
 	char buffer[PipeData::bufferSize];
 	nat written;
 	Pipe from;
 
-	while (!exit) {
+	// Keep going until we have forwarded all output (at least the one the remainder of the system cared to close).
+	while (!exit || !terminate.empty()) {
 		readPipeSet(pipeSet, buffer, written, from);
 
 		PipeMap::iterator it = pipes.find(from);
@@ -98,9 +107,8 @@ void OutputMgr::threadMain() {
 					toRemove.pop();
 
 					if (terminated.count(e.pipe)) {
-						// Already terminated, wake the thread.
+						// Already terminated.
 						terminated.erase(e.pipe);
-						e.wake->up();
 						// Close the pipe. Now it is safe!
 						PipeMap::iterator i = pipes.find(e.pipe);
 						if (i == pipes.end())
@@ -109,7 +117,7 @@ void OutputMgr::threadMain() {
 						pipes.erase(i);
 					} else {
 						// Wait for termination.
-						terminate.insert(make_pair(e.pipe, e.wake));
+						terminate.insert(e.pipe);
 					}
 				}
 
@@ -126,10 +134,9 @@ void OutputMgr::threadMain() {
 			removePipeSet(pipeSet, from);
 
 			// Someone waiting for us?
-			map<Pipe, Sema *>::iterator i = terminate.find(from);
+			set<Pipe>::iterator i = terminate.find(from);
 			if (i != terminate.end()) {
-				// Yes, wake them up.
-				i->second->up();
+				// Yes, then we can remove it already.
 				terminate.erase(i);
 
 				// Remove the pipe.
@@ -201,4 +208,8 @@ void OutputMgr::addError(Pipe pipe, OutputState *state) {
 
 void OutputMgr::remove(Pipe pipe) {
 	me.removePipe(pipe);
+}
+
+void OutputMgr::shutdown() {
+	me.shutdownMe();
 }

@@ -4,6 +4,7 @@
 #include "compile.h"
 #include "projectcompile.h"
 #include "process.h"
+#include "outputmgr.h"
 
 // Compile a stand-alone .mymake-file.
 int compileTarget(const Path &wd, const CmdLine &cmdline) {
@@ -50,6 +51,8 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 
 	DEBUG("Compilation successful!", NORMAL);
 
+	OutputMgr::shutdown();
+
 	return c.execute(cmdline.params);
 }
 
@@ -95,6 +98,8 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	}
 
 	DEBUG("-- Compilation successful! --", NORMAL);
+
+	OutputMgr::shutdown();
 
 	if (params.getBool("execute")) {
 		return c.execute(cmdline.params);

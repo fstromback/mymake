@@ -17,8 +17,12 @@ public:
 	static void add(Pipe pipe, OutputState *state);
 	static void addError(Pipe pipe, OutputState *state);
 
-	// Remove pipe. Waits until all output from the pipe is properly flushed (= the other end is closed).
+	// Remove pipe.
+	// Not anymore: Waits until all output from the pipe is properly flushed (= the other end is closed).
 	static void remove(Pipe pipe);
+
+	// Clean up all data in the manager, ensuring that all data is flushed.
+	static void shutdown();
 
 private:
 	// Disallow creation.
@@ -71,7 +75,10 @@ private:
 		Pipe pipe;
 
 		// Semaphore used to signal when deletion is complete.
-		Sema *wake;
+		// We don't wait for the pipes to close on removal, that hangs the system in some cases.
+		// The worst thing that happens is that some output is delayed a bit, we wont lose any
+		// output as we wait for all pipes to become empty before removing them at least.
+		// Sema *wake;
 	};
 
 	// All current pipes. Only used from our thread.
@@ -88,6 +95,9 @@ private:
 	// Lock for 'toAdd' and 'toRemove'.
 	Lock editsLock;
 
+	// Running?
+	bool running;
+
 	// Our global instance.
 	static OutputMgr me;
 
@@ -97,4 +107,6 @@ private:
 
 	// Main function for the thread.
 	void threadMain();
+
+	void shutdownMe();
 };
