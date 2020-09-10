@@ -1,0 +1,6 @@
+[]
+input=main.cpp
+output=setup
+
+define+=_UNICODE
+define+=UNICODE

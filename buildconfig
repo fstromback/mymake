@@ -9,4 +9,5 @@
 #Test freezing when there are many compiler errors (will not 'compile').
 #-e -p test/stale-wait -a -f
 
--e -p test/independent-wait -a -f
+#-e -p test/independent-wait -a -f
+setup -e

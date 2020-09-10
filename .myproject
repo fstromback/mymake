@@ -2,7 +2,7 @@
 
 #Build mymake
 [project]
-input=src
+#input=src
 explicitTargets=yes
 execute=no
 
