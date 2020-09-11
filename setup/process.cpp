@@ -15,7 +15,7 @@ DWORD WINAPI writeThread(void *data) {
 	DWORD written;
 
 	d->stream.read(buffer, bufferSize);
-	filled = d->stream.gcount();
+	filled = (DWORD)d->stream.gcount();
 	while (filled > 0) {
 		if (!WriteFile(d->handle, buffer, filled, &written, NULL)) {
 			std::cout << "Error: " << GetLastError() << std::endl;
@@ -28,7 +28,7 @@ DWORD WINAPI writeThread(void *data) {
 			filled -= written;
 		} else {
 			d->stream.read(buffer, bufferSize);
-			filled = d->stream.gcount();
+			filled = (DWORD)d->stream.gcount();
 		}
 	}
 
@@ -96,7 +96,6 @@ void runProcess(const std::wstring &exe, const std::wstring &cmd, std::istream &
 	HANDLE rThread = CreateThread(NULL, 0, &readThread, &rd, 0, NULL);
 
 	WaitForSingleObject(info.hProcess, INFINITE);
-	std::cout << "Process done." << std::endl;
 	WaitForSingleObject(wThread, INFINITE);
 	WaitForSingleObject(rThread, INFINITE);
 

@@ -7,6 +7,7 @@
 #include "process.h"
 
 #pragma comment (lib, "shlwapi.lib")
+#pragma warning (disable: 4996) // Unsafe C-functions, _wgetenv in this case.
 
 using std::string;
 using std::wstring;
@@ -16,9 +17,9 @@ using std::vector;
 
 #define ARRAY_COUNT(x) (sizeof(x) / sizeof(*x))
 
-// Known names of the "Developer Command Prompt"
+// What to look for: It seems "vcvarsall.bat" is always present and works approximately the same across versions.
 const wchar_t *toolNames[] = {
-	L"VsDevCmd.bat",  // At least on VS2019
+	// L"VsDevCmd.bat",  // At least on VS2019
 	L"vcvarsall.bat", // At least on VS2008
 };
 
@@ -108,11 +109,15 @@ int main(int argc, const wchar_t *argv[]) {
 	}
 
 	wstring file = pickFile(candidates);
+	wstring cmd = _wgetenv(L"comspec");
 
-	std::istringstream in("set\ncl /?\n");
+	std::wcout << L"Examining environment variables..." << std::endl;
+
+	std::istringstream in("set\n");
 	std::ostringstream out;
-	runProcess(L"C:\\Windows\\system32\\cmd.exe", L"/K \"\"" + file + L"\"\"", in, out);
-	// runProcess(L"C:\\Windows\\system32\\cmd.exe", L"", in, out);
+	runProcess(L"C:\\Windows\\system32\\cmd.exe", L"/K \"\"" + file + L"\" amd64\"", in, out);
+	runProcess(L"C:\\Windows\\system32\\cmd.exe", L"/K \"\"" + file + L"\" x86\"", in, out);
+	runProcess(L"C:\\Windows\\system32\\cmd.exe", L"", in, out);
 
 	std::cout << out.str() << std::endl;
 
