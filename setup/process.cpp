@@ -57,7 +57,7 @@ DWORD WINAPI readThread(void *data) {
 	return 0;
 }
 
-void runProcess(const std::wstring &exe, const std::wstring &cmd, std::istream &inStream, std::ostream &outStream) {
+void runProcess(const std::string &exe, const std::string &cmd, std::istream &inStream, std::ostream &outStream) {
 	STARTUPINFO startup;
 	memset(&startup, 0, sizeof(startup));
 	startup.cb = sizeof(startup);
@@ -77,10 +77,10 @@ void runProcess(const std::wstring &exe, const std::wstring &cmd, std::istream &
 	SetHandleInformation(output, HANDLE_FLAG_INHERIT, 0);
 
 	PROCESS_INFORMATION info;
-	wchar_t *cmdline = new wchar_t[cmd.size() + 1];
-	memcpy(cmdline, cmd.c_str(), (cmd.size() + 1) * sizeof(wchar_t));
+	char *cmdline = new char[cmd.size() + 1];
+	memcpy(cmdline, cmd.c_str(), cmd.size() + 1);
 	if (CreateProcess(exe.c_str(), cmdline, NULL, NULL, TRUE, 0, NULL, NULL, &startup, &info) == 0) {
-		std::wcout << "Failed to start " << exe << std::endl;
+		std::cout << "Failed to start " << exe << std::endl;
 		exit(1);
 	}
 	delete []cmdline;
