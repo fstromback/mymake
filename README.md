@@ -23,8 +23,8 @@ C/C++-programs, so usually you do not have to worry. If your codebase does not f
 criteria, it is usually easy to make the codebase meed the criteria by adding a few includes and/or
 a few mostly empty header files.
 
-## Terminology
 
+## Terminology
 
 Here, the terminology used in mymake is explained.
 
@@ -50,53 +50,25 @@ specific compilation settings.
 
 ### Windows (using Visual Studio 2008 or later)
 
-The first time you install mymake, clone the repository somewhere. Open the "Visual Studio Command
-Prompt", from the start menu (or any command prompt you can run cl.exe from) and cd into the
-directory you cloned mymake into and run `compile.bat`. Now, copy `mymake.exe` somewhere in your
-path.
+Make sure that you have Visual Studio 2008 or later installed. Then, clone the repository somewhere
+and run `setup.exe` in the root directory (either by clicking it, or from the terminal, `cd`:ing to
+the proper directory first). This will locate the Visual Studio installation (automatically, most of
+the time), and use it to compile mymake. After compilation, it will ask if you want to place
+`mm.exe` somewhere in your path (either an existing location, or modifying your path to point to the
+repository location).
 
-After this, run `mm --config` to generate a global `.mymake`-file which contains your system
-specific compilation settings.
+After installation succeeded, open a terminal and generate a global `.mymake`-file with the command
+`mm --config`. This will once again locate the Visual Studio installation, identify the capabilities
+of the compiler and generate a proper configuration. This means that `mm` will work outside the
+Visual Studio Command Prompt.
 
-From here, you have several options:
-- You always run mymake from the "Visual Studio Command Prompt".
-- You add the environment variables from the "Visual Studio Command Prompt" to your system. Run `set` to seem them.
-- You add the environment variables from the "Visual Studio Command Prompt" to your global `.mymake`-file.
+If you have multiple Visual Studio installations, you will be prompted which to use. Note that it is
+not necessary to use the same compiler for compiling mymake and in the global configuration.
 
-The two first ones are not described any further here.
+If mymake fails to locate the installation, you can help it by providing a path to the command
+(e.g. `setup.exe C:\Path\To\Vs` or `mm --config C:\Path\To\Vs`), and if that fails, locate the file
+`vsvarsall.bat` and provde the path to that file.
 
-To add environment variables to your `.mymake`-file, open `C:\Users\<user>\.mymake` in your
-favourite editor and find the lines in the generated configuration starting with `env+=` (they are
-commented out). Find the paths for your installation by running `set` in the "Visual Studio Command
-Prompt", and uncommenting and changing the lines you need. Note you only need the `Path` variables
-that points to `cl.exe`, not the regular ones that are also present in the regular command prompt.
-
-For example, if your output from `set` is:
-
-```
-INCLUDE=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\INCLUDE;C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE;C:\Program Files\Microsoft SDKs\Windows\v6.0A\include;
-
-LIB=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\LIB;C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB;C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib;
-
-Path=C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\IDE;C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN;C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\Tools;C:\windows\Microsoft.NET\Framework\v3.5;C:\windows\Microsoft.NET\Framework\v2.0.50727;C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\VCPackages;C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;
-```
-
-you want to add:
-
-```
-env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\INCLUDE
-env+=INCLUDE=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\INCLUDE
-env+=INCLUDE=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\include
-
-env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\ATLMFC\LIB
-env+=LIB=>C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\LIB
-env+=LIB=>C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib
-
-env+=Path<=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
-env+=Path<=C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\BIN
-```
-
-In general, it does not hurt to add too many environment variables.
 
 ## Update
 
@@ -108,9 +80,8 @@ you need to copy mymake to your path once more.
 
 ### Windows
 
-Check out the latest version of mymake using the git client you are using. Then re-compile mymake,
-either using `compile.bat`, or by using mymake: `mm release -f`. If you are using mymake, remember that the
-resulting binary is in the release-directory.
+Check out the latest version of mymake using the git client you are using. Then re-compile mymake
+using `setup.exe` again, making sure to specify the same installation path as last time.
 
 ## Usage
 

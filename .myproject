@@ -36,6 +36,9 @@ execDir=../release/
 #Only mymake itself needs a release version. The textinc is only used during compilation anyway.
 src+=release
 
+#The setup does need it as well.
+setup+=release
+
 #Use the global config unless 'standalone' is used on the command line.
 
 [unix,standalone]
