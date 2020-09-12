@@ -67,6 +67,7 @@ private:
 		sExecPath,
 		sParallel,
 		sDefaultInput,
+		sCreateGlobal,
 	};
 
 	State state;
@@ -82,6 +83,12 @@ private:
 
 	// Number of threads to use. 0 = no opinion.
 	nat threads;
+
+	// Parameter to the global config option.
+	String configParam;
+
+	// Create global config?
+	bool createGlobal;
 
 	// Parse options.
 	bool parseOptions(const String &opts);

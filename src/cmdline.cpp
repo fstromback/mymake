@@ -1,11 +1,14 @@
 #include "std.h"
 #include "cmdline.h"
 #include "config.h"
+#include "setup/envinfo.h"
 #include <limits>
 
 namespace templ {
 #include "../bin/templates.h"
 }
+
+static bool createGlobal(const String &param);
 
 static const pair<String, char> rawLongOptions[] = {
 	make_pair("output", 'o'),
@@ -62,7 +65,8 @@ CmdLine::CmdLine(const vector<String> &params) :
 	execute(tUnset),
 	showHelp(false),
 	clean(false),
-	threads(0) {
+	threads(0),
+	createGlobal(false) {
 
 	bool noOptions = false;
 	state = sNone;
@@ -84,6 +88,11 @@ CmdLine::CmdLine(const vector<String> &params) :
 		} else {
 			addFile(c);
 		}
+	}
+
+	if (createGlobal) {
+		if (!::createGlobal(configParam))
+			errors = true;
 	}
 }
 
@@ -135,10 +144,16 @@ static nat askThreads() {
 	}
 }
 
-static bool createGlobal() {
+static bool createGlobal(const String &param) {
 	Path file = Path::home() + localConfig;
 	if (!checkFile(file))
 		return false;
+
+	String envinfo;
+	if (param.empty())
+		envinfo = setup::envinfo(null);
+	else
+		envinfo = setup::envinfo(&param);
 
 	nat defThreads = askThreads();
 	if (defThreads < 1)
@@ -152,6 +167,7 @@ static bool createGlobal() {
 
 	dest << templ::global;
 	dest << endl;
+	dest << envinfo;
 	dest << "[]" << endl;
 	dest << "#Default number of threads for compilation on this machine." << endl;
 	dest << "maxThreads=" << defThreads << endl;
@@ -238,8 +254,8 @@ bool CmdLine::parseOption(char opt) {
 		state = sParallel;
 		break;
 	case '\1':
-		if (!createGlobal())
-			errors = true;
+		createGlobal = true;
+		state = sCreateGlobal;
 		exit = true;
 		break;
 	case '\2':
@@ -321,6 +337,9 @@ bool CmdLine::optionParam(const String &v) {
 		return true;
 	case sDefaultInput:
 		defaultInput = v;
+		return true;
+	case sCreateGlobal:
+		configParam = v;
 		return true;
 	default:
 		return false;

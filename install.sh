@@ -1,15 +1,15 @@
 #!/bin/bash
 
-./compile.sh mymake
+./compile.sh mm
 
-if [ -e mymake ]
+if [ -e mm ]
 then
     :
 else
     exit 1
 fi
 
-touch mymake_v2
+touch mm_v2
 
 # set up aliases in shells?
 while true
@@ -37,7 +37,7 @@ then
     alias_name="mm"
 fi
 
-file=`pwd`"/mymake"
+file=`pwd`"/mm"
 
 go_on="yes"
 while [ -n "$go_on" ]

@@ -1,142 +1,178 @@
-#include "std.h"
-#include "env.h"
-#include "process.h"
+#include "../setuputils/pipe_process.h"
+#include "../setuputils/find_vs.h"
+#include <iostream>
+#include <string>
+#include <cstring>
+#include <map>
+#include <vector>
+#include <sstream>
+#include <iomanip>
+#include <Windows.h>
+#include <Shlwapi.h>
+#include <direct.h>
 
-#pragma comment (lib, "shlwapi.lib")
+using std::string;
+using std::cout;
+using std::endl;
+using std::setw;
+using std::map;
+using std::vector;
+using std::istream;
+using std::ostream;
+using std::stringstream;
+using std::istringstream;
+using std::ostringstream;
 
-#define ARRAY_COUNT(x) (sizeof(x) / sizeof(*x))
+#pragma comment (lib, "advapi32.lib")
+#pragma comment (lib, "user32.lib")
+#pragma warning (disable : 4996) // For getenv.
 
-// What to look for: It seems "vcvarsall.bat" is always present and works approximately the same across versions.
-const char *toolNames[] = {
-	// "VsDevCmd.bat",  // At least on VS2019
-	"vcvarsall.bat", // At least on VS2008
-};
-
-bool isToolFile(const char *file) {
-	for (size_t i = 0; i < ARRAY_COUNT(toolNames); i++) {
-		if (_stricmp(file, toolNames[i]) == 0)
-			return true;
+vector<string> getPath() {
+	istringstream pathVar(getenv("PATH"));
+	string var;
+	vector<string> r;
+	while (getline(pathVar, var, ';')) {
+		r.push_back(var);
 	}
-	return false;
+	return r;
 }
 
-void findFiles(vector<string> &out, const string &root) {
-	WIN32_FIND_DATA file;
-	HANDLE handle = FindFirstFile((root + "*").c_str(), &file);
-	if (handle == INVALID_HANDLE_VALUE)
+void moveFile(const string &from, const string &to) {
+	if (PathFileExists(to.c_str()))
+		DeleteFile(to.c_str());
+	MoveFile(from.c_str(), to.c_str());
+}
+
+void addPath(const string &to) {
+	HKEY envKey;
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, "Environment", 0, KEY_QUERY_VALUE | KEY_SET_VALUE, &envKey)) {
+		cout << "Failed accessing the windows registry." << endl;
 		return;
+	}
 
-	do {
-		if (strcmp(file.cFileName, ".") == 0 || strcmp(file.cFileName, "..") == 0) {
-			continue;
-		} else if (file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-			findFiles(out, root + file.cFileName + "\\");
-		} else if (isToolFile(file.cFileName)) {
-			out.push_back(root + file.cFileName);
-		}
-	} while (FindNextFile(handle, &file) == TRUE);
+	DWORD type = 0;
+	DWORD size = 0;
+	if (RegGetValue(envKey, NULL, "Path", RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_NOEXPAND, &type, NULL, &size)) {
+		cout << "Failed to open the 'Path' key." << endl;
+		return;
+	}
 
-	FindClose(handle);
+	char *data = new char[size * 2]; // Some margin if another process changes the value.
+	size = size * 2;
+	if (RegGetValue(envKey, NULL, "Path", RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_NOEXPAND, &type, data, &size)) {
+		cout << "Failed to open the 'Path' key." << endl;
+		return;
+	}
+
+	string oldPath = data;
+	if (oldPath[oldPath.size() - 1] != ';')
+		oldPath += ";";
+	oldPath += to;
+
+	if (RegSetValueEx(envKey, "Path", 0, type, (const BYTE *)oldPath.c_str(), oldPath.size() + 1)) {
+		cout << "Failed to write the 'Path' key." << endl;
+		return;
+	}
+
+	RegCloseKey(envKey);
+
+	// Update the ENV in any open shell windows.
+	DWORD_PTR result;
+	SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 1, (LPARAM)"Environment", SMTO_ABORTIFHUNG | SMTO_BLOCK, 1000, &result);
+
+	cout << "Done! Please restart your terminal windows." << endl;
 }
 
-string pickFile(const vector<string> &candidates) {
-	if (candidates.size() == 1)
-		return candidates[0];
+int main(int argc, const char *argv[]) {
+	string file;
+	if (argc == 1) {
+		file = find_vs::find(NULL);
+	} else {
+		string s(argv[1]);
+		file = find_vs::find(&s);
+	}
 
-	cout << "Multiple versions of Visual Studio were found. Please pick the one you want to use:" << endl;
-	for (size_t i = 0; i < candidates.size(); i++)
-		cout << (i + 1) << "> " << candidates[i] << endl;
+	if (file.empty())
+		return 1;
 
+	cout << "Compiling mymake..." << endl;
+
+	if (!PathFileExists("build"))
+		CreateDirectory("build", NULL);
+	if (!PathFileExists("bin"))
+		CreateDirectory("bin", NULL);
+
+	stringstream commands;
+	commands << "cl /nologo /EHsc textinc\\*.cpp /Fobuild\\ /Febin\\textinc.exe" << endl;
+	commands << "bin\\textinc.exe bin\\templates.h";
+	{
+		WIN32_FIND_DATA file;
+		HANDLE f = FindFirstFile("templates\\*.txt", &file);
+		if (f != INVALID_HANDLE_VALUE) {
+			do {
+				if (file.cFileName[0] != '.')
+					commands << " templates\\" << file.cFileName;
+			} while (FindNextFile(f, &file) == TRUE);
+			FindClose(f);
+		}
+	}
+	commands << endl;
+	commands << "cl /nologo /O2 /EHsc src\\*.cpp /Fobuild\\ /Femm.exe" << endl;
+
+	stringstream out;
+	pipe::runCmd(true, "\"\"" + file + "\"\" x86", commands, out);
+
+	if (!PathFileExists("mm.exe")) {
+		cout << "Compilation failed." << endl;
+		return 1;
+	}
+
+	cout << "Done!" << endl;
+
+	vector<string> paths = getPath();
+	cout << "Do you wish to add mm.exe to your path?" << endl;
+	cout << " 0> No, don't do anything." << endl;
+	cout << " 1> Create a new entry for this path." << endl;
+	for (size_t i = 0; i < paths.size(); i++)
+		cout << setw(2) << (i + 2) << "> " << paths[i] << endl;
+
+	size_t id = 0;
 	while (true) {
-		cout << "?> ";
+		cout << " ?> ";
 		string selection;
 		if (!getline(std::cin, selection))
-			exit(1);
+			return 1;
 
 		istringstream iss(selection);
-		size_t id;
 		if (!(iss >> id)) {
 			cout << "Not a number, try again!" << endl;
 			continue;
 		}
 
-		if (id > 0 && id <= candidates.size())
-			return candidates[id - 1];
+		if (id < paths.size() + 2)
+			break;
 
 		cout << "Not an option, try again!" << endl;
 	}
-}
 
-bool supportsFlag(const string &file, const string &flag) {
-	string cmd = getenv("comspec");
-	istringstream in("cl " + flag + "\n");
-	ostringstream out;
-	runProcess(cmd, "/K \"\"" + file + "\"\" x86", in, out);
+	if (id == 0) {
+		// Don't do anything.
+	} else if (id == 1) {
+		// Add a new thing to PATH.
+		if (!PathFileExists("release"))
+			CreateDirectory("release", NULL);
+		moveFile("mm.exe", "release\\mm.exe");
 
-	size_t first = out.str().find(flag);
-	size_t second = out.str().find(flag, first + 1);
-	bool ok = second == string::npos;
-	cout << "-> " << flag << " supported: " << (ok ? "yes" : "no") << endl;
-	return ok;
-}
-
-
-int main(int argc, const char *argv[]) {
-	vector<string> candidates;
-
-	if (argc == 1) {
-		cout << "Looking for the Visual Studio command line tools..." << endl;
-		findFiles(candidates, "C:\\Program Files (x86)\\");
-		findFiles(candidates, "C:\\Program Files\\");
-	} else if (argc == 2) {
-		DWORD attrs = GetFileAttributes(argv[1]);
-		if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-			// It's the bat file we're supposedly looking for!
-			candidates.push_back(argv[1]);
-		} else {
-			string name = argv[1];
-			if (name[name.size() - 1] != '\\')
-				name += "\\";
-			cout << "Looking for the Visual Studio command line tools in " << name << "..." << endl;
-			findFiles(candidates, name);
-		}
+		char tmp[MAX_PATH + 1];
+		_getcwd(tmp, MAX_PATH + 1);
+		string cwd = tmp;
+		if (cwd[cwd.size() - 1] != '\\')
+			cwd += "\\";
+		addPath(cwd + "release\\mm.exe");
+	} else {
+		// Move the binary to the proper location.
+		moveFile("mm.exe", paths[id - 2] + "\\mm.exe");
 	}
-
-	if (candidates.empty()) {
-		cout << "Unable to find the Visual Studio command line tools using any of the following names:" << endl;
-		for (size_t i = 0; i < ARRAY_COUNT(toolNames); i++)
-			cout << "  " << toolNames[i] << endl;
-		cout << "Please try specifying either the path to your Visual Studio installation, or the full path to any of the above files." << endl;
-		return 1;
-	}
-
-	string file = pickFile(candidates);
-
-	cout << "Examining environment variables..." << endl;
-
-	EnvVars plain = captureEnv("");
-	EnvVars x86 = captureEnv("\"\"" + file + "\"\" x86");
-	EnvVars x64 = captureEnv("\"\"" + file + "\"\" amd64");
-
-	x86 = subtract(x86, plain);
-	x64 = subtract(x64, plain);
-
-	cout << x86;
-	cout << x64;
-
-	cout << "Examining supported features..." << endl;
-
-	// Faster PCB file generation when multiple instances. From VS 2017.
-	bool mtPdb = supportsFlag(file, "/Zf");
-
-	// Flag to support multiple processes. Required from VS 2010.
-	bool mtFlag = supportsFlag(file, "/FS");
-
-	// Supports setting standard?
-	bool stdFlag = supportsFlag(file, "/std:c++14");
-
-
-	// Now, we can start generating a new template, and build mymake itself!
 
 	return 0;
 }

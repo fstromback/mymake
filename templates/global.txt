@@ -174,7 +174,7 @@ defineCl=/D
 useStandard=/std:
 
 #/EHsc - exception handling, /FC - full paths in diagnostics
-flags=/nologo /EHsc /FC <useStandard*standard>
+flags=/nologo /EHsc /FC
 warnings=/W3
 linkFlags=/MANIFEST /NXCOMPAT
 manifestId=1
@@ -190,14 +190,7 @@ compile=*:cl <defines> <file> <includes> <flags> <warnings> <usePch*title|pch> <
 link=link <linkFlags> <libs> <files> /nologo /OUT:<output>
 link+=mt -nologo -manifest <output>.manifest -outputresource:<output>;#<manifestId>
 
-[windows,!64]
-#Environment variables for 32-bit compiles. Inserted by the setup-program.
-#ENVVARS32
-
 [windows,64]
-#Environment variables for 64-bit compiles. Inserted by the setup-program.
-#ENVVARS64
-
 linkFlags+=/MACHINE:X64
 
 [windows,!release]

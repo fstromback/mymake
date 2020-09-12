@@ -1,3 +1,7 @@
 []
 input=main.cpp
 output=setup
+
+[release,windows]
+# Use static libraries - makes it a bit more portable.
+flags=/MT /O2
