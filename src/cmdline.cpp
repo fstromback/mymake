@@ -150,7 +150,7 @@ static bool createGlobal() {
 		return false;
 	}
 
-	dest << templ::target;
+	dest << templ::global;
 	dest << endl;
 	dest << "[]" << endl;
 	dest << "#Default number of threads for compilation on this machine." << endl;

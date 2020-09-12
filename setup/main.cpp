@@ -1,18 +1,8 @@
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <vector>
-#include <sstream>
-#include <Windows.h>
+#include "std.h"
+#include "env.h"
 #include "process.h"
 
 #pragma comment (lib, "shlwapi.lib")
-#pragma warning (disable: 4996) // Unsafe C-functions, _wgetenv in this case.
-
-using std::string;
-using std::cout;
-using std::endl;
-using std::vector;
 
 #define ARRAY_COUNT(x) (sizeof(x) / sizeof(*x))
 
@@ -63,7 +53,7 @@ string pickFile(const vector<string> &candidates) {
 		if (!getline(std::cin, selection))
 			exit(1);
 
-		std::istringstream iss(selection);
+		istringstream iss(selection);
 		size_t id;
 		if (!(iss >> id)) {
 			cout << "Not a number, try again!" << endl;
@@ -75,6 +65,19 @@ string pickFile(const vector<string> &candidates) {
 
 		cout << "Not an option, try again!" << endl;
 	}
+}
+
+bool supportsFlag(const string &file, const string &flag) {
+	string cmd = getenv("comspec");
+	istringstream in("cl " + flag + "\n");
+	ostringstream out;
+	runProcess(cmd, "/K \"\"" + file + "\"\" x86", in, out);
+
+	size_t first = out.str().find(flag);
+	size_t second = out.str().find(flag, first + 1);
+	bool ok = second == string::npos;
+	cout << "-> " << flag << " supported: " << (ok ? "yes" : "no") << endl;
+	return ok;
 }
 
 
@@ -108,19 +111,32 @@ int main(int argc, const char *argv[]) {
 	}
 
 	string file = pickFile(candidates);
-	string cmd = getenv("comspec");
 
 	cout << "Examining environment variables..." << endl;
 
-	std::istringstream in("set\n");
-	std::ostringstream out;
-	runProcess("C:\\Windows\\system32\\cmd.exe", "/K \"\"" + file + "\" amd64\"", in, out);
-	in = std::istringstream("set\n");
-	runProcess("C:\\Windows\\system32\\cmd.exe", "/K \"\"" + file + "\" x86\"", in, out);
-	in = std::istringstream("set\n");
-	runProcess("C:\\Windows\\system32\\cmd.exe", "", in, out);
+	EnvVars plain = captureEnv("");
+	EnvVars x86 = captureEnv("\"\"" + file + "\"\" x86");
+	EnvVars x64 = captureEnv("\"\"" + file + "\"\" amd64");
 
-	std::cout << out.str() << std::endl;
+	x86 = subtract(x86, plain);
+	x64 = subtract(x64, plain);
+
+	cout << x86;
+	cout << x64;
+
+	cout << "Examining supported features..." << endl;
+
+	// Faster PCB file generation when multiple instances. From VS 2017.
+	bool mtPdb = supportsFlag(file, "/Zf");
+
+	// Flag to support multiple processes. Required from VS 2010.
+	bool mtFlag = supportsFlag(file, "/FS");
+
+	// Supports setting standard?
+	bool stdFlag = supportsFlag(file, "/std:c++14");
+
+
+	// Now, we can start generating a new template, and build mymake itself!
 
 	return 0;
 }

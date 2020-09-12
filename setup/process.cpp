@@ -1,10 +1,9 @@
 #include "process.h"
-#include <Windows.h>
 
 const size_t bufferSize = 1024;
 
 struct WriteData {
-	std::istream &stream;
+	istream &stream;
 	HANDLE handle;
 };
 
@@ -18,7 +17,7 @@ DWORD WINAPI writeThread(void *data) {
 	filled = (DWORD)d->stream.gcount();
 	while (filled > 0) {
 		if (!WriteFile(d->handle, buffer, filled, &written, NULL)) {
-			std::cout << "Error: " << GetLastError() << std::endl;
+			cout << "Error: " << GetLastError() << endl;
 			CloseHandle(d->handle);
 			return 0;
 		}
@@ -37,7 +36,7 @@ DWORD WINAPI writeThread(void *data) {
 }
 
 struct ReadData {
-	std::ostream &stream;
+	ostream &stream;
 	HANDLE handle;
 };
 
@@ -57,7 +56,7 @@ DWORD WINAPI readThread(void *data) {
 	return 0;
 }
 
-void runProcess(const std::string &exe, const std::string &cmd, std::istream &inStream, std::ostream &outStream) {
+void runProcess(const string &exe, const string &cmd, istream &inStream, ostream &outStream) {
 	STARTUPINFO startup;
 	memset(&startup, 0, sizeof(startup));
 	startup.cb = sizeof(startup);
@@ -80,7 +79,7 @@ void runProcess(const std::string &exe, const std::string &cmd, std::istream &in
 	char *cmdline = new char[cmd.size() + 1];
 	memcpy(cmdline, cmd.c_str(), cmd.size() + 1);
 	if (CreateProcess(exe.c_str(), cmdline, NULL, NULL, TRUE, 0, NULL, NULL, &startup, &info) == 0) {
-		std::cout << "Failed to start " << exe << std::endl;
+		cout << "Failed to start " << exe << endl;
 		exit(1);
 	}
 	delete []cmdline;

@@ -1,5 +1,5 @@
 #pragma once
-#include <iostream>
-#include <string>
 
-void runProcess(const std::string &exe, const std::string &cmd, std::istream &input, std::ostream &output);
+#include "std.h"
+
+void runProcess(const string &exe, const string &cmd, istream &input, ostream &output);
