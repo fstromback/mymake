@@ -117,7 +117,7 @@ int main(int argc, const char *argv[]) {
 		}
 	}
 	commands << endl;
-	commands << "cl /nologo /O2 /EHsc src\\*.cpp /Fobuild\\ /Femm.exe" << endl;
+	commands << "cl /nologo /O2 /EHsc /Isrc\\ src\\*.cpp src\\setup\\*.cpp /Fobuild\\ /Femm.exe" << endl;
 
 	stringstream out;
 	pipe::runCmd(true, "\"\"" + file + "\"\" x86", commands, out);

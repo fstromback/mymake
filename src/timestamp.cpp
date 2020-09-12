@@ -27,7 +27,7 @@ Timestamp fromFileTime(FILETIME ft) {
 ostream &operator <<(ostream &to, const Timestamp &t) {
 	LARGE_INTEGER li;
 	li.QuadPart = t.time * 10LL;
-	FILETIME fTime = { li.LowPart, li.HighPart };
+	FILETIME fTime = { li.LowPart, (DWORD)li.HighPart };
 	SYSTEMTIME sTime;
 	FileTimeToSystemTime(&fTime, &sTime);
 

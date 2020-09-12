@@ -1,6 +1,6 @@
 #include "std.h"
 #include "envinfo.h"
-#include "env.h"
+#include "envvars.h"
 #include "../../setuputils/find_vs.h"
 #include "../../setuputils/pipe_process.h"
 
@@ -21,6 +21,10 @@ namespace setup {
 
 	void outputEnv(ostream &to, const EnvVars &vars) {
 		for (EnvVars::const_iterator i = vars.begin(); i != vars.end(); ++i) {
+			// We don't need these...
+			if (i->first.size() >= 1 && i->first[0] == '_')
+				continue;
+
 			for (size_t j = i->second.size(); j > 0; j--) {
 				if (!i->second[j - 1].empty()) {
 					to << "env+=" << i->first << "<=" << i->second[j - 1] << endl;
@@ -48,6 +52,8 @@ namespace setup {
 			std::cout << "WARNING: Failed to find Visual Studio, will not setup environvent variables." << endl;
 			return "";
 		}
+
+		std::cout << "Examining environment variables..." << endl;
 
 		EnvVars plain = captureEnv("");
 		EnvVars x86 = captureEnv("\"\"" + file + "\"\" x86");
