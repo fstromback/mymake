@@ -7,6 +7,8 @@ release/
 
 mymake
 mymake_v2
+mm
+mm_v2
 
 *.exe
 *.lib

@@ -123,4 +123,4 @@ namespace find_vs {
 
 }
 
-#endif WINDOWS
+#endif
