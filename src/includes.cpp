@@ -49,6 +49,10 @@ IncludeInfo Includes::info(const Path &file) {
 		// See if it was ignored at some point.
 		result.ignored |= at.ignored;
 
+		// If ignored, stop traversing.
+		if (at.ignored)
+			continue;
+
 		// Add recursively included headers.
 		for (set<Path>::const_iterator i = at.includes.begin(), end = at.includes.end(); i != end; ++i) {
 			toExplore << *i;
