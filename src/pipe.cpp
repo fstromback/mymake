@@ -3,10 +3,6 @@
 
 #ifdef WINDOWS
 
-// When defined, uses the file handle for synchronization instead of creating a separate
-// event. Mainly used for investigating the cause of a weird race condition.
-//#define NO_SEPARATE_EVENT
-
 const Pipe noPipe = INVALID_HANDLE_VALUE;
 
 volatile LONG pipeSerialNr;
@@ -75,28 +71,40 @@ public:
 	~PipeSet();
 
 	struct Data {
-		Pipe pipe;
-		OVERLAPPED overlapped;
-		HANDLE event;
-		nat size;
-		char *buffer;
-		bool error;
-
-		Data(Pipe pipe, nat buf);
+		// Init.
+		Data(Pipe pipe, nat buffer);
 		~Data();
 
-		void startRead();
-		void read(void *to, nat &written);
+		// OVERLAPPED request data
+		OVERLAPPED request;
+
+		// Copy of the pipe handle so that we can find it.
+		Pipe pipe;
+
+		// Buffer.
+		char *buffer;
+
+		// Buffer size.
+		nat size;
+
+		// Any error?
+		bool error;
+
+		// Start reading from this pipe (port is the IO completion port so that we can post errors there).
+		void startRead(HANDLE port);
+
+		// Destroy this element. Makes sure that any pending IO operations are finished before
+		// deallocating the object. Returns true if we can deallocate now.
+		bool destroy();
 	};
 
 	typedef map<Pipe, Data *> DataMap;
 	DataMap data;
 
-	nat bufSize;
+	// IO completion port.
+	HANDLE port;
 
-	// Linear list of all event variables.
-	vector<HANDLE> events;
-	vector<Data *> sources;
+	nat bufSize;
 
 	void add(Pipe pipe);
 	void remove(Pipe pipe);
@@ -105,74 +113,67 @@ public:
 
 PipeSet::Data::Data(Pipe pipe, nat buf) :
 	pipe(pipe),
-#ifdef NO_SEPARATE_EVENT
-	event(pipe),
-#else
-	event(CreateEvent(NULL, TRUE, FALSE, NULL)),
-#endif
-	size(buf),
 	buffer(new char[buf]),
+	size(buf),
 	error(false) {
-
-	startRead();
 }
 
 PipeSet::Data::~Data() {
-	CancelIo(pipe);
-
 	delete []buffer;
-#ifndef NO_SEPARATE_EVENT
-	CloseHandle(event);
-#endif
 }
 
-void PipeSet::Data::startRead() {
+void PipeSet::Data::startRead(HANDLE port) {
 	if (error)
 		return;
 
-	zeroMem(overlapped);
-#ifndef NO_SEPARATE_EVENT
-	overlapped.hEvent = event;
-	ResetEvent(event);
-#endif
+	// Clear out the OVERLAPPED structure.
+	zeroMem(request);
 
-	if (ReadFile(pipe, buffer, size, NULL, &overlapped) == FALSE) {
-		if (GetLastError() != ERROR_IO_PENDING) {
-			// Arrange so that we're in a signaling state and will report 0 bytes next time.
+	if (ReadFile(pipe, buffer, size, NULL, &request) == FALSE) {
+		int error = GetLastError();
+
+		if (error == ERROR_IO_PENDING || error == 0) {
+			// All is well.
+		} else {
+			// Some error. Perhaps we should signal the IO completion port so that we can be removed?
 			error = true;
-#ifndef NO_SEPARATE_EVENT
-			SetEvent(event);
-#endif
+			PostQueuedCompletionStatus(port, 0, (ULONG_PTR)this, NULL);
 		}
 	}
 }
 
-void PipeSet::Data::read(void *to, nat &written) {
+bool PipeSet::Data::destroy() {
 	if (error) {
-		written = 0;
+		return true;
 	} else {
-		DWORD read = 0;
-		GetOverlappedResult(pipe, &overlapped, &read, TRUE);
-
-		memcpy_s(to, size, buffer, read);
-		written = read;
-
-		startRead();
+		CancelIo(pipe);
+		return false;
 	}
 }
 
-PipeSet::PipeSet(nat bufSize) : bufSize(bufSize) {}
+
+PipeSet::PipeSet(nat bufSize) : bufSize(bufSize) {
+	port = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
+}
 
 PipeSet::~PipeSet() {
 	for (DataMap::iterator i = data.begin(), end = data.end(); i != end; ++i) {
 		delete i->second;
 	}
+	CloseHandle(port);
 }
 
 void PipeSet::add(Pipe p) {
-	events.clear();
-	sources.clear();
-	data.insert(make_pair(p, new Data(p, bufSize)));
+	Data *d = new Data(p, bufSize);
+	data.insert(make_pair(p, d));
+	HANDLE nPort = CreateIoCompletionPort(p, port, (ULONG_PTR)d, 1);
+	if (nPort == NULL) {
+		WARNING("Failed to associate the port to the handle: " << GetLastError());
+		exit(11);
+	}
+	port = nPort;
+
+	d->startRead(port);
 }
 
 void PipeSet::remove(Pipe p) {
@@ -180,39 +181,52 @@ void PipeSet::remove(Pipe p) {
 	if (i == data.end())
 		return;
 
-	events.clear();
-	sources.clear();
-
-	delete i->second;
-	data.erase(i);
+	if (i->second->destroy()) {
+		delete i->second;
+		data.erase(i);
+	}
 }
 
 void PipeSet::read(void *to, nat &written, Pipe &from) {
 	from = noPipe;
 	written = 0;
 
-	if (events.size() != data.size()) {
-		events.clear();
-		sources.clear();
-		for (DataMap::iterator i = data.begin(), end = data.end(); i != end; ++i) {
-			events << i->second->event;
-			sources << i->second;
+	DWORD bytes = 0;
+	Data *src = null;
+	BOOL ok = FALSE;
+
+	while (true) {
+		ULONG_PTR key = 0;
+		OVERLAPPED *request = null;
+		ok = GetQueuedCompletionStatus(port, &bytes, &key, &request, INFINITE);
+
+		if (!key) {
+			WARNING(L"Failed to wait: " << GetLastError());
+			exit(11);
+		}
+
+		src = (Data *)key;
+		from = src->pipe;
+
+		// Data from some old pipe that were still used?
+		if (data.count(from) != 0) {
+			break;
 		}
 	}
 
-	Data *src = null;
-	DWORD r = WaitForMultipleObjects(events.size(), &events[0], FALSE, INFINITE);
-	if (r >= WAIT_OBJECT_0 && r < WAIT_OBJECT_0 + events.size()) {
-		src = sources[r - WAIT_OBJECT_0];
-	} else if (r >= WAIT_ABANDONED_0 && r < WAIT_ABANDONED_0 + events.size()) {
-		src = sources[r - WAIT_ABANDONED_0];
+	if (ok == false || src->error || bytes == 0) {
+		// If it returned an error or EOF, remove it now.
+		written = 0;
+		data.erase(from);
+		delete src;
 	} else {
-		WARNING("Failed to wait: " << GetLastError());
-		exit(11);
-	}
+		// Otherwise, extract the data.
+		written = bytes;
+		memcpy_s(to, bufSize, src->buffer, bytes);
 
-	from = src->pipe;
-	src->read(to, written);
+		// Start the next read operation.
+		src->startRead(port);
+	}
 }
 
 
