@@ -272,7 +272,7 @@ are:
 - `noExt`: remove the file type from a path.
 - `path`: format the element as a path for the current operating system. For example: `src/foo.txt` evaluates to `src\foo.txt` on Windows.
 - `buildpath`: make the element into a path inside the build path.
-- `exexpath`: make the element int a path inside the bin path.
+- `execpath`: make the element int a path inside the bin path.
 - `parent`: evaluates to the parent directory of the path. If no parent is given (eg. only a file-name), the element is removed from the array.
 - `if`: make all elements empty. This can be used to test if a variable contains a value and then include something.
 
