@@ -57,7 +57,8 @@ namespace compile {
 	}
 
 	Target::~Target() {
-		includes.save(buildDir + "includes");
+		// We do this in "save", since if we execute the binary, the destructor will not be executed.
+		// includes.save(buildDir + "includes");
 	}
 
 	void Target::clean() {
@@ -369,6 +370,10 @@ namespace compile {
 		}
 
 		return true;
+	}
+
+	void Target::save() const {
+		includes.save(buildDir + "includes");
 	}
 
 	int Target::execute(const vector<String> &params) const {

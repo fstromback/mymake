@@ -29,6 +29,9 @@ namespace compile {
 		// Compile a directory with a .mymake file in.
 		bool compile();
 
+		// Save build files (include cache, etc.)
+		void save() const;
+
 		// Execute the final executable.
 		int execute(const vector<String> &params) const;
 

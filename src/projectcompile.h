@@ -26,6 +26,9 @@ namespace compile {
 		// Compile.
 		bool compile();
 
+		// Save build files.
+		void save() const;
+
 		// Execute the resulting file.
 		int execute(const vector<String> &params);
 

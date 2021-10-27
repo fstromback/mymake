@@ -289,6 +289,12 @@ namespace compile {
 		return true;
 	}
 
+	void Project::save() const {
+		for (map<String, Target *>::const_iterator i = target.begin(); i != target.end(); ++i) {
+			i->second->save();
+		}
+	}
+
 	int Project::execute(const vector<String> &params) {
 		if (mainTarget.empty()) {
 			PLN("Nothing to run!");

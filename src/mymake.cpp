@@ -39,12 +39,14 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 		return 0;
 	}
 
-	if (!c.find()) {
-		PLN("Compilation failed!");
-		return 1;
-	}
+	bool ok = c.find();
 
-	if (!c.compile()) {
+	if (ok)
+		ok = c.compile();
+
+	c.save();
+
+	if (!ok) {
 		PLN("Compilation failed!");
 		return 1;
 	}
@@ -83,6 +85,7 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	DEBUG("-- Finding dependencies --", NORMAL);
 
 	if (!c.find()) {
+		c.save();
 		PLN("Compilation failed!");
 		return 1;
 	}
@@ -92,7 +95,10 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 		return 0;
 	}
 
-	if (!c.compile()) {
+	bool ok = c.compile();
+	c.save();
+
+	if (!ok) {
 		PLN("Compilation failed!");
 		return 1;
 	}
