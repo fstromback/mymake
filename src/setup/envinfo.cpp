@@ -101,7 +101,7 @@ namespace setup {
 
 #else
 
-	String envinfo(const String *params) {
+	String envinfo(const String *) {
 		return "";
 	}
 
