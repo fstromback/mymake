@@ -3,6 +3,7 @@
 #include "config.h"
 #include "uniquequeue.h"
 #include "includes.h"
+#include "commands.h"
 #include "wildcard.h"
 #include "process.h"
 #include "env.h"
@@ -60,6 +61,9 @@ namespace compile {
 		// Include cache.
 		Includes includes;
 
+		// Previous command lines.
+		Commands commands;
+
 		// Valid extensions to compile.
 		vector<String> validExts;
 
@@ -109,6 +113,9 @@ namespace compile {
 
 		// Files to compile in some valid order.
 		vector<Compile> toCompile;
+
+		// Create a shellProcess instance that saves the output to 'commands' whenever the command succeeds.
+		Process *saveShellProcess(const String &file, const String &command, const Path &cwd, const Env *env);
 
 		// Run steps.
 		bool runSteps(const String &key, ProcGroup &group, const Env &env, const map<String, String> &options);

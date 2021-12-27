@@ -53,6 +53,7 @@ namespace compile {
 		includes.ignore(config.getArray("noIncludes"));
 		if (!force) {
 			includes.load(buildDir + "includes");
+			commands.load(buildDir + "commands");
 		}
 	}
 
@@ -160,6 +161,32 @@ namespace compile {
 		return true;
 	}
 
+	// Save command line on exit.
+	class SaveOnExit : public ProcessCallback {
+	public:
+		SaveOnExit(Commands *to, const String &file, const String &command) : to(to), key(file), command(command) {}
+
+		// Save to.
+		Commands *to;
+
+		// Source file used as key.
+		String key;
+
+		// Command line.
+		String command;
+
+		virtual void exited(int result) {
+			if (result == 0)
+				to->set(key, command);
+		}
+	};
+
+	Process *Target::saveShellProcess(const String &file, const String &command, const Path &cwd, const Env *env) {
+		Process *p = shellProcess(command, cwd, env);
+		p->callback = new SaveOnExit(&commands, file, command);
+		return p;
+	}
+
 	bool Target::compile() {
 		nat threads = to<nat>(config.getStr("maxThreads", "1"));
 
@@ -233,14 +260,14 @@ namespace compile {
 			}
 
 			if (!combinedPch && src.isPch) {
-				DEBUG("Compiling header " << src.makeRelative(wd) << "...", NORMAL);
+				DEBUG("Compiling header " << file << "...", NORMAL);
 				String cmd = config.getStr("pchCompile");
 				data["file"] = preparePath(Path(pchHeader).makeAbsolute(wd));
 				data["output"] = data["pchFile"];
 				cmd = config.expandVars(cmd, data);
 
 				DEBUG("Command line: " << cmd, INFO);
-				if (!group.spawn(shellProcess(cmd, wd, &env))) {
+				if (!group.spawn(saveShellProcess(file, cmd, wd, &env))) {
 					return false;
 				}
 
@@ -268,7 +295,7 @@ namespace compile {
 			cmd = config.expandVars(cmd, data);
 
 			DEBUG("Command line: " << cmd, INFO);
-			if (!group.spawn(shellProcess(cmd, wd, &env)))
+			if (!group.spawn(saveShellProcess(file, cmd, wd, &env)))
 				return false;
 
 			// If it is a pch, wait for it to finish.
@@ -374,6 +401,7 @@ namespace compile {
 
 	void Target::save() const {
 		includes.save(buildDir + "includes");
+		commands.save(buildDir + "commands");
 	}
 
 	int Target::execute(const vector<String> &params) const {

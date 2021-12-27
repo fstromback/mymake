@@ -39,6 +39,9 @@ src+=release
 #The setup does need it as well.
 setup+=release
 
+[release,pdb,build]
+src+=pdb
+
 #Use the global config unless 'standalone' is used on the command line.
 
 [unix,standalone]

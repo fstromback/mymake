@@ -16,6 +16,18 @@ extern const ProcId invalidProc;
 class ProcGroup;
 
 /**
+ * Callback for process completion.
+ */
+class ProcessCallback : NoCopy {
+public:
+	virtual ~ProcessCallback();
+
+	// Called when the process is completed.
+	virtual void exited(int result) = 0;
+};
+
+
+/**
  * Handles a process.
  */
 class Process : NoCopy {
@@ -37,6 +49,9 @@ public:
 	// Terminated?
 	inline bool terminated() const { return finished; }
 
+	// Completion callback.
+	ProcessCallback *callback;
+
 private:
 	// Parameters.
 	Path file;
@@ -54,11 +69,16 @@ private:
 	Pipe outPipe, errPipe;
 
 	// Result.
-	volatile int result;
+	int result;
 
-	// Finished?
-	volatile bool finished;
+	// Finished? Locked.
+	bool finished;
 
+	// Lock for 'finished'.
+	Lock finishLock;
+
+	// Called when the process terminated.
+	void terminated(int result);
 
 	friend void waitProc();
 };

@@ -46,12 +46,13 @@ void waitProc() {
 	if (!p)
 		return;
 
-	p->result = result;
-	p->finished = true;
+	p->terminated(result);
 
 	if (p->owner)
 		p->owner->terminated(p, result);
 }
+
+ProcessCallback::~ProcessCallback() {}
 
 class WaitCond {
 public:
@@ -143,7 +144,7 @@ void waitFor(WaitCond &cond) {
 
 
 Process::Process(const Path &file, const vector<String> &args, const Path &cwd, const Env *env) :
-	file(file), args(args), cwd(cwd), env(env), process(invalidProc),
+	callback(null), file(file), args(args), cwd(cwd), env(env), process(invalidProc),
 	owner(null), outPipe(noPipe), errPipe(noPipe), result(0), finished(false) {}
 
 int Process::wait() {
@@ -152,6 +153,7 @@ int Process::wait() {
 		Process *me;
 		Finished(Process *p) : me(p) {}
 		virtual bool done() {
+			Lock::Guard z(me->finishLock);
 			return me->finished;
 		}
 	};
@@ -163,6 +165,17 @@ int Process::wait() {
 	return result;
 }
 
+void Process::terminated(int result) {
+	{
+		Lock::Guard z(finishLock);
+		this->result = result;
+		this->finished = true;
+	}
+
+	// Check the callback.
+	if (callback)
+		callback->exited(result);
+}
 
 #ifdef WINDOWS
 
@@ -254,6 +267,8 @@ Process::~Process() {
 		if (errPipe != noPipe)
 			OutputMgr::remove(errPipe);
 	}
+
+	delete callback;
 }
 
 static String getEnv(const char *name) {
@@ -466,6 +481,8 @@ Process::~Process() {
 		if (errPipe != noPipe)
 			OutputMgr::remove(errPipe);
 	}
+
+	delete callback;
 }
 
 Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
