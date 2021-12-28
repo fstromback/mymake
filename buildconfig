@@ -12,5 +12,5 @@
 #-e -p test/independent-wait -a -f
 #setup -e
 #-e src -a --config
--e src -a src -f
+-e src -a src
 

@@ -246,38 +246,34 @@ namespace compile {
 				pchValid = pchFile.exists() && pchFile.mTime() >= lastModified;
 			}
 
-			if (!force && pchValid && output.exists() && output.mTime() >= lastModified) {
-				DEBUG("Skipping " << src.makeRelative(wd) << "...", INFO);
-				DEBUG("Source modified: " << lastModified << ", output modified " << output.mTime(), DEBUG);
-
-				Timestamp mTime = output.mTime();
-				if (i == 0)
-					latestModified = mTime;
-				else
-					latestModified = max(latestModified, mTime);
-
-				continue;
-			}
+			bool skip = !force     // Never skip a file if the force flag is set.
+				&& pchValid        // If the pch is invalid, don't skip.
+				&& output.exists() // If the output exists, ...
+				&& output.mTime() >= lastModified; // ... and is new enough, we can skip.
 
 			if (!combinedPch && src.isPch) {
-				DEBUG("Compiling header " << file << "...", NORMAL);
 				String cmd = config.getStr("pchCompile");
-				data["file"] = preparePath(Path(pchHeader).makeAbsolute(wd));
+				Path pchPath = Path(pchHeader).makeAbsolute(wd);
+				String pchFile = toS(pchPath.makeRelative(wd));
+				data["file"] = preparePath(pchPath);
 				data["output"] = data["pchFile"];
 				cmd = config.expandVars(cmd, data);
 
-				DEBUG("Command line: " << cmd, INFO);
-				if (!group.spawn(saveShellProcess(file, cmd, wd, &env))) {
-					return false;
-				}
+				if (skip && commands.check(pchFile, cmd)) {
+					DEBUG("Skipping header " << file << "...", INFO);
+				} else {
+					DEBUG("Compiling header " << file << "...", NORMAL);
+					DEBUG("Command line: " << cmd, INFO);
+					if (!group.spawn(saveShellProcess(pchFile, cmd, wd, &env))) {
+						return false;
+					}
 
-				// Wait for it to complete...
-				if (!group.wait()) {
-					return false;
+					// Wait for it to complete...
+					if (!group.wait()) {
+						return false;
+					}
 				}
 			}
-
-			DEBUG("Compiling " << src.makeRelative(wd) << "...", NORMAL);
 
 			String cmd;
 			if (combinedPch && src.isPch)
@@ -294,17 +290,23 @@ namespace compile {
 			data["output"] = out;
 			cmd = config.expandVars(cmd, data);
 
-			DEBUG("Command line: " << cmd, INFO);
-			if (!group.spawn(saveShellProcess(file, cmd, wd, &env)))
-				return false;
-
-			// If it is a pch, wait for it to finish.
-			if (src.isPch) {
-				if (!group.wait())
+			if (skip && commands.check(file, cmd)) {
+				DEBUG("Skipping " << file << "...", INFO);
+				DEBUG("Source modified: " << lastModified << ", output modified " << output.mTime(), DEBUG);
+			} else {
+				DEBUG("Compiling " << file << "...", NORMAL);
+				DEBUG("Command line: " << cmd, INFO);
+				if (!group.spawn(saveShellProcess(file, cmd, wd, &env)))
 					return false;
+
+				// If it is a pch, wait for it to finish.
+				if (src.isPch) {
+					if (!group.wait())
+						return false;
+				}
 			}
 
-			// Update 'last modified'
+			// Update 'last modified'. We always want to do this, even if we did not need to compile the file.
 			if (i == 0)
 				latestModified = lastModified;
 			else
@@ -327,7 +329,22 @@ namespace compile {
 		}
 
 		// Link the output.
-		if (!force && output.exists() && output.mTime() >= latestModified) {
+		bool skipLink = !force && output.exists() && output.mTime() >= latestModified;
+
+		String finalOutput = toS(output.makeRelative(wd));
+		data["files"] = intermediateFiles.str();
+		data["output"] = finalOutput;
+
+		vector<String> linkCmds = config.getArray("link");
+		std::ostringstream allCmds;
+		for (nat i = 0; i < linkCmds.size(); i++) {
+			linkCmds[i] = config.expandVars(linkCmds[i], data);
+			if (i > 0)
+				allCmds << ";";
+			allCmds << linkCmds[i];
+		}
+
+		if (skipLink && commands.check(finalOutput, allCmds.str())) {
 			DEBUG("Skipping linking.", INFO);
 			DEBUG("Output modified " << output.mTime() << ", input modified " << latestModified, DEBUG);
 			return true;
@@ -335,12 +352,8 @@ namespace compile {
 
 		DEBUG("Linking " << output.title() << "...", NORMAL);
 
-		data["files"] = intermediateFiles.str();
-		data["output"] = toS(output.makeRelative(wd));
-
-		vector<String> linkCmds = config.getArray("link");
 		for (nat i = 0; i < linkCmds.size(); i++) {
-			String cmd = config.expandVars(linkCmds[i], data);
+			const String &cmd = linkCmds[i];
 			DEBUG("Command line: " << cmd, INFO);
 
 			if (!group.spawn(shellProcess(cmd, wd, &env)))
@@ -349,6 +362,8 @@ namespace compile {
 			if (!group.wait())
 				return false;
 		}
+
+		commands.set(finalOutput, allCmds.str());
 
 		{
 			// Run post-build steps.
