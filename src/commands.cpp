@@ -7,14 +7,18 @@ static const char SEPARATOR = ':';
 
 Commands::Commands() {}
 
-bool Commands::check(const String &file, const String &command) const {
+bool Commands::check(const String &file, const String &command) {
 	Lock::Guard z(lock);
 
 	hash_map<String, String>::const_iterator found = files.find(file);
 
-	// We consider it "same" if we don't have it in our storage.
-	if (found == files.end())
+	// We consider it "same" if we don't have it in our storage. If so, we add it to ourselves so
+	// that we may remember it in the future. It might be the case that this file will soon be
+	// compiled, in that case our storage will simply be refreshed.
+	if (found == files.end()) {
+		files.insert(std::make_pair(file, command));
 		return true;
+	}
 
 	return found->second == command;
 }

@@ -20,7 +20,7 @@ public:
 
 	// Check if the command to compile a file is the same as the previous compilation. If no command
 	// line was stored previously, we consider it to be the same.
-	bool check(const String &file, const String &command) const;
+	bool check(const String &file, const String &command);
 
 	// Set the command to compile a given file.
 	void set(const String &file, const String &command);
