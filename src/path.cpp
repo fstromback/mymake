@@ -1,6 +1,9 @@
 #include "std.h"
 #include "path.h"
 #include "system.h"
+#include "sync.h"
+#include "hash.h"
+
 
 #ifdef WINDOWS
 
@@ -60,6 +63,7 @@ static const char *separatorStr = "/";
 // The Path class
 //////////////////////////////////////////////////////////////////////////
 
+
 #ifdef WINDOWS
 
 Path Path::cwd() {
@@ -76,10 +80,6 @@ Path Path::home() {
 	Path r(tmp);
 	r.makeDir();
 	return r;
-}
-
-bool Path::exists() const {
-	return GetFileAttributes(toS(*this).c_str()) != INVALID_FILE_ATTRIBUTES;
 }
 
 void Path::deleteFile() const {
@@ -125,40 +125,6 @@ vector<Path> Path::children() const {
 	return result;
 }
 
-Timestamp Path::mTime() const {
-	HANDLE hFile = CreateFile(toS(*this).c_str(),
-							0, /* We only want metadata */
-							FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, /* Allow access to others */
-							NULL, /* Security attributes */
-							OPEN_EXISTING, /* Action if not existing */
-							FILE_ATTRIBUTE_NORMAL,
-							NULL /* Template file */);
-	if (hFile == INVALID_HANDLE_VALUE)
-		return Timestamp(0);
-	FILETIME time;
-	GetFileTime(hFile, NULL, NULL, &time);
-	CloseHandle(hFile);
-
-	return fromFileTime(time);
-}
-
-Timestamp Path::cTime() const {
-	HANDLE hFile = CreateFile(toS(*this).c_str(),
-							0, /* We only want metadata */
-							FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, /* Allow access to others */
-							NULL, /* Security attributes */
-							OPEN_EXISTING, /* Action if not existing */
-							FILE_ATTRIBUTE_NORMAL,
-							NULL /* Template file */);
-	if (hFile == INVALID_HANDLE_VALUE)
-		return Timestamp(0);
-	FILETIME time;
-	GetFileTime(hFile, &time, NULL, NULL);
-	CloseHandle(hFile);
-
-	return fromFileTime(time);
-}
-
 void Path::createDir() const {
 	if (exists())
 		return;
@@ -170,6 +136,37 @@ void Path::createDir() const {
 	CreateDirectory(toS(*this).c_str(), NULL);
 }
 
+Timestamp fromFileTime(FILETIME ft);
+
+FileInfo Path::info() const {
+	FileInfo result(false);
+	HANDLE hFile = CreateFile(toS(*this).c_str(),
+							0, /* We only want metadata */
+							FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, /* Allow access to others */
+							NULL, /* Security attributes */
+							OPEN_EXISTING, /* Action if not existing */
+							FILE_ATTRIBUTE_NORMAL,
+							NULL /* Template file */);
+	if (hFile != INVALID_HANDLE_VALUE) {
+		result.exists = true;
+		FILETIME cTime, mTime;
+		if (GetFileTime(hFile, &cTime, NULL, &mTime) == TRUE) {
+			result.mTime = fromFileTime(mTime);
+			result.cTime = fromFileTime(cTime);
+		} else {
+			// This is likely an implementation bug.
+			WARNING("Failed to retrieve file times for file " << *this);
+		}
+		CloseHandle(hFile);
+	}
+
+	return result;
+}
+
+// We can do exists() cheaper than stat() on Windows.
+bool Path::exists() const {
+	return GetFileAttributes(toS(*this).c_str()) != INVALID_FILE_ATTRIBUTES;
+}
 
 #else
 
@@ -186,11 +183,6 @@ Path Path::home() {
 	Path r(getenv("HOME"));
 	r.makeDir();
 	return r;
-}
-
-bool Path::exists() const {
-	struct stat s;
-	return stat(toS(*this).c_str(), &s) == 0;
 }
 
 void Path::deleteFile() const {
@@ -234,24 +226,6 @@ vector<Path> Path::children() const {
 	return result;
 }
 
-Timestamp fromFileTime(time_t);
-
-Timestamp Path::mTime() const {
-	struct stat s;
-	if (stat(toS(*this).c_str(), &s))
-		return Timestamp();
-
-	return fromFileTime(s.st_mtime);
-}
-
-Timestamp Path::cTime() const {
-	struct stat s;
-	if (stat(toS(*this).c_str(), &s))
-		return Timestamp();
-
-	return fromFileTime(s.st_ctime);
-}
-
 void Path::createDir() const {
 	if (exists())
 		return;
@@ -263,7 +237,34 @@ void Path::createDir() const {
 	mkdir(toS(*this).c_str(), 0777);
 }
 
+Timestamp fromFileTime(time_t);
+
+FileInfo Path::info() const {
+	FileInfo result(false);
+
+	struct stat s;
+	if (stat(toS(*this).c_str(), &s) == 0) {
+		result.exists = true;
+		result.mTime = fromFileTime(s.st_mtime);
+		result.cTime = fromFileTime(s.st_ctime);
+	}
+
+	return result;
+}
+
+bool Path::exists() const {
+	return fileInfo(*this).exists;
+}
+
 #endif
+
+Timestamp Path::mTime() const {
+	return info().mTime;
+}
+
+Timestamp Path::cTime() const {
+	return info().cTime;
+}
 
 bool Path::equal(const String &a, const String &b) {
 	return partEq(a, b);

@@ -3,6 +3,27 @@
 #include "timestamp.h"
 
 /**
+ * Information about a file. Returned from the Path::info() member. Avoids calling exists(), cTime()
+ * and mTime() separately if they are all needed.
+ */
+class FileInfo {
+public:
+	// Create.
+	FileInfo(bool exists, Timestamp cTime = Timestamp(0), Timestamp mTime = Timestamp(0))
+		: exists(exists), cTime(cTime), mTime(mTime) {}
+
+	// Does the file exist?
+	bool exists;
+
+	// Created time. 0 if the file does not exist.
+	Timestamp cTime;
+
+	// Modified time. 0 if the file does not exist.
+	Timestamp mTime;
+};
+
+
+/**
  * A class for managing path names.
  */
 class Path {
@@ -94,6 +115,9 @@ public:
 
 	// Created time.
 	Timestamp cTime() const;
+
+	// Get file information. Essentially calls cTime, mTime and exists at the same time.
+	FileInfo info() const;
 
 	// Create this path as directory if it does not already exist.
 	void createDir() const;

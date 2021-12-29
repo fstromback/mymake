@@ -214,7 +214,7 @@ namespace compile {
 		data["output"] = "";
 		data["pchFile"] = toS(pchFile.makeRelative(wd));
 
-		Timestamp latestModified;
+		Timestamp latestModified(0);
 		ostringstream intermediateFiles;
 
 		for (nat i = 0; i < toCompile.size(); i++) {
@@ -243,13 +243,13 @@ namespace compile {
 
 			bool pchValid = true;
 			if (src.isPch) {
-				pchValid = pchFile.exists() && pchFile.mTime() >= lastModified;
+				// Note: This implies that pchFile exists as well.
+				pchValid = pchFile.mTime() >= lastModified;
 			}
 
 			bool skip = !force     // Never skip a file if the force flag is set.
 				&& pchValid        // If the pch is invalid, don't skip.
-				&& output.exists() // If the output exists, ...
-				&& output.mTime() >= lastModified; // ... and is new enough, we can skip.
+				&& output.mTime() >= lastModified; // If the output exists and is new enough, we can skip.
 
 			if (!combinedPch && src.isPch) {
 				String cmd = config.getStr("pchCompile");
@@ -329,7 +329,7 @@ namespace compile {
 		}
 
 		// Link the output.
-		bool skipLink = !force && output.exists() && output.mTime() >= latestModified;
+		bool skipLink = !force && output.mTime() >= latestModified;
 
 		String finalOutput = toS(output.makeRelative(wd));
 		data["files"] = intermediateFiles.str();
