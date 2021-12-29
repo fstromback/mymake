@@ -79,7 +79,7 @@ Path Path::home() {
 }
 
 bool Path::exists() const {
-	return PathFileExists(toS(*this).c_str()) == TRUE;
+	return GetFileAttributes(toS(*this).c_str()) != INVALID_FILE_ATTRIBUTES;
 }
 
 void Path::deleteFile() const {
@@ -125,26 +125,38 @@ vector<Path> Path::children() const {
 	return result;
 }
 
-Timestamp fromFileTime(FILETIME ft);
-
 Timestamp Path::mTime() const {
-	WIN32_FIND_DATA d;
-	HANDLE h = FindFirstFile(toS(*this).c_str(), &d);
-	if (h == INVALID_HANDLE_VALUE)
+	HANDLE hFile = CreateFile(toS(*this).c_str(),
+							0, /* We only want metadata */
+							FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, /* Allow access to others */
+							NULL, /* Security attributes */
+							OPEN_EXISTING, /* Action if not existing */
+							FILE_ATTRIBUTE_NORMAL,
+							NULL /* Template file */);
+	if (hFile == INVALID_HANDLE_VALUE)
 		return Timestamp(0);
-	FindClose(h);
+	FILETIME time;
+	GetFileTime(hFile, NULL, NULL, &time);
+	CloseHandle(hFile);
 
-	return fromFileTime(d.ftLastWriteTime);
+	return fromFileTime(time);
 }
 
 Timestamp Path::cTime() const {
-	WIN32_FIND_DATA d;
-	HANDLE h = FindFirstFile(toS(*this).c_str(), &d);
-	if (h == INVALID_HANDLE_VALUE)
+	HANDLE hFile = CreateFile(toS(*this).c_str(),
+							0, /* We only want metadata */
+							FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, /* Allow access to others */
+							NULL, /* Security attributes */
+							OPEN_EXISTING, /* Action if not existing */
+							FILE_ATTRIBUTE_NORMAL,
+							NULL /* Template file */);
+	if (hFile == INVALID_HANDLE_VALUE)
 		return Timestamp(0);
-	FindClose(h);
+	FILETIME time;
+	GetFileTime(hFile, &time, NULL, NULL);
+	CloseHandle(hFile);
 
-	return fromFileTime(d.ftCreationTime);
+	return fromFileTime(time);
 }
 
 void Path::createDir() const {
