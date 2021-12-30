@@ -6,10 +6,10 @@ IncludeInfo::IncludeInfo() : ignored(false) {}
 
 IncludeInfo::IncludeInfo(const Path &file, bool ignored) : file(file), ignored(ignored) {}
 
-Timestamp IncludeInfo::lastModified() const {
-	Timestamp r = file.mTime();
+Timestamp IncludeInfo::lastModified(TimeCache &cache) const {
+	Timestamp r = cache.mTime(file);
 	for (PathSet::const_iterator i = includes.begin(); i != includes.end(); ++i)
-		r = max(r, i->mTime());
+		r = max(r, cache.mTime(*i));
 	return r;
 }
 
@@ -42,8 +42,6 @@ const IncludeInfo &Includes::info(const Path &file) {
 IncludeInfo Includes::createInfo(const Path &file) {
 	IncludeInfo result(file);
 
-	// TODO? We may want to cache the result of this little search as well, but only until mymake
-	// terminates, not more than that.
 	UniqueQueue<Path> toExplore;
 	toExplore << file;
 

@@ -3,6 +3,7 @@
 #include "hash.h"
 #include "config.h"
 #include "wildcard.h"
+#include "timeCache.h"
 
 /**
  * Error with includes.
@@ -39,7 +40,7 @@ public:
 	bool ignored;
 
 	// Compute the last modified date of all includes.
-	Timestamp lastModified() const;
+	Timestamp lastModified(TimeCache &cache) const;
 };
 
 // Output.

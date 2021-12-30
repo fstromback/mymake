@@ -214,6 +214,7 @@ namespace compile {
 		data["output"] = "";
 		data["pchFile"] = toS(pchFile.makeRelative(wd));
 
+		TimeCache timeCache;
 		Timestamp latestModified(0);
 		ostringstream intermediateFiles;
 
@@ -239,7 +240,7 @@ namespace compile {
 			if (ignored(file))
 				continue;
 
-			Timestamp lastModified = includes.info(src).lastModified();
+			Timestamp lastModified = includes.info(src).lastModified(timeCache);
 
 			bool pchValid = true;
 			if (src.isPch) {
