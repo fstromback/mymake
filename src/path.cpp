@@ -21,11 +21,9 @@ static int partCmp(const String &a, const String &b) {
 	return _stricmp(a.c_str(), b.c_str());
 }
 
-static size_t partHash(const String &part) {
-	size_t r = 5381;
+static void partHash(size_t &state, const String &part) {
 	for (nat i = 0; i < part.size(); i++)
-		r = ((r << 5) + r) + tolower(part[i]);
-	return r;
+		state = ((state << 5) + state) + tolower(part[i]);
 }
 
 static const char separator = '\\';
@@ -47,10 +45,9 @@ static int partCmp(const String &a, const String &b) {
 	return strcmp(a.c_str(), b.c_str());
 }
 
-static size_t partHash(const String &part) {
-	size_t r = 5381;
+static size_t partHash(size_t &state, const String &part) {
 	for (nat i = 0; i < part.size(); i++)
-		r = ((r << 5) + r) + part[i];
+		state = ((state << 5) + state) + part[i];
 	return r;
 }
 
@@ -369,8 +366,10 @@ bool Path::operator >(const Path &o) const {
 size_t Path::hash() const {
 	// djb2-inspired hash
 	size_t r = 5381;
-	for (nat i = 0; i < parts.size(); i++)
-		r = ((r << 5) + r) + partHash(parts[i]);
+	for (nat i = 0; i < parts.size(); i++) {
+		partHash(r, parts[i]);
+		r = ((r << 5) + r) + '/'; // To differentiate between different divisions of slashes.
+	}
 
 	return r;
 }
