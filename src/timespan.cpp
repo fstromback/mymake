@@ -35,13 +35,13 @@ ostream &operator <<(ostream &output, const Timespan &t) {
 	int64 time = my_abs(t.time);
 
 	if (time < 1000) {
-		output << t.time << L" us";
+		output << t.time << " us";
 	} else if (time < 1000 * 1000) {
-		output << t.time / 1000 << L" ms";
+		output << t.time / 1000 << " ms";
 	} else if (time < 60 * 1000 * 1000) {
-		output << std::fixed << std::setprecision(2) << (t.time / 1000000.0) << L" s";
+		output << std::fixed << std::setprecision(2) << (t.time / 1000000.0) << " s";
 	} else {
-		output << std::fixed << std::setprecision(2) << (t.time / 60000000.0) << L" min";
+		output << std::fixed << std::setprecision(2) << (t.time / 60000000.0) << " min";
 	}
 
 	return output;
