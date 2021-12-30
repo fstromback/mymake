@@ -50,6 +50,9 @@ public:
 	// Clean project?
 	bool clean;
 
+	// Show times.
+	bool times;
+
 	// Apply to Config object.
 	void apply(const set<String> &usedOptions, Config &config) const;
 

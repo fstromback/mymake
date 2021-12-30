@@ -12,7 +12,7 @@ namespace compile {
 	class Project : NoCopy {
 	public:
 		// Create.
-		Project(const Path &wd, const set<String> &cmdlineOptions, const MakeConfig &projectFile, const Config &config);
+		Project(const Path &wd, const set<String> &cmdlineOptions, const MakeConfig &projectFile, const Config &config, bool showTimes);
 
 		// Destroy.
 		~Project();
@@ -53,6 +53,9 @@ namespace compile {
 
 		// Use implicit dependencies.
 		bool implicitDependencies;
+
+		// Show compilation times.
+		bool showTimes;
 
 		// Use prefix when building in parallel?
 		String usePrefix;

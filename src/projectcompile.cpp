@@ -11,10 +11,11 @@ namespace compile {
 		return s;
 	}
 
-	Project::Project(const Path &wd, const set<String> &cmdline, const MakeConfig &projectFile, const Config &config) :
+	Project::Project(const Path &wd, const set<String> &cmdline, const MakeConfig &projectFile, const Config &config, bool showTimes) :
 		wd(wd),
 		projectFile(projectFile),
-		config(config) {
+		config(config),
+		showTimes(showTimes) {
 
 		projectFile.apply(createSet("deps") + cmdline, depsConfig);
 		projectFile.apply(createSet("build") + cmdline, buildConfig);
@@ -182,13 +183,20 @@ namespace compile {
 		SetBanner w(banner.c_str());
 		SetPrefix z(prefix.c_str());
 
+		Timestamp start;
+
 		vector<Path> d = dependencies(info.name, info);
 		d = removeDuplicates(d);
 		for (nat i = 0; i < d.size(); i++) {
 			t->addLib(d[i]);
 		}
 
-		if (!t->compile()) {
+		bool ok = t->compile();
+		Timestamp end;
+		if (showTimes)
+			PLN("Compilation time (" << info.name << "): " << (end - start));
+
+		if (!ok) {
 			DEBUG("Compilation of " << info.name << " failed!", NORMAL);
 			return false;
 		}

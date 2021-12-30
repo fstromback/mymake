@@ -39,10 +39,19 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 		return 0;
 	}
 
+	Timestamp depStart;
 	bool ok = c.find();
+	Timestamp depEnd;
+	if (cmdline.times)
+		PLN("Found dependencies in " << (depEnd - depStart));
 
-	if (ok)
+	if (ok) {
+		Timestamp compStart;
 		ok = c.compile();
+		Timestamp compEnd;
+		if (cmdline.times)
+			PLN("Compilation time: " << (compEnd - compStart));
+	}
 
 	c.save();
 
@@ -81,10 +90,16 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	// Set max # threads.
 	ProcGroup::setLimit(to<nat>(params.getStr("maxThreads", "1")));
 
-	compile::Project c(wd, cmdline.names, config, params);
+	compile::Project c(wd, cmdline.names, config, params, cmdline.times);
 	DEBUG("-- Finding dependencies --", NORMAL);
 
-	if (!c.find()) {
+	Timestamp depStart;
+	bool ok = c.find();
+	Timestamp depEnd;
+	if (cmdline.times)
+		PLN("Total time: " << (depEnd - depStart));
+
+	if (!ok) {
 		c.save();
 		PLN("Compilation failed!");
 		return 1;
@@ -95,7 +110,9 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 		return 0;
 	}
 
-	bool ok = c.compile();
+	Timestamp compStart;
+	ok = c.compile();
+	Timestamp compEnd;
 	c.save();
 
 	if (!ok) {
@@ -103,6 +120,8 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 		return 1;
 	}
 
+	if (cmdline.times)
+		PLN("Compilation time: " << (compEnd - compStart));
 	DEBUG("-- Compilation successful! --", NORMAL);
 
 	OutputMgr::shutdown();

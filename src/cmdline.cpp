@@ -25,6 +25,7 @@ static const pair<String, char> rawLongOptions[] = {
 	make_pair("default-input", '\4'),
 	make_pair("help", '?'),
 	make_pair("threads", 'j'),
+	make_pair("time", 't'),
 };
 static const map<String, char> longOptions(rawLongOptions, rawLongOptions + ARRAY_COUNT(rawLongOptions));
 
@@ -57,7 +58,8 @@ static const char *helpStr =
 	"--config        - write global config file.\n"
 	"--threads, -j   - compile in parallel if possible, using this many threads.\n"
 	"--default-input - add this file as an input if no other is specified on command-line\n"
-	"                  or in configuration. Useful when integrating with text editors.\n";
+	"                  or in configuration. Useful when integrating with text editors.\n"
+	"--time, -t      - output the time taken for various stages of mymake.\n";
 
 CmdLine::CmdLine(const vector<String> &params) :
 	errors(false),
@@ -65,6 +67,7 @@ CmdLine::CmdLine(const vector<String> &params) :
 	execute(tUnset),
 	showHelp(false),
 	clean(false),
+	times(false),
 	threads(0),
 	createGlobal(false) {
 
@@ -252,6 +255,9 @@ bool CmdLine::parseOption(char opt) {
 		break;
 	case 'j':
 		state = sParallel;
+		break;
+	case 't':
+		times = true;
 		break;
 	case '\1':
 		createGlobal = true;
