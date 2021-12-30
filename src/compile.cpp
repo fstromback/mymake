@@ -122,7 +122,7 @@ namespace compile {
 				return false;
 			}
 
-			for (hash_set<Path>::const_iterator i = info.includes.begin(); i != info.includes.end(); ++i) {
+			for (IncludeInfo::PathSet::const_iterator i = info.includes.begin(); i != info.includes.end(); ++i) {
 				DEBUG(now << " depends on " << *i, VERBOSE);
 				addFile(q, *i);
 

@@ -32,7 +32,8 @@ public:
 	String firstInclude;
 
 	// All files included from this file.
-	hash_set<Path> includes;
+	typedef set<Path> PathSet;
+	PathSet includes;
 
 	// Is this file ignored? (ie. not useful to look for headers inside?)
 	bool ignored;
@@ -54,7 +55,7 @@ public:
 	Includes(const Path &wd, const Config &config);
 
 	// Get includes, and latest modified time from one include.
-	IncludeInfo info(const Path &file);
+	const IncludeInfo &info(const Path &file);
 
 	// Resolve an include string given the include path(s).
 	Path resolveInclude(const Path &file, nat lineNr, const String &inc) const;
@@ -107,7 +108,8 @@ private:
 		bool valid;
 	};
 
-	// Information about each file. If a file is in the cache, it is valid (ie. it is not too old).
+	// Information about each file. If a file is in the cache, it is valid (ie. it is not too
+	// old). We save this cache to disk between runs of mymake.
 	typedef map<Path, Info> InfoMap;
 	InfoMap cache;
 
@@ -117,4 +119,10 @@ private:
 	// Create the file info to be inserted into the cache.
 	Info createFileInfo(const Path &file);
 
+	// Cache for the call to "info".
+	typedef hash_map<Path, IncludeInfo> RecInfoMap;
+	RecInfoMap recCache;
+
+	// Create an includeinfo object.
+	IncludeInfo createInfo(const Path &file);
 };

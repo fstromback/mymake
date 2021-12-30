@@ -8,7 +8,7 @@ IncludeInfo::IncludeInfo(const Path &file, bool ignored) : file(file), ignored(i
 
 Timestamp IncludeInfo::lastModified() const {
 	Timestamp r = file.mTime();
-	for (hash_set<Path>::const_iterator i = includes.begin(); i != includes.end(); ++i)
+	for (PathSet::const_iterator i = includes.begin(); i != includes.end(); ++i)
 		r = max(r, i->mTime());
 	return r;
 }
@@ -30,7 +30,16 @@ Includes::Includes(const Path &wd, const Config &config) : wd(wd) {
 	}
 }
 
-IncludeInfo Includes::info(const Path &file) {
+const IncludeInfo &Includes::info(const Path &file) {
+	RecInfoMap::const_iterator i = recCache.find(file);
+	if (i == recCache.end()) {
+		return recCache.insert(make_pair(file, createInfo(file))).first->second;
+	} else {
+		return i->second;
+	}
+}
+
+IncludeInfo Includes::createInfo(const Path &file) {
 	IncludeInfo result(file);
 
 	// TODO? We may want to cache the result of this little search as well, but only until mymake
