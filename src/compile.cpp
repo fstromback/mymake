@@ -32,15 +32,8 @@ namespace compile {
 			}
 		}
 
-		// Add unique file extensions.
-		vector<String> ext = config.getArray("ext");
-		set<String> extSet;
-		for (nat i = 0; i < ext.size(); i++) {
-			if (extSet.count(ext[i]) == 0) {
-				extSet.insert(ext[i]);
-				validExts << ext[i];
-			}
-		}
+		// Add file extensions. We don't bother with uniqueness here, and let the ExtCache deal with that.
+		validExts = config.getArray("ext");
 
 		vector<String> ign = config.getArray("ignore");
 		for (nat i = 0; i < ign.size(); i++)
@@ -76,13 +69,15 @@ namespace compile {
 		DEBUG("Finding dependencies for target in " << wd, INFO);
 		toCompile.clear();
 
+		ExtCache cache(validExts);
+
 		CompileQueue q;
 		String outputName = config.getVars("output");
 
 		// Compile pre-compiled header first.
 		String pchStr = config.getVars("pch");
 		if (!pchStr.empty()) {
-			if (!addFile(q, pchStr, true)) {
+			if (!addFile(q, cache, pchStr, true)) {
 				PLN("Failed to find an implementation file for the precompiled header.");
 				PLN("Make sure to create both a header file '" << pchStr << "' and a corresponding implementation file.");
 				return false;
@@ -90,7 +85,7 @@ namespace compile {
 		}
 
 		// Add initial files.
-		addFiles(q, config.getArray("input"));
+		addFiles(q, cache, config.getArray("input"));
 
 		// Process files...
 		while (q.any()) {
@@ -124,7 +119,7 @@ namespace compile {
 
 			for (IncludeInfo::PathSet::const_iterator i = info.includes.begin(); i != info.includes.end(); ++i) {
 				DEBUG(now << " depends on " << *i, VERBOSE);
-				addFile(q, *i);
+				addFile(q, cache, *i);
 
 				// Is this a reference to another sub-project?
 				if (!i->isChild(wd)) {
@@ -437,24 +432,7 @@ namespace compile {
 		config.add("localLibrary", toS(p));
 	}
 
-	Target::CacheItem Target::buildCache(const Path &path) const {
-		CacheItem r;
-
-		vector<Path> children = path.children();
-		for (nat i = 0; i < children.size(); i++) {
-			Path &p = children[i];
-
-			if (p.isDir())
-				continue;
-
-			Path title(p.titleNoExt());
-			r[title] << p.ext();
-		}
-
-		return r;
-	}
-
-	vector<Path> Target::findExt(const Path &path) {
+	vector<Path> Target::findExt(const Path &path, ExtCache &cache) {
 		// Earlier implementation did way too many queries for files, and has therefore been optimized.
 		// for (nat i = 0; i < validExts.size(); i++) {
 		// 	path.makeExt(validExts[i]);
@@ -462,30 +440,12 @@ namespace compile {
 		// 		return true;
 		// }
 
-		// This is faster since we do not need to ask the OS as many times in large projects.
-		Path title(path.titleNoExt());
-		Path parent = path.parent();
+		const vector<String> &exts = cache.find(path);
+
 		vector<Path> result;
-
-		CacheMap::const_iterator i = findExtCache.find(parent);
-		if (i == findExtCache.end()) {
-			i = findExtCache.insert(make_pair(parent, buildCache(parent))).first;
-		}
-
-		CacheItem::const_iterator j = i->second.find(title);
-
-		// No such file.
-		if (j == i->second.end())
-			return result;
-
-		const vector<String> &exts = j->second;
-		for (nat f = 0; f < exts.size(); f++) {
-			for (nat i = 0; i < validExts.size(); i++) {
-				if (Path::equal(exts[f], validExts[i])) {
-					result.push_back(path);
-					result.back().makeExt(validExts[i]);
-				}
-			}
+		for (nat i = 0; i < exts.size(); i++) {
+			result.push_back(path);
+			result.back().makeExt(exts[i]);
 		}
 
 		if (!appendExt && result.size() > 1) {
@@ -499,9 +459,9 @@ namespace compile {
 		return result;
 	}
 
-	void Target::addFiles(CompileQueue &to, const vector<String> &src) {
+	void Target::addFiles(CompileQueue &to, ExtCache &cache, const vector<String> &src) {
 		for (nat i = 0; i < src.size(); i++) {
-			addFile(to, src[i], false);
+			addFile(to, cache, src[i], false);
 		}
 	}
 
@@ -521,7 +481,7 @@ namespace compile {
 		}
 	}
 
-	bool Target::addFile(CompileQueue &to, const String &src, bool pch) {
+	bool Target::addFile(CompileQueue &to, ExtCache &cache, const String &src, bool pch) {
 		if (src.empty())
 			return false;
 
@@ -533,7 +493,7 @@ namespace compile {
 		Path path(src);
 		path = path.makeAbsolute(wd);
 
-		vector<Path> exts = findExt(path);
+		vector<Path> exts = findExt(path, cache);
 		if (exts.empty()) {
 			WARNING("The file " << src << " does not exist with any of the extensions " << join(validExts));
 			return false;
@@ -546,8 +506,8 @@ namespace compile {
 		return true;
 	}
 
-	void Target::addFile(CompileQueue &to, const Path &header) {
-		vector<Path> exts = findExt(header);
+	void Target::addFile(CompileQueue &to, ExtCache &cache, const Path &header) {
+		vector<Path> exts = findExt(header, cache);
 
 		// No big deal if no cpp file is found for every h file.
 		for (nat i = 0; i < exts.size(); i++) {

@@ -267,6 +267,10 @@ bool Path::equal(const String &a, const String &b) {
 	return partEq(a, b);
 }
 
+int Path::compare(const String &a, const String &b) {
+	return partCmp(a, b);
+}
+
 Path::Path(const String &path) : isDirectory(false) {
 	parseStr(path);
 	simplify();

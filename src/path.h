@@ -37,6 +37,7 @@ public:
 
 	// Are the string equal regarding the current OS?
 	static bool equal(const String &a, const String &b);
+	static int compare(const String &a, const String &b);
 
 	// Create an empty path.
 	Path();

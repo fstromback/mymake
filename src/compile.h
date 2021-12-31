@@ -4,6 +4,7 @@
 #include "uniquequeue.h"
 #include "includes.h"
 #include "commands.h"
+#include "extcache.h"
 #include "wildcard.h"
 #include "process.h"
 #include "env.h"
@@ -121,32 +122,20 @@ namespace compile {
 		bool runSteps(const String &key, ProcGroup &group, const Env &env, const map<String, String> &options);
 
 		// Add files to the queue of files to process.
-		void addFiles(CompileQueue &to, const vector<String> &src);
+		void addFiles(CompileQueue &to, ExtCache &cache, const vector<String> &src);
 
 		// Add a file to the queue of files to process.
-		bool addFile(CompileQueue &to, const String &src, bool pch);
+		bool addFile(CompileQueue &to, ExtCache &cache, const String &src, bool pch);
 
 		// Add a file to the queue of files to process.
-		void addFile(CompileQueue &to, const Path &src);
+		void addFile(CompileQueue &to, ExtCache &cache, const Path &src);
 
 		// Add files created by the pre-build steps. These might not exist yet.
 		void addPreBuildFiles(CompileQueue &to, const vector<String> &src);
 		void addPreBuildFile(CompileQueue &to, const String &src);
 
-		// Cache of the directory contents for 'findExt'.
-
-		// Map of all file titles found along with their extension. Paths here are relative.
-		typedef map<Path, vector<String>> CacheItem;
-
-		// Map of all files in searched paths.
-		typedef map<Path, CacheItem> CacheMap;
-		CacheMap findExtCache;
-
-		// Build the cache for a specific directory.
-		CacheItem buildCache(const Path &dir) const;
-
 		// Find a valid extension for the given Path.
-		vector<Path> findExt(const Path &to);
+		vector<Path> findExt(const Path &to, ExtCache &cache);
 
 		// Choose a file to compile.
 		String chooseCompile(const String &file);
