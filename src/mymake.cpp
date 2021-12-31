@@ -8,6 +8,7 @@
 
 // Compile a stand-alone .mymake-file.
 int compileTarget(const Path &wd, const CmdLine &cmdline) {
+	Timestamp start;
 	MakeConfig config;
 
 	// Load the system-global file.
@@ -49,8 +50,10 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 		Timestamp compStart;
 		ok = c.compile();
 		Timestamp compEnd;
-		if (cmdline.times)
+		if (cmdline.times) {
 			PLN("Compilation time: " << (compEnd - compStart));
+			PLN("Total time: " << (compEnd - start));
+		}
 	}
 
 	c.save();
@@ -68,6 +71,7 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 }
 
 int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdline) {
+	Timestamp start;
 	MakeConfig config;
 
 	Path globalFile(Path::home() + localConfig);
@@ -120,8 +124,10 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 		return 1;
 	}
 
-	if (cmdline.times)
+	if (cmdline.times) {
 		PLN("Compilation time: " << (compEnd - compStart));
+		PLN("Total time: " << (compEnd - start));
+	}
 	DEBUG("-- Compilation successful! --", NORMAL);
 
 	OutputMgr::shutdown();
