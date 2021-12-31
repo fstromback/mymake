@@ -3,7 +3,7 @@
 #include "hash.h"
 #include "config.h"
 #include "wildcard.h"
-#include "timeCache.h"
+#include "timecache.h"
 
 /**
  * Error with includes.
