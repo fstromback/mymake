@@ -3,6 +3,8 @@
 #include "uniquequeue.h"
 #include "toposort.h"
 #include "sync.h"
+#include "thread.h"
+#include "workqueue.h"
 
 namespace compile {
 
@@ -57,38 +59,119 @@ namespace compile {
 		// Show compilation times.
 		bool showTimes;
 
+		// Number of threads to use.
+		nat numThreads;
+
 		// Use prefix when building in parallel?
 		String usePrefix;
 
 		// Information about a target and all it dependencies.
-		typedef Node<String> TargetInfo;
+		typedef Node<String> TargetDeps;
 
 		// Found targets, in the order we found them. Compiling in reverse order ensures all dependencies
 		// are fullfilled.
-		vector<TargetInfo> order;
+		vector<TargetDeps> order;
 
 		// The target we want to run.
 		String mainTarget;
 
+		// Information associated with a target.
+		class TargetInfo : NoCopy {
+		public:
+			TargetInfo(const String &name)
+				: name(name), status(sNotReady) {}
+
+			~TargetInfo() {
+				delete target;
+			}
+
+			// Name of this target.
+			String name;
+
+			// The target itself, if loaded.
+			Target *target;
+
+			// Dependencies of the target.
+			set<String> depends;
+
+			// Status:
+			enum Status {
+				sNotReady,
+				sOK,
+				sError,
+			};
+
+			// Type is of 'status', used as a nat since updated concurrently.
+			volatile nat status;
+
+			// Semaphore for synch. Signalled when status becomes ready.
+			Condition done;
+
+			// Create a "TargetDeps" element.
+			TargetDeps node() {
+				TargetDeps t = { name, depends };
+				return t;
+			}
+		};
+
 		// Targets.
-		map<String, Target *> target;
+		map<String, TargetInfo *> target;
 
-		// Info.
-		map<String, TargetInfo> targetInfo;
+		// Shared state for multithreaded find. Contains two queues: one queue that is used by the
+		// main, coordinating, thread, and another that is used for distributing work between the
+		// worker threads. If 'numThreads' in the Project object is 1, then we don't spawn any
+		// threads.
+		class FindState : NoCopy {
+		public:
+			FindState(Project *p);
 
-		// Queue for the targets.
-		typedef UniqueQueue<String> TargetQueue;
+			~FindState();
+
+			// Using multiple threads?
+			bool isMT() const { return threads != null; }
+
+			// Push an element.
+			void push(TargetInfo *info);
+
+			// Pop an element from the "process" thread. This ensures that the element has been
+			// processed. Elements are guaranteed to be returned in the same order they were
+			// pushed. Returns null if empty.
+			TargetInfo *pop();
+
+			// Call when we are done.
+			void done();
+
+		private:
+			// Owner.
+			Project *project;
+
+			// Threads (if created).
+			Thread *threads;
+
+			// Work queue.
+			WorkQueue<TargetInfo> work;
+
+			// Processing queue.
+			queue<TargetInfo *> process;
+
+			// Entry point for threads.
+			void main();
+		};
 
 		// Add targets to an UniqueQueue.
-		void addTargets(const vector<String> &names, TargetQueue &to);
-		void addTarget(const String &name, TargetQueue &to);
+		void addTargets(const vector<String> &names, FindState &to);
+		void addTarget(const String &name, FindState &to);
+
+		// Prepare a target - i.e. does all processing (loading, looking up dependencies) that can
+		// be done in parallel.
+		void prepareTarget(TargetInfo *info) const;
 
 		// Create a new target.
 		Target *loadTarget(const String &name) const;
 
-		// Find dependencies to a target. May contain duplicates.
-		vector<Path> dependencies(const String &root, const TargetInfo &at) const;
-		void dependencies(const String &root, vector<Path> &out, const TargetInfo &at) const;
+		// Find dependencies to a target. Duplicates are removed.
+		vector<Path> dependencies(const String &root) const;
+		void dependencies(const String &root, vector<Path> &out, set<String> &visited, const String &at) const;
 
 		// Compile one target. This function may only _read_ from shared data.
 		bool compileOne(nat id, bool mt);
@@ -97,7 +180,8 @@ namespace compile {
 		bool compileST();
 
 		// Shared state for the multithreaded compilation.
-		struct MTState : NoCopy {
+		class MTCompileState : NoCopy {
+		public:
 			// Owning project.
 			Project *p;
 
@@ -108,13 +192,13 @@ namespace compile {
 			nat next;
 
 			// Compilation ok? (= no errors).
-			volatile bool ok;
+			volatile nat ok;
 
 			// Create.
-			MTState(Project &p);
+			MTCompileState(Project &p);
 
 			// Destroy.
-			~MTState();
+			~MTCompileState();
 
 			// Launch.
 			void start();
@@ -124,7 +208,8 @@ namespace compile {
 		bool compileMT(nat threads);
 
 		// Main function for each thread in compileMT.
-		bool threadMain(MTState &state);
+		bool threadMain(MTCompileState &state);
+
 	};
 
 }

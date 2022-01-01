@@ -28,58 +28,65 @@ namespace compile {
 		usePrefix = "gnu";
 #endif
 		usePrefix = config.getStr("usePrefix", usePrefix);
+
+		// Number of threads to use.
+		numThreads = to<nat>(config.getStr("maxThreads", "1"));
+
+		// Force serial execution?
+		if (!config.getBool("parallel", true))
+			numThreads = 1;
+
 	}
 
 	Project::~Project() {
-		for (map<String, Target *>::iterator i = target.begin(); i != target.end(); ++i) {
+		for (map<String, TargetInfo *>::iterator i = target.begin(); i != target.end(); ++i) {
 			delete i->second;
 		}
 	}
 
 	bool Project::find() {
 		// Figure out which projects we need.
-		TargetQueue q;
-		addTargets(config.getArray("input"), q);
+		FindState state(this);
+		addTargets(config.getArray("input"), state);
 
-		while (q.any()) {
-			String now = q.pop();
-			DEBUG("Examining target " << now, INFO);
-
+		TargetInfo *now;
+		while (now = state.pop()) {
 			if (mainTarget.empty())
-				mainTarget = now;
+				mainTarget = now->name;
 
-			Target *target = loadTarget(now);
-			if (!target)
-				continue;
-
-			this->target[now] = target;
-			if (!target->find()) {
+			if (now->status == TargetInfo::sError) {
 				DEBUG("Compilation of " << now << " failed!", NORMAL);
 				return false;
 			}
 
-			TargetInfo info = { now, set<String>() };
+			Target *target = now->target;
+
+			// Some targets are ignored. Handle that.
+			if (!target)
+				continue;
 
 			// Add any dependent projects.
 			if (implicitDependencies) {
 				for (set<String>::const_iterator i = target->dependsOn.begin(); i != target->dependsOn.end(); ++i) {
-					q << *i;
-					info.dependsOn << *i;
+					addTarget(*i, state);
+					now->depends << *i;
 				}
 			}
 
 			// Add any explicit dependent projects.
-			vector<String> depends = depsConfig.getArray(now);
+			vector<String> depends = depsConfig.getArray(now->name);
 			for (nat i = 0; i < depends.size(); i++) {
-				q << depends[i];
-				info.dependsOn << depends[i];
+				addTarget(depends[i], state);
+				now->depends << depends[i];
 			}
 
-			order << info;
-			targetInfo[info.name] = info;
+			order << now->node();
 
-			DEBUG("Done. " << now << " depends on " << join(info.dependsOn, ", "), INFO);
+			DEBUG(now << " depends on " << join(now->depends, ", "), INFO);
 		}
+
+		// Ask threads to exit.
+		state.done();
 
 		if (order.empty()) {
 			DEBUG("No input files or projects. Compilation failed.", NORMAL);
@@ -96,236 +103,47 @@ namespace compile {
 		return true;
 	}
 
-	vector<Path> Project::dependencies(const String &root, const TargetInfo &at) const {
-		vector<Path> o;
-		dependencies(root, o, at);
-		return o;
-	}
+	void Project::prepareTarget(TargetInfo *info) const {
+		if (atomicRead(info->status) != TargetInfo::sNotReady)
+			return;
 
-	void Project::dependencies(const String &root, vector<Path> &out, const TargetInfo &at) const {
-		for (set<String>::const_iterator i = at.dependsOn.begin(); i != at.dependsOn.end(); ++i) {
-			const String &name = *i;
+		DEBUG("Examining target " << info->name, INFO);
 
-			map<String, Target *>::const_iterator f = target.find(name);
-			if (f == target.end())
-				continue;
+		info->target = loadTarget(info->name);
+		if (info->target) {
+			if (info->target->find())
+				atomicWrite(info->status, TargetInfo::sOK);
+			else
+				atomicWrite(info->status, TargetInfo::sError);
 
-			Target *z = f->second;
-			if (z->linkOutput) {
-				DEBUG(root << " includes dependent " << z->output, INFO);
-				out << z->output;
-			}
-
-			if (z->forwardDeps) {
-				map<String, TargetInfo>::const_iterator f = targetInfo.find(name);
-				if (f == targetInfo.end())
-					continue;
-
-				dependencies(root, out, f->second);
-			}
-		}
-	}
-
-	static vector<Path> removeDuplicates(const vector<Path> &d) {
-		map<Path, nat> count;
-		for (nat i = 0; i < d.size(); i++) {
-			count[d[i]]++;
-		}
-
-		vector<Path> r;
-		for (nat i = 0; i < d.size(); i++) {
-			if (--count[d[i]] == 0)
-				r << d[i];
-		}
-
-		return r;
-	}
-
-	void Project::clean() {
-		for (nat i = 0; i < order.size(); i++) {
-			TargetInfo &info = order[i];
-			Target *t = target[info.name];
-			DEBUG("-- Target " << info.name << " --", NORMAL);
-			t->clean();
-		}
-	}
-
-	bool Project::compile() {
-		nat threads = to<nat>(config.getStr("maxThreads", "1"));
-
-		// Force serial execution?
-		if (!config.getBool("parallel", true))
-			threads = 1;
-
-		if (threads <= 1) {
-			return compileST();
 		} else {
-			return compileMT(threads);
+			// We don't always treat all subdirectories as targets.
+			atomicWrite(info->status, TargetInfo::sOK);
 		}
+
+		info->done.signal();
 	}
 
-	bool Project::compileOne(nat id, bool mt) {
-		String prefix;
-		if (mt) {
-			if (usePrefix == "vc") {
-				prefix = toS(id + 1) + ">";
-			} else if (usePrefix == "gnu") {
-				prefix = "p" + toS(id + 1) + ": ";
-			}
-		}
-
-		TargetInfo &info = order[id];
-		Target *t = target[info.name];
-
-		String banner;
-		if (debugLevel >= dbg_NORMAL)
-			banner = "-- Target " + info.name + " --";
-		SetBanner w(banner.c_str());
-		SetPrefix z(prefix.c_str());
-
-		Timestamp start;
-
-		vector<Path> d = dependencies(info.name, info);
-		d = removeDuplicates(d);
-		for (nat i = 0; i < d.size(); i++) {
-			t->addLib(d[i]);
-		}
-
-		bool ok = t->compile();
-		Timestamp end;
-		if (showTimes)
-			PLN("Compilation time (" << info.name << "): " << (end - start));
-
-		if (!ok) {
-			DEBUG("Compilation of " << info.name << " failed!", NORMAL);
-			return false;
-		}
-
-		return true;
-	}
-
-	bool Project::compileST() {
-		for (nat i = 0; i < order.size(); i++) {
-			if (!compileOne(i, false))
-				return false;
-		}
-
-		return true;
-	}
-
-	bool Project::compileMT(nat threadCount) {
-		MTState state(*this);
-
-		Thread *threads = new Thread[threadCount];
-		for (nat i = 0; i < threadCount; i++) {
-			threads[i].start(&MTState::start, state);
-		}
-
-		// Join all threads, and read result.
-		for (nat i = 0; i < threadCount; i++) {
-			threads[i].join();
-		}
-
-		return state.ok;
-	}
-
-	Project::MTState::MTState(Project &p) :
-		p(&p), next(0), ok(true) {
-
-		for (nat i = 0; i < p.order.size(); i++)
-			targetDone.insert(make_pair(p.order[i].name, new Condition()));
-	}
-
-	Project::MTState::~MTState() {
-		for (map<String, Condition *>::iterator i = targetDone.begin(), end = targetDone.end(); i != end; ++i) {
-			delete i->second;
-		}
-	}
-
-	void Project::MTState::start() {
-		if (!p->threadMain(*this)) {
-			if (!ok)
-				return;
-
-			// This does not matter too much if we do it more than once.
-			ok = false;
-
-			// Signal all condition variables to cause threads to exit.
-			for (map<String, Condition *>::iterator i = targetDone.begin(), end = targetDone.end(); i != end; ++i) {
-				i->second->signal();
-			}
-		}
-	}
-
-	bool Project::threadMain(MTState &state) {
-		while (true) {
-			nat work = atomicInc(state.next);
-
-			// Done?
-			if (work >= order.size())
-				break;
-
-			// Wait until all dependencies are satisfied.
-			TargetInfo &info = order[work];
-			for (set<String>::const_iterator i = info.dependsOn.begin(), end = info.dependsOn.end(); i != end; ++i) {
-				map<String, Condition *>::iterator f = state.targetDone.find(*i);
-
-				// Note: some dependencies are ignored. That is fine!
-				if (f == state.targetDone.end())
-					continue;
-
-				f->second->wait();
-			}
-
-			// Double-check so that something did not fail.
-			if (!state.ok)
-				return false;
-
-			if (!compileOne(work, true))
-				return false;
-
-			map<String, Condition *>::iterator f = state.targetDone.find(info.name);
-			if (f == state.targetDone.end())
-				return false;
-			f->second->signal();
-
-			// Once again, something failed?
-			if (!state.ok)
-				return false;
-		}
-
-		return true;
-	}
-
-	void Project::save() const {
-		for (map<String, Target *>::const_iterator i = target.begin(); i != target.end(); ++i) {
-			i->second->save();
-		}
-	}
-
-	int Project::execute(const vector<String> &params) {
-		if (mainTarget.empty()) {
-			PLN("Nothing to run!");
-			return 1;
-		}
-
-		return target[mainTarget]->execute(params);
-	}
-
-
-	void Project::addTargets(const vector<String> &params, TargetQueue &to) {
+	void Project::addTargets(const vector<String> &params, FindState &to) {
 		for (nat i = 0; i < params.size(); i++)
 			addTarget(params[i], to);
 	}
 
-	void Project::addTarget(const String &param, TargetQueue &to) {
+	void Project::addTarget(const String &param, FindState &to) {
 		Path rel = Path(param);
 		if (rel.isAbsolute())
 			rel = rel.makeRelative(wd);
 		if (rel.isEmpty())
 			return;
 
-		to << rel.first();
+		String name = rel.first();
+		// Duplicate?
+		if (target.count(name))
+			return;
+
+		TargetInfo *info = new TargetInfo(name);
+		target.insert(make_pair(name, info));
+		to.push(info);
 	}
 
 	Target *Project::loadTarget(const String &name) const {
@@ -376,5 +194,265 @@ namespace compile {
 
 		return new Target(dir, opt);
 	}
+
+	Project::FindState::FindState(Project *p) : project(p), threads(null) {
+		if (project->numThreads > 1) {
+			threads = new Thread[p->numThreads];
+			for (nat i = 0; i < project->numThreads; i++) {
+				threads[i].start(&FindState::main, *this);
+			}
+		}
+	}
+
+	Project::FindState::~FindState() {
+		// Failsafe.
+		work.done();
+
+		if (threads) {
+			for (nat i = 0; i < project->numThreads; i++)
+				threads[i].join();
+			delete []threads;
+		}
+	}
+
+	void Project::FindState::push(TargetInfo *info) {
+		process.push(info);
+		work.push(info);
+	}
+
+	Project::TargetInfo *Project::FindState::pop() {
+		if (process.empty())
+			return null;
+
+		TargetInfo *r = process.front();
+		process.pop();
+
+		// Ensure it is processed.
+		if (isMT()) {
+			r->done.wait();
+		} else {
+			project->prepareTarget(r);
+		}
+
+		return r;
+	}
+
+	void Project::FindState::done() {
+		work.done();
+	}
+
+	void Project::FindState::main() {
+		TargetInfo *info = null;
+		while (info = work.pop()) {
+			project->prepareTarget(info);
+		}
+	}
+
+	vector<Path> Project::dependencies(const String &root) const {
+		vector<Path> o;
+		set<String> visited;
+		visited.insert(root);
+		dependencies(root, o, visited, root);
+		return o;
+	}
+
+	void Project::dependencies(const String &root, vector<Path> &out, set<String> &visited, const String &at) const {
+		map<String, TargetInfo *>::const_iterator atIt = target.find(at);
+		if (atIt == target.end())
+			return; // Should not happen.
+
+		TargetInfo *t = atIt->second;
+
+		for (set<String>::const_iterator i = t->depends.begin(); i != t->depends.end(); ++i) {
+			const String &name = *i;
+
+			if (visited.count(name))
+				continue;
+			visited.insert(name);
+
+			map<String, TargetInfo *>::const_iterator f = target.find(name);
+			if (f == target.end())
+				continue;
+
+			TargetInfo *z = f->second;
+			if (!z || !z->target)
+				continue;
+
+			if (z->target->linkOutput) {
+				DEBUG(root << " includes dependent " << z->target->output, INFO);
+				out << z->target->output;
+			}
+
+			if (z->target->forwardDeps) {
+				dependencies(root, out, visited, name);
+			}
+		}
+	}
+
+	void Project::clean() {
+		for (nat i = 0; i < order.size(); i++) {
+			TargetDeps &info = order[i];
+			Target *t = target[info.name]->target;
+			DEBUG("-- Target " << info.name << " --", NORMAL);
+			t->clean();
+		}
+	}
+
+	bool Project::compile() {
+		if (numThreads <= 1) {
+			return compileST();
+		} else {
+			return compileMT(numThreads);
+		}
+	}
+
+	bool Project::compileOne(nat id, bool mt) {
+		String prefix;
+		if (mt) {
+			if (usePrefix == "vc") {
+				prefix = toS(id + 1) + ">";
+			} else if (usePrefix == "gnu") {
+				prefix = "p" + toS(id + 1) + ": ";
+			}
+		}
+
+		TargetDeps &info = order[id];
+		TargetInfo *t = target[info.name];
+
+		String banner;
+		if (debugLevel >= dbg_NORMAL)
+			banner = "-- Target " + info.name + " --";
+		SetBanner w(banner.c_str());
+		SetPrefix z(prefix.c_str());
+
+		Timestamp start;
+
+		vector<Path> d = dependencies(info.name);
+		for (nat i = 0; i < d.size(); i++) {
+			t->target->addLib(d[i]);
+		}
+
+		bool ok = t->target->compile();
+		Timestamp end;
+		if (showTimes)
+			PLN("Compilation time (" << info.name << "): " << (end - start));
+
+		if (!ok) {
+			DEBUG("Compilation of " << info.name << " failed!", NORMAL);
+			return false;
+		}
+
+		return true;
+	}
+
+	bool Project::compileST() {
+		for (nat i = 0; i < order.size(); i++) {
+			if (!compileOne(i, false))
+				return false;
+		}
+
+		return true;
+	}
+
+	bool Project::compileMT(nat threadCount) {
+		MTCompileState state(*this);
+
+		Thread *threads = new Thread[threadCount];
+		for (nat i = 0; i < threadCount; i++) {
+			threads[i].start(&MTCompileState::start, state);
+		}
+
+		// Join all threads, and read result.
+		for (nat i = 0; i < threadCount; i++) {
+			threads[i].join();
+		}
+
+		return atomicRead(state.ok) != 0;
+	}
+
+	Project::MTCompileState::MTCompileState(Project &p) :
+		p(&p), next(0), ok(1) {
+
+		for (nat i = 0; i < p.order.size(); i++)
+			targetDone.insert(make_pair(p.order[i].name, new Condition()));
+	}
+
+	Project::MTCompileState::~MTCompileState() {
+		for (map<String, Condition *>::iterator i = targetDone.begin(), end = targetDone.end(); i != end; ++i) {
+			delete i->second;
+		}
+	}
+
+	void Project::MTCompileState::start() {
+		if (!p->threadMain(*this)) {
+			if (!atomicRead(ok))
+				return;
+
+			// This does not matter too much if we do it more than once.
+			atomicWrite(ok, 0);
+
+			// Signal all condition variables to cause threads to exit.
+			for (map<String, Condition *>::iterator i = targetDone.begin(), end = targetDone.end(); i != end; ++i) {
+				i->second->signal();
+			}
+		}
+	}
+
+	bool Project::threadMain(MTCompileState &state) {
+		while (true) {
+			nat work = atomicInc(state.next);
+
+			// Done?
+			if (work >= order.size())
+				break;
+
+			// Wait until all dependencies are satisfied.
+			TargetDeps &info = order[work];
+			for (set<String>::const_iterator i = info.dependsOn.begin(), end = info.dependsOn.end(); i != end; ++i) {
+				map<String, Condition *>::iterator f = state.targetDone.find(*i);
+
+				// Note: some dependencies are ignored. That is fine!
+				if (f == state.targetDone.end())
+					continue;
+
+				f->second->wait();
+			}
+
+			// Double-check so that something did not fail.
+			if (!atomicRead(state.ok))
+				return false;
+
+			if (!compileOne(work, true))
+				return false;
+
+			map<String, Condition *>::iterator f = state.targetDone.find(info.name);
+			if (f == state.targetDone.end())
+				return false;
+			f->second->signal();
+
+			// Once again, something failed?
+			if (!atomicRead(state.ok))
+				return false;
+		}
+
+		return true;
+	}
+
+	void Project::save() const {
+		for (map<String, TargetInfo *>::const_iterator i = target.begin(); i != target.end(); ++i) {
+			if (i->second && i->second->target)
+				i->second->target->save();
+		}
+	}
+
+	int Project::execute(const vector<String> &params) {
+		if (mainTarget.empty()) {
+			PLN("Nothing to run!");
+			return 1;
+		}
+
+		return target[mainTarget]->target->execute(params);
+	}
+
 
 }

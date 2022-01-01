@@ -11,6 +11,11 @@
 template <class V, class K = V>
 class UniqueQueue {
 public:
+	// Size.
+	size_t size() const {
+		return q.size();
+	}
+
 	// Empty?
 	bool empty() const {
 		return q.empty();
