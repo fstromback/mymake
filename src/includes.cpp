@@ -33,14 +33,17 @@ Includes::Includes(const Path &wd, const Config &config) : wd(wd) {
 const IncludeInfo &Includes::info(const Path &file) {
 	RecInfoMap::const_iterator i = recCache.find(file);
 	if (i == recCache.end()) {
-		return recCache.insert(make_pair(file, createInfo(file))).first->second;
+		IncludeInfo &info = recCache[file];
+		createInfo(file, info);
+		return info;
 	} else {
 		return i->second;
 	}
 }
 
-IncludeInfo Includes::createInfo(const Path &file) {
-	IncludeInfo result(file);
+void Includes::createInfo(const Path &file, IncludeInfo &result) {
+	result.file = file;
+	result.ignored = false;
 
 	UniqueQueue<Path> toExplore;
 	toExplore << file;
@@ -66,14 +69,14 @@ IncludeInfo Includes::createInfo(const Path &file) {
 			result.includes << *i;
 		}
 	}
-
-	return result;
 }
 
 const Includes::Info &Includes::fileInfo(const Path &file) {
 	InfoMap::iterator i = cache.find(file);
 	if (i == cache.end()) {
-		return cache.insert(make_pair(file, createFileInfo(file))).first->second;
+		Info &result = cache[file];
+		createFileInfo(file, result);
+		return result;
 	} else {
 		return i->second;
 	}
@@ -116,19 +119,19 @@ static bool isBlank(const String &line) {
 	return true;
 }
 
-Includes::Info Includes::createFileInfo(const Path &file) {
-	Info r(file);
+void Includes::createFileInfo(const Path &file, Info &r) {
+	r = Info(file);
 
 	// Ignored?
 	if (ignored(file)) {
 		r.ignored = true;
-		return r;
+		return;
 	}
 
 	ifstream in(toS(file).c_str());
 	if (!in) {
 		PLN(file << ":1: Failed to open file.");
-		return r;
+		return;
 	}
 
 	// Find includes.
@@ -155,7 +158,6 @@ Includes::Info Includes::createFileInfo(const Path &file) {
 
 	// We succeeded, mark it as valid.
 	r.valid = true;
-	return r;
 }
 
 Path Includes::resolveInclude(const Path &fromFile, nat lineNr, const String &src) const {
@@ -298,4 +300,3 @@ bool Includes::ignored(const Path &path) const {
 Includes::Info::Info() {}
 
 Includes::Info::Info(const Path &file) : file(file), lastModified(file.mTime()), ignored(false), valid(false) {}
-

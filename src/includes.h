@@ -109,6 +109,13 @@ private:
 		bool valid;
 	};
 
+	// Cache for the call to "info".
+	typedef hash_map<Path, IncludeInfo> RecInfoMap;
+	RecInfoMap recCache;
+
+	// Create an includeinfo object.
+	void createInfo(const Path &file, IncludeInfo &out);
+
 	// Information about each file. If a file is in the cache, it is valid (ie. it is not too
 	// old). We save this cache to disk between runs of mymake.
 	typedef map<Path, Info> InfoMap;
@@ -118,12 +125,5 @@ private:
 	const Info &fileInfo(const Path &file);
 
 	// Create the file info to be inserted into the cache.
-	Info createFileInfo(const Path &file);
-
-	// Cache for the call to "info".
-	typedef hash_map<Path, IncludeInfo> RecInfoMap;
-	RecInfoMap recCache;
-
-	// Create an includeinfo object.
-	IncludeInfo createInfo(const Path &file);
+	void createFileInfo(const Path &file, Info &out);
 };
