@@ -1,5 +1,5 @@
 #include "std.h"
-#include "timeCache.h"
+#include "timecache.h"
 
 const FileInfo &TimeCache::info(const Path &path) {
 	Cache::const_iterator i = cache.find(path);

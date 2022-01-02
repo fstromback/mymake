@@ -50,7 +50,7 @@ namespace compile {
 		addTargets(config.getArray("input"), state);
 
 		TargetInfo *now;
-		while (now = state.pop()) {
+		while ((now = state.pop())) {
 			if (mainTarget.empty())
 				mainTarget = now->name;
 

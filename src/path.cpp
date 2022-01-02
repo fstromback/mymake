@@ -45,10 +45,9 @@ static int partCmp(const String &a, const String &b) {
 	return strcmp(a.c_str(), b.c_str());
 }
 
-static size_t partHash(size_t &state, const String &part) {
+static void partHash(size_t &state, const String &part) {
 	for (nat i = 0; i < part.size(); i++)
 		state = ((state << 5) + state) + part[i];
-	return r;
 }
 
 static const char separator = '/';
@@ -250,7 +249,8 @@ FileInfo Path::info() const {
 }
 
 bool Path::exists() const {
-	return fileInfo(*this).exists;
+	struct stat s;
+	return stat(toS(*this).c_str(), &s) == 0;
 }
 
 #endif
