@@ -533,8 +533,23 @@ ProcGroup::ProcGroup(nat limit, OutputState &state) : state(state), limit(limit)
 }
 
 ProcGroup::~ProcGroup() {
-	Lock::Guard z(aliveLock);
 
+	// Wait until all processes terminated.
+	class Empty : public WaitCond {
+	public:
+		ProcGroup *me;
+		Empty(ProcGroup *me) : me(me) {}
+		virtual bool done() {
+			return me->our.empty();
+		}
+	};
+
+	Empty c(this);
+	waitFor(c);
+
+
+	// Remove any remaining processes, in case someting went wrong.
+	Lock::Guard z(aliveLock);
 	for (set<Process *>::iterator i = our.begin(), end = our.end(); i != end; ++i) {
 		alive.erase((*i)->process);
 		delete *i;
