@@ -116,7 +116,7 @@ namespace compile {
 		vector<Compile> toCompile;
 
 		// Create a shellProcess instance that saves the output to 'commands' whenever the command succeeds.
-		Process *saveShellProcess(const String &file, const String &command, const Path &cwd, const Env *env);
+		Process *saveShellProcess(const String &file, const String &command, const Path &cwd, const Env *env, nat skip);
 
 		// Run steps.
 		bool runSteps(const String &key, ProcGroup &group, const Env &env, const map<String, String> &options);

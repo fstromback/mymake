@@ -333,3 +333,11 @@ combined with other options as well:
 [build,windows]
 main+=foo
 ```
+
+## Skipping output
+
+On most command lines (in particular, `compile` and `link`) it is possible to prepend the string
+`<n>!` where `<n>` is an integer to cause mymake to skip that many lines of stdout of the started
+process. This can be used to ignore banners and the likes from the compiler. For example, cl.exe
+outputs the name of the compiled file as its first line. This can be omitted by prepending `1!` to
+the compile command line.

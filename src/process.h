@@ -34,7 +34,7 @@ class Process : NoCopy {
 	friend class ProcGroup;
 public:
 	// Create and spawn the process.
-	Process(const Path &file, const vector<String> &args, const Path &cwd, const Env *env);
+	Process(const Path &file, const vector<String> &args, const Path &cwd, const Env *env, nat skipLines);
 
 	// Release any resources associated with this process.
 	~Process();
@@ -58,6 +58,9 @@ private:
 	vector<String> args;
 	Path cwd;
 	const Env *env;
+
+	// Lines in the output to skip.
+	nat skipLines;
 
 	// Handle to the process.
 	ProcId process;
@@ -137,10 +140,13 @@ private:
 // Convenience functions.
 
 // Create a Process executing things in a shell.
-Process *shellProcess(const String &command, const Path &cwd, const Env *env);
+Process *shellProcess(const String &command, const Path &cwd, const Env *env, nat skip);
 
 // Low-level exec.
 int exec(const Path &binary, const vector<String> &args, const Path &cwd, const Env *env);
 
 // Run a command through a shell.
-int shellExec(const String &command, const Path &cwd, const Env *env);
+int shellExec(const String &command, const Path &cwd, const Env *env, nat skip);
+
+// Extract the amount of lines to skip from a command. Exposed here so that other parts of the codebase may use it.
+const char *extractSkip(const char *command, nat &out);

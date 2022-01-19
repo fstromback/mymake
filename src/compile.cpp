@@ -6,6 +6,28 @@
 
 namespace compile {
 
+	// Find number of lines to skip in the output of a process. Checks if 'command' starts with <n>!
+	// where <n> is an integer. Extracts the prefix and returns the rest of the string.
+	nat extractSkip(String &command) {
+		nat result = 0;
+		for (nat i = 0; i < command.size(); i++) {
+			char c = command[i];
+			if (c >= '0' && c <= '9') {
+				result = result*10 + (c - '0');
+			} else if (c == '!') {
+				// Done!
+				command = command.substr(i + 1);
+				return result;
+			} else {
+				// Something is not as expected, bail.
+				break;
+			}
+		}
+
+		return 0;
+	}
+
+
 	Target::Target(const Path &wd, const Config &config) :
 		wd(wd),
 		config(config),
@@ -176,8 +198,8 @@ namespace compile {
 		}
 	};
 
-	Process *Target::saveShellProcess(const String &file, const String &command, const Path &cwd, const Env *env) {
-		Process *p = shellProcess(command, cwd, env);
+	Process *Target::saveShellProcess(const String &file, const String &command, const Path &cwd, const Env *env, nat skip) {
+		Process *p = shellProcess(command, cwd, env, skip);
 		p->callback = new SaveOnExit(&commands, file, command);
 		return p;
 	}
@@ -255,12 +277,14 @@ namespace compile {
 				data["output"] = data["pchFile"];
 				cmd = config.expandVars(cmd, data);
 
+				nat skipLines = extractSkip(cmd);
+
 				if (skip && commands.check(pchFile, cmd)) {
 					DEBUG("Skipping header " << file << "...", INFO);
 				} else {
 					DEBUG("Compiling header " << file << "...", NORMAL);
 					DEBUG("Command line: " << cmd, INFO);
-					if (!group.spawn(saveShellProcess(pchFile, cmd, wd, &env))) {
+					if (!group.spawn(saveShellProcess(pchFile, cmd, wd, &env, skipLines))) {
 						return false;
 					}
 
@@ -286,13 +310,15 @@ namespace compile {
 			data["output"] = out;
 			cmd = config.expandVars(cmd, data);
 
+			nat skipLines = extractSkip(cmd);
+
 			if (skip && commands.check(file, cmd)) {
 				DEBUG("Skipping " << file << "...", INFO);
 				DEBUG("Source modified: " << lastModified << ", output modified " << output.mTime(), DEBUG);
 			} else {
 				DEBUG("Compiling " << file << "...", NORMAL);
 				DEBUG("Command line: " << cmd, INFO);
-				if (!group.spawn(saveShellProcess(file, cmd, wd, &env)))
+				if (!group.spawn(saveShellProcess(file, cmd, wd, &env, skipLines)))
 					return false;
 
 				// If it is a pch, wait for it to finish.
@@ -332,9 +358,11 @@ namespace compile {
 		data["output"] = finalOutput;
 
 		vector<String> linkCmds = config.getArray("link");
+		vector<nat> linkSkip;
 		std::ostringstream allCmds;
 		for (nat i = 0; i < linkCmds.size(); i++) {
 			linkCmds[i] = config.expandVars(linkCmds[i], data);
+			linkSkip.push_back(extractSkip(linkCmds[i]));
 			if (i > 0)
 				allCmds << ";";
 			allCmds << linkCmds[i];
@@ -352,7 +380,7 @@ namespace compile {
 			const String &cmd = linkCmds[i];
 			DEBUG("Command line: " << cmd, INFO);
 
-			if (!group.spawn(shellProcess(cmd, wd, &env)))
+			if (!group.spawn(shellProcess(cmd, wd, &env, linkSkip[i])))
 				return false;
 
 			if (!group.wait())
@@ -395,8 +423,9 @@ namespace compile {
 
 		for (nat i = 0; i < steps.size(); i++) {
 			String expanded = config.expandVars(steps[i], options);
+			nat skip = extractSkip(expanded);
 			DEBUG("Running " << expanded, INFO);
-			if (!group.spawn(shellProcess(expanded, wd, &env))) {
+			if (!group.spawn(shellProcess(expanded, wd, &env, skip))) {
 				PLN("Failed running " << key << ": " << expanded);
 				return false;
 			}

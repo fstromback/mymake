@@ -30,12 +30,12 @@ void OutputMgr::shutdownMe() {
 	running = false;
 }
 
-void OutputMgr::addPipe(Pipe pipe, OutputState *state, bool errorStream) {
+void OutputMgr::addPipe(Pipe pipe, OutputState *state, nat skip, bool errorStream) {
 	Sema ack(0);
 
 	{
 		Lock::Guard z(editsLock);
-		PipeData *data = new PipeData(pipe, state, errorStream);
+		PipeData *data = new PipeData(pipe, state, skip, errorStream);
 		toAdd.push(data);
 		wake.push(&ack);
 	}
@@ -155,8 +155,8 @@ void OutputMgr::threadMain() {
 	destroyPipeSet(pipeSet);
 }
 
-OutputMgr::PipeData::PipeData(Pipe pipe, OutputState *state, bool errorStream) :
-	pipe(pipe), state(state), errorStream(errorStream), bufferCount(0) {}
+OutputMgr::PipeData::PipeData(Pipe pipe, OutputState *state, nat skip, bool errorStream) :
+	pipe(pipe), state(state), errorStream(errorStream), skipLines(skip), bufferCount(0) {}
 
 OutputMgr::PipeData::~PipeData() {
 	closePipe(pipe);
@@ -166,7 +166,22 @@ OutputMgr::PipeData::~PipeData() {
 }
 
 void OutputMgr::PipeData::add(const char *src, nat size) {
-	for (nat i = 0; i < size; i++) {
+	nat pos = 0;
+
+	// Skip lines if needed.
+	if (skipLines > 0) {
+		for (pos = 0; pos < size; pos++)
+			if (src[pos] == '\n')
+				if (--skipLines == 0)
+					break;
+
+		// Skip the final newline.
+		if (pos < size)
+			pos++;
+	}
+
+	// Output.
+	for (nat i = pos; i < size; i++) {
 		if (src[i] == '\n') {
 			flush();
 		} else if (bufferCount >= bufferSize) {
@@ -198,12 +213,12 @@ void OutputMgr::PipeData::flush() {
 
 OutputMgr OutputMgr::me;
 
-void OutputMgr::add(Pipe pipe, OutputState *state) {
-	me.addPipe(pipe, state, false);
+void OutputMgr::add(Pipe pipe, OutputState *state, nat skip) {
+	me.addPipe(pipe, state, skip, false);
 }
 
-void OutputMgr::addError(Pipe pipe, OutputState *state) {
-	me.addPipe(pipe, state, true);
+void OutputMgr::addError(Pipe pipe, OutputState *state, nat skip) {
+	me.addPipe(pipe, state, skip, true);
 }
 
 void OutputMgr::remove(Pipe pipe) {

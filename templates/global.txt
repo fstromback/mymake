@@ -183,10 +183,10 @@ pchFile=<pch|noExt>.pch
 usePch=/Yu
 namePch=/Fp<pchFile>
 
-pchCompile=cl <defines> <file> <includes> <flags> <warnings> /Yc<title|pch> <namePch*if|pch> /c /Fo<output>
+pchCompile=1!cl <defines> <file> <includes> <flags> <warnings> /Yc<title|pch> <namePch*if|pch> /c /Fo<output>
 pchCompileCombined=yes
 
-compile=*:cl <defines> <file> <includes> <flags> <warnings> <usePch*title|pch> <namePch*if|pch> /c /Fo<output>
+compile=*:1!cl <defines> <file> <includes> <flags> <warnings> <usePch*title|pch> <namePch*if|pch> /c /Fo<output>
 link=link <linkFlags> <libs> <files> /nologo /OUT:<output>
 link+=mt -nologo -manifest <output>.manifest -outputresource:<output>;#<manifestId>
 

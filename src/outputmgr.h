@@ -14,8 +14,8 @@ public:
 	~OutputMgr();
 
 	// Add pipe. The pipe will be closed eventually.
-	static void add(Pipe pipe, OutputState *state);
-	static void addError(Pipe pipe, OutputState *state);
+	static void add(Pipe pipe, OutputState *state, nat skipLines = 0);
+	static void addError(Pipe pipe, OutputState *state, nat skipLines = 0);
 
 	// Remove pipe.
 	// Not anymore: Waits until all output from the pipe is properly flushed (= the other end is closed).
@@ -42,6 +42,9 @@ private:
 		// Output state.
 		OutputState *state;
 
+		// Lines to skip before outputting.
+		nat skipLines;
+
 		// To standard error?
 		bool errorStream;
 
@@ -57,7 +60,7 @@ private:
 		nat bufferCount;
 
 		// Create.
-		inline PipeData(Pipe pipe, OutputState *state, bool errorStream);
+		inline PipeData(Pipe pipe, OutputState *state, nat skip, bool errorStream);
 
 		// Destroy.
 		~PipeData();
@@ -102,7 +105,7 @@ private:
 	static OutputMgr me;
 
 	// Helpers for add and remove.
-	void addPipe(Pipe pipe, OutputState *state, bool errorStream);
+	void addPipe(Pipe pipe, OutputState *state, nat skip, bool errorStream);
 	void removePipe(Pipe pipe);
 
 	// Main function for the thread.

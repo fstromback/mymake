@@ -142,9 +142,8 @@ void waitFor(WaitCond &cond) {
 }
 
 
-
-Process::Process(const Path &file, const vector<String> &args, const Path &cwd, const Env *env) :
-	callback(null), file(file), args(args), cwd(cwd), env(env), process(invalidProc),
+Process::Process(const Path &file, const vector<String> &args, const Path &cwd, const Env *env, nat skipLines) :
+	callback(null), file(file), args(args), cwd(cwd), env(env), skipLines(skipLines), process(invalidProc),
 	owner(null), outPipe(noPipe), errPipe(noPipe), result(0), finished(false) {}
 
 int Process::wait() {
@@ -207,7 +206,7 @@ bool Process::spawn(bool manage, OutputState *state) {
 		createPipe(readStdout, writeStdout, true);
 		si.hStdOutput = writeStdout;
 		outPipe = readStdout;
-		OutputMgr::add(readStdout, state);
+		OutputMgr::add(readStdout, state, skipLines);
 	} else {
 		si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 		si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -277,14 +276,17 @@ static String getEnv(const char *name) {
 	return buf;
 }
 
-Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
+Process *shellProcess(const String &command, const Path &cwd, const Env *env, nat skip) {
 	static String shell = getEnv("ComSpec");
 
-	vector<String> args;
-	args.push_back("/S");
-	args.push_back("/C");
-	args.push_back("\"" + command + "\"");
-	return new Process(Path(shell), args, cwd, env);
+	vector<String> args(3);
+	args[0] = "/S";
+	args[1] = "/C";
+	args[2] = "\"";
+	args[2].reserve(command.size() + 2);
+	args[2] += command;
+	args[2].push_back('\"');
+	return new Process(Path(shell), args, cwd, env, skip);
 }
 
 // Event notified whenever we have a new process that we want to wait for. Used to cause the systemWaitProc to restart.
@@ -485,12 +487,12 @@ Process::~Process() {
 	delete callback;
 }
 
-Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
+Process *shellProcess(const String &command, const Path &cwd, const Env *env, nat skip) {
 	vector<String> args;
 	args.push_back("-c");
 	args.push_back(command);
 
-	return new Process(Path("/bin/sh"), args, cwd, env);
+	return new Process(Path("/bin/sh"), args, cwd, env, skip);
 }
 
 static void systemNewProc() {
@@ -632,15 +634,15 @@ void ProcGroup::terminated(Process *p, int result) {
 
 
 int exec(const Path &binary, const vector<String> &args, const Path &cwd, const Env *env) {
-	Process p(binary, args, cwd, env);
+	Process p(binary, args, cwd, env, 0);
 	if (!p.spawn())
 		return 1;
 	return p.wait();
 }
 
 // Run a command through a shell.
-int shellExec(const String &command, const Path &cwd, const Env *env) {
-	Process *p = shellProcess(command, cwd, env);
+int shellExec(const String &command, const Path &cwd, const Env *env, nat skip) {
+	Process *p = shellProcess(command, cwd, env, skip);
 	int r = 1;
 	if (p->spawn())
 		r = p->wait();
