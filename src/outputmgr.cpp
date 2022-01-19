@@ -156,7 +156,7 @@ void OutputMgr::threadMain() {
 }
 
 OutputMgr::PipeData::PipeData(Pipe pipe, OutputState *state, nat skip, bool errorStream) :
-	pipe(pipe), state(state), errorStream(errorStream), skipLines(skip), bufferCount(0) {}
+	pipe(pipe), state(state), skipLines(skip), errorStream(errorStream), bufferCount(0) {}
 
 OutputMgr::PipeData::~PipeData() {
 	closePipe(pipe);
