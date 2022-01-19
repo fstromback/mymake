@@ -278,7 +278,7 @@ static String getEnv(const char *name) {
 }
 
 Process *shellProcess(const String &command, const Path &cwd, const Env *env) {
-	String shell = getEnv("ComSpec");
+	static String shell = getEnv("ComSpec");
 
 	vector<String> args;
 	args.push_back("/S");
