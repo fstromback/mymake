@@ -458,7 +458,11 @@ namespace compile {
 	}
 
 	void Target::addLib(const Path &p) {
-		config.add("localLibrary", toS(p));
+		if (absolutePath && p.isAbsolute()) {
+			config.add("localLibrary", toS(p.makeRelative(wd)));
+		} else {
+			config.add("localLibrary", toS(p));
+		}
 	}
 
 	vector<Path> Target::findExt(const Path &path, ExtCache &cache) {
