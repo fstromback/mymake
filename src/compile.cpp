@@ -343,6 +343,8 @@ namespace compile {
 		vector<String> libs = config.getArray("localLibrary");
 		for (nat i = 0; i < libs.size(); i++) {
 			Path libPath(libs[i]);
+			if (!libPath.isAbsolute())
+				libPath = libPath.makeAbsolute(wd);
 			if (libPath.exists()) {
 				latestModified = max(latestModified, libPath.mTime());
 			} else {
@@ -458,7 +460,7 @@ namespace compile {
 	}
 
 	void Target::addLib(const Path &p) {
-		if (absolutePath && p.isAbsolute()) {
+		if (!absolutePath && p.isAbsolute()) {
 			config.add("localLibrary", toS(p.makeRelative(wd)));
 		} else {
 			config.add("localLibrary", toS(p));
