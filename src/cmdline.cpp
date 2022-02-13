@@ -43,7 +43,7 @@ static const char *helpStr =
 	"   QUIET    = 0 - no output except for hard errors.\n"
 	"   NORMAL   = 1 - standard. Outputs progress information.\n"
 	"   PEDANTIC = 2 - warns about suspicious things, which could be errors.\n"
-	"   INFO     = 3 - information about decisions made during the build. Good for debugging.\n"
+	"   INFO     = 3 - command lines executed during the build. Good for debugging.\n"
 	"   VERBOSE  = 4 - all information you will possibly need when debugging your configurations.\n"
 	"   DEBUG    = 5 - information usually only needed when debugging mymake itself.\n"
 	"--exec-path, -p - specify the cwd when running the output.\n"

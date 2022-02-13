@@ -88,7 +88,7 @@ namespace compile {
 	}
 
 	bool Target::find() {
-		DEBUG("Finding dependencies for target in " << wd, INFO);
+		DEBUG("Finding dependencies for target in " << wd, VERBOSE);
 		toCompile.clear();
 
 		ExtCache cache(validExts);
@@ -280,7 +280,7 @@ namespace compile {
 				nat skipLines = extractSkip(cmd);
 
 				if (skip && commands.check(pchFile, cmd)) {
-					DEBUG("Skipping header " << file << "...", INFO);
+					DEBUG("Skipping header " << file << "...", VERBOSE);
 				} else {
 					DEBUG("Compiling header " << file << "...", NORMAL);
 					DEBUG("Command line: " << cmd, INFO);
@@ -313,11 +313,11 @@ namespace compile {
 			nat skipLines = extractSkip(cmd);
 
 			if (skip && commands.check(file, cmd)) {
-				DEBUG("Skipping " << file << "...", INFO);
+				DEBUG("Skipping " << file << "...", VERBOSE);
 				DEBUG("Source modified: " << lastModified << ", output modified " << output.mTime(), DEBUG);
 			} else {
 				DEBUG("Compiling " << file << "...", NORMAL);
-				DEBUG("Command line: " << cmd, INFO);
+				DEBUG("Command: " << cmd, INFO);
 				if (!group.spawn(saveShellProcess(file, cmd, wd, &env, skipLines)))
 					return false;
 
@@ -371,7 +371,7 @@ namespace compile {
 		}
 
 		if (skipLink && commands.check(finalOutput, allCmds.str())) {
-			DEBUG("Skipping linking.", INFO);
+			DEBUG("Skipping linking.", VERBOSE);
 			DEBUG("Output modified " << output.mTime() << ", input modified " << latestModified, DEBUG);
 			return true;
 		}
@@ -380,7 +380,7 @@ namespace compile {
 
 		for (nat i = 0; i < linkCmds.size(); i++) {
 			const String &cmd = linkCmds[i];
-			DEBUG("Command line: " << cmd, INFO);
+			DEBUG("Command: " << cmd, INFO);
 
 			if (!group.spawn(shellProcess(cmd, wd, &env, linkSkip[i])))
 				return false;
@@ -413,7 +413,7 @@ namespace compile {
 	bool Target::ignored(const String &file) {
 		for (nat j = 0; j < ignore.size(); j++) {
 			if (ignore[j].matches(file)) {
-				DEBUG("Ignoring " << file << " as per " << ignore[j], INFO);
+				DEBUG("Ignoring " << file << " as per " << ignore[j], VERBOSE);
 				return true;
 			}
 		}
@@ -426,7 +426,7 @@ namespace compile {
 		for (nat i = 0; i < steps.size(); i++) {
 			String expanded = config.expandVars(steps[i], options);
 			nat skip = extractSkip(expanded);
-			DEBUG("Running " << expanded, INFO);
+			DEBUG("Running: " << expanded, INFO);
 			if (!group.spawn(shellProcess(expanded, wd, &env, skip))) {
 				PLN("Failed running " << key << ": " << expanded);
 				return false;
@@ -574,9 +574,10 @@ namespace compile {
 			if (w.matches(file))
 				return variant.substr(colon + 1);
 
-			DEBUG("No match for " << file << " using " << variant, INFO);
+			DEBUG("No match for " << file << " using " << variant, VERBOSE);
 		}
 
+		DEBUG("Failed to find a compilation fommand for " << file, NORMAL);
 		return "";
 	}
 

@@ -158,13 +158,13 @@ namespace compile {
 		vOptions = buildConfig.getArray("all");
 		options.insert(vOptions.begin(), vOptions.end());
 
-		DEBUG("Options for " << name << ": " << join(options), INFO);
+		DEBUG("Options for " << name << ": " << join(options), VERBOSE);
 
 		MakeConfig config;
 
 		Path configFile = dir + localConfig;
 		if (configFile.exists()) {
-			DEBUG("Found local config: " << configFile, INFO);
+			DEBUG("Found local config: " << configFile, VERBOSE);
 			config.load(configFile);
 		} else if (explicitTargets) {
 			DEBUG("No config in " << dir << ", ignoring it since 'explicitTargets=1'.", PEDANTIC);

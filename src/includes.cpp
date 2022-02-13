@@ -290,7 +290,7 @@ bool Includes::ignored(const Path &path) const {
 
 	for (nat i = 0; i < ignorePatterns.size(); i++) {
 		if (ignorePatterns[i].matches(t)) {
-			DEBUG(path << " ignored as per " << ignorePatterns[i], INFO);
+			DEBUG(path << " ignored as per " << ignorePatterns[i], VERBOSE);
 			return true;
 		}
 	}
