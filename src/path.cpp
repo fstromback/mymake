@@ -97,6 +97,7 @@ bool Path::isAbsolute() const {
 
 vector<Path> Path::children() const {
 	vector<Path> result;
+	vector<std::pair<String, bool>> pieces;
 
 	String searchStr = toS(*this);
 	if (!isDir())
@@ -117,6 +118,17 @@ vector<Path> Path::children() const {
 	} while (FindNextFile(h, &findData));
 
 	FindClose(h);
+
+	// Note: technically not using the default comparator, but this is typically stricter than the
+	// default anyway, so it is fine.
+	std::sort(pieces.begin(), pieces.end());
+
+	result.reserve(pieces.size());
+	for (size_t i = 0; i < pieces.size(); i++) {
+		result.push_back(*this + pieces[i].first);
+		if (pieces[i].second)
+			result.back().makeDir();
+	}
 
 	return result;
 }
@@ -197,27 +209,51 @@ bool Path::isAbsolute() const {
 
 vector<Path> Path::children() const {
 	vector<Path> result;
+	vector<std::pair<String, bool>> pieces;
+	String prefix = toS(*this);
 
-	DIR *h = opendir(toS(*this).c_str());
+	DIR *h = opendir(prefix.c_str());
 	if (h == null)
 		return result;
+
+	if (!prefix.empty() && prefix.back() != '/')
+		prefix += '/';
 
 	dirent *d;
 	struct stat s;
 	while ((d = readdir(h)) != null) {
 		if (strcmp(d->d_name, "..") != 0 && strcmp(d->d_name, ".") != 0) {
-			result.push_back(*this + d->d_name);
+			bool dir = false;
 
-			if (stat(toS(result.back()).c_str(), &s) == 0) {
-				if (S_ISDIR(s.st_mode))
-					result.back().makeDir();
-			} else {
-				result.pop_back();
+			switch (d->d_type) {
+			case DT_UNKNOWN:
+			case DT_LNK:
+				if (stat((prefix + d->d_name).c_str(), &s) == 0) {
+					if (S_ISDIR(s.st_mode))
+						dir = true;
+				} else {
+					continue;
+				}
+				break;
+			case DT_DIR:
+				dir = true;
+				break;
 			}
+
+			pieces.push_back(std::pair<String, bool>(d->d_name, dir));
 		}
 	}
 
 	closedir(h);
+
+	std::sort(pieces.begin(), pieces.end());
+
+	result.reserve(pieces.size());
+	for (size_t i = 0; i < pieces.size(); i++) {
+		result.push_back(*this + pieces[i].first);
+		if (pieces[i].second)
+			result.back().makeDir();
+	}
 
 	return result;
 }

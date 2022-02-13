@@ -125,6 +125,12 @@ flags+=-g
 [unix,release]
 flags+=-O3
 
+[unix,reproducible]
+absolutePath=no
+flags+=-ffile-prefix-map=<projectRoot>=.
+# Needed for asm files, at least on GCC.
+flags+=-fdebug-prefix-map=<projectRoot>=.
+
 [unix,lib]
 
 execExt=a

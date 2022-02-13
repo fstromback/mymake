@@ -5,20 +5,22 @@
 
 namespace compile {
 
-	set<String> createSet(const String &member) {
-		set<String> s;
-		s << member;
-		return s;
-	}
-
 	Project::Project(const Path &wd, const set<String> &cmdline, const MakeConfig &projectFile, const Config &config, bool showTimes) :
 		wd(wd),
 		projectFile(projectFile),
 		config(config),
 		showTimes(showTimes) {
 
-		projectFile.apply(createSet("deps") + cmdline, depsConfig);
-		projectFile.apply(createSet("build") + cmdline, buildConfig);
+		{
+			set<String> s = cmdline;
+			s.insert("deps");
+			projectFile.apply(s, depsConfig);
+		}
+		{
+			set<String> s = cmdline;
+			s.insert("build");
+			projectFile.apply(s, buildConfig);
+		}
 		explicitTargets = config.getBool("explicitTargets", false);
 		implicitDependencies = config.getBool("implicitDeps", true);
 
@@ -82,7 +84,7 @@ namespace compile {
 
 			order << now->node();
 
-			DEBUG(now << " depends on " << join(now->depends, ", "), INFO);
+			DEBUG(now->name << " depends on " << join(now->depends, ", "), INFO);
 		}
 
 		// Ask threads to exit.
@@ -186,6 +188,10 @@ namespace compile {
 				opt.add("input", toS(abs));
 			}
 		}
+
+		// Add project path and local path.
+		opt.add("projectRoot", toS(wd));
+		opt.add("targetRoot", toS(dir));
 
 		projectFile.apply(options, opt);
 		config.apply(options, opt);

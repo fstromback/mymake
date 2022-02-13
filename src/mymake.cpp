@@ -26,6 +26,11 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 
 	// Compile plain .mymake-file.
 	Config params;
+	{
+		String path = toS(wd);
+		params.add("projectRoot", path);
+		params.add("targetRoot", path);
+	}
 	config.apply(cmdline.names, params);
 	cmdline.apply(config.options(), params);
 
@@ -84,6 +89,8 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	config.load(projectFile);
 
 	Config params;
+	params.add("projectRoot", toS(wd));
+
 	set<String> opts = cmdline.names;
 	opts.insert("project");
 	config.apply(opts, params);

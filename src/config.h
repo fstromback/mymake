@@ -71,7 +71,7 @@ private:
 
 
 /**
- * Mymake-file.
+ * Mymake-file. Stores the raw file contents without evaluating which variable assignments to apply.
  */
 class MakeConfig {
 public:

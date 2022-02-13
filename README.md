@@ -168,6 +168,10 @@ The following options are pre-defined by mymake or the default configuration:
 - `project`: defined when a project file is evaluated in the project-context.
 - `windows`: Defined when running on a windows system, expected to be using `cl.exe` as the compiler.
 - `unix`: Defined when running on an unix system, or when running in MinGW.
+- `reproducible`: Enables reproducible builds on Linux by turning of relative paths, and adding the
+  `-ffile-prefix-map` flag to the compile commands. This may not be enough if you have added custom
+  compilation commands. This generally worsens debugging experience a bit as full paths are not
+  stored in the debug information.
 
 ## Wildcard patterns in mymake
 
@@ -251,6 +255,8 @@ These variables are used by mymake to understand what should be done:
 - `implicitDeps`: (defaults to `yes`), if set, mymake tries to figure out dependencies between targets by looking at includes.
   Sometimes, this results in unneeded circular dependencies, causing compilation to fail, so sometimes it is neccessary to set
   this to `no`.
+- `projectRoot`: The full path of the root of the project (either for the `.myproject` file if it exists or for the `.mymake` file). Ends with a slash.
+- `targetRoot`: The full path of the current target. Differs from `projectRoot` if a project contains multiple targets, otherwise the same path as `projectRoot`.
 
 ## Variables in strings
 
