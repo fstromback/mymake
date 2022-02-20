@@ -102,6 +102,11 @@ namespace compile {
 			return false;
 		}
 
+		// Update the 'order' part of all targets.
+		for (nat i = 0; i < order.size(); i++) {
+			target[order[i].name]->order = i;
+		}
+
 		return true;
 	}
 
@@ -254,43 +259,46 @@ namespace compile {
 		}
 	}
 
-	vector<Path> Project::dependencies(const String &root) const {
-		vector<Path> o;
-		set<String> visited;
-		visited.insert(root);
-		dependencies(root, o, visited, root);
-		return o;
+	map<nat, Path> Project::dependencies(const String &root) const {
+		map<nat, Path> output;
+		vector<bool> visited(order.size(), false);
+
+		map<String, TargetInfo *>::const_iterator found = target.find(root);
+		if (found == target.end())
+			return output; // Should not happen...
+
+		visited[found->second->order] = true;
+
+		dependencies(root, visited, output, found->second);
+
+		return output;
 	}
 
-	void Project::dependencies(const String &root, vector<Path> &out, set<String> &visited, const String &at) const {
-		map<String, TargetInfo *>::const_iterator atIt = target.find(at);
-		if (atIt == target.end())
-			return; // Should not happen.
-
-		TargetInfo *t = atIt->second;
-
-		for (set<String>::const_iterator i = t->depends.begin(); i != t->depends.end(); ++i) {
+	void Project::dependencies(const String &root, vector<bool> &visited, map<nat, Path> &output, const TargetInfo *at) const {
+		for (set<String>::const_iterator i = at->depends.begin(); i != at->depends.end(); ++i) {
 			const String &name = *i;
-
-			if (visited.count(name))
-				continue;
-			visited.insert(name);
 
 			map<String, TargetInfo *>::const_iterator f = target.find(name);
 			if (f == target.end())
+				continue; // Should not happen...
+
+			TargetInfo *info = f->second;
+
+			// Exclude duplicates. Won't hurt, but is expensive.
+			if (visited[info->order])
+				continue;
+			visited[info->order] = true;
+
+			if (!info->target)
 				continue;
 
-			TargetInfo *z = f->second;
-			if (!z || !z->target)
-				continue;
-
-			if (z->target->linkOutput) {
-				DEBUG(root << " includes dependent " << z->target->output, INFO);
-				out << z->target->output;
+			if (info->target->linkOutput) {
+				DEBUG(root << " includes dependent " << info->target->output, INFO);
+				output[info->order] = info->target->output;
 			}
 
-			if (z->target->forwardDeps) {
-				dependencies(root, out, visited, name);
+			if (info->target->forwardDeps) {
+				dependencies(root, visited, output, info);
 			}
 		}
 	}
@@ -333,9 +341,9 @@ namespace compile {
 
 		Timestamp start;
 
-		vector<Path> d = dependencies(info.name);
-		for (nat i = 0; i < d.size(); i++) {
-			t->target->addLib(d[i]);
+		map<nat, Path> d = dependencies(info.name);
+		for (map<nat, Path>::reverse_iterator i = d.rbegin(), end = d.rend(); i != end; ++i) {
+			t->target->addLib(i->second);
 		}
 
 		bool ok = t->target->compile();

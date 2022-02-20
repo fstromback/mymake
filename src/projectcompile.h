@@ -68,8 +68,10 @@ namespace compile {
 		// Information about a target and all it dependencies.
 		typedef Node<String> TargetDeps;
 
-		// Found targets, in the order we found them. Compiling in reverse order ensures all dependencies
-		// are fullfilled.
+		// Found targets, in the order we found them. Compiling in this order ensures all
+		// dependencies are fullfilled. This also determines the order in which libraries are linked
+		// (this is important on GCC for example). In this case, we use the reverse order due to how
+		// the linker works.
 		vector<TargetDeps> order;
 
 		// The target we want to run.
@@ -79,7 +81,7 @@ namespace compile {
 		class TargetInfo : NoCopy {
 		public:
 			TargetInfo(const String &name)
-				: name(name), status(sNotReady) {}
+				: name(name), order(0), status(sNotReady) {}
 
 			~TargetInfo() {
 				delete target;
@@ -93,6 +95,9 @@ namespace compile {
 
 			// Dependencies of the target.
 			set<String> depends;
+
+			// Index in the computed compilation order (for convenient reverse lookups).
+			nat order;
 
 			// Status:
 			enum Status {
@@ -169,9 +174,9 @@ namespace compile {
 		// Create a new target.
 		Target *loadTarget(const String &name) const;
 
-		// Find dependencies to a target. Duplicates are removed.
-		vector<Path> dependencies(const String &root) const;
-		void dependencies(const String &root, vector<Path> &out, set<String> &visited, const String &at) const;
+		// Find dependencies to a target. Duplicates are removed. Returns order-id -> output file name.
+		map<nat, Path> dependencies(const String &root) const;
+		void dependencies(const String &root, vector<bool> &visited, map<nat, Path> &out, const TargetInfo *at) const;
 
 		// Compile one target. This function may only _read_ from shared data.
 		bool compileOne(nat id, bool mt);
