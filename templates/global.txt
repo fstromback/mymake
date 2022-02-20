@@ -136,7 +136,7 @@ flags+=-fdebug-prefix-map=<projectRoot>=.
 execExt=a
 
 #Link, remove the library first so that removed files do not get duplicated.
-link=rm -- <output> 2>/dev/null; ar rcs <output> <files>
+link=rm -f -- <output>; ar rcs <output> <files>
 
 [unix,sharedlib]
 execExt=so
