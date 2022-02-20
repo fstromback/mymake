@@ -283,7 +283,7 @@ namespace compile {
 					DEBUG("Skipping header " << file << "...", VERBOSE);
 				} else {
 					DEBUG("Compiling header " << file << "...", NORMAL);
-					DEBUG("Command line: " << cmd, INFO);
+					DEBUG(cmd, COMMAND);
 					if (!group.spawn(saveShellProcess(pchFile, cmd, wd, &env, skipLines))) {
 						return false;
 					}
@@ -317,7 +317,7 @@ namespace compile {
 				DEBUG("Source modified: " << lastModified << ", output modified " << output.mTime(), DEBUG);
 			} else {
 				DEBUG("Compiling " << file << "...", NORMAL);
-				DEBUG("Command: " << cmd, INFO);
+				DEBUG(cmd, COMMAND);
 				if (!group.spawn(saveShellProcess(file, cmd, wd, &env, skipLines)))
 					return false;
 
@@ -380,7 +380,7 @@ namespace compile {
 
 		for (nat i = 0; i < linkCmds.size(); i++) {
 			const String &cmd = linkCmds[i];
-			DEBUG("Command: " << cmd, INFO);
+			DEBUG(cmd, COMMAND);
 
 			if (!group.spawn(shellProcess(cmd, wd, &env, linkSkip[i])))
 				return false;
@@ -426,7 +426,7 @@ namespace compile {
 		for (nat i = 0; i < steps.size(); i++) {
 			String expanded = config.expandVars(steps[i], options);
 			nat skip = extractSkip(expanded);
-			DEBUG("Running: " << expanded, INFO);
+			DEBUG(expanded, COMMAND);
 			if (!group.spawn(shellProcess(expanded, wd, &env, skip))) {
 				PLN("Failed running " << key << ": " << expanded);
 				return false;
@@ -455,7 +455,7 @@ namespace compile {
 			execPath = Path(config.getStr("execPath")).makeAbsolute(wd);
 		}
 
-		DEBUG("Executing " << output.makeRelative(execPath) << " " << join(params) << " in " << execPath, INFO);
+		DEBUG(output.makeRelative(execPath) << " " << join(params) << " in " << execPath, COMMAND);
 		return exec(output, params, execPath, null);
 	}
 

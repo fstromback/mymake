@@ -43,7 +43,8 @@ static const char *helpStr =
 	"   QUIET    = 0 - no output except for hard errors.\n"
 	"   NORMAL   = 1 - standard. Outputs progress information.\n"
 	"   PEDANTIC = 2 - warns about suspicious things, which could be errors.\n"
-	"   INFO     = 3 - command lines executed during the build. Good for debugging.\n"
+	"   COMMAND  = 3 - command lines executed during the build. Good for debugging.\n"
+	"   INFO     = 3 - information about decisions during the build.\n"
 	"   VERBOSE  = 4 - all information you will possibly need when debugging your configurations.\n"
 	"   DEBUG    = 5 - information usually only needed when debugging mymake itself.\n"
 	"--exec-path, -p - specify the cwd when running the output.\n"
@@ -306,6 +307,8 @@ static int findDebugLevel(const String &name) {
 		return dbg_NORMAL;
 	if (strEq(name, "PEDANTIC"))
 		return dbg_PEDANTIC;
+	if (strEq(name, "COMMAND"))
+		return dbg_COMMAND;
 	if (strEq(name, "INFO"))
 		return dbg_INFO;
 	if (strEq(name, "VERBOSE"))

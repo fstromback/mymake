@@ -273,6 +273,7 @@ enum {
 	dbg_QUIET = 0,
 	dbg_NORMAL,
 	dbg_PEDANTIC,
+	dbg_COMMAND,
 	dbg_INFO,
 	dbg_VERBOSE,
 	dbg_DEBUG,
