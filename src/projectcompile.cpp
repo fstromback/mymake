@@ -57,7 +57,7 @@ namespace compile {
 				mainTarget = now->name;
 
 			if (now->status == TargetInfo::sError) {
-				DEBUG("Compilation of " << now << " failed!", NORMAL);
+				DEBUG("Compilation of " << now->name << " failed!", NORMAL);
 				return false;
 			}
 
