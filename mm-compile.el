@@ -48,8 +48,22 @@
 (global-set-key (kbd "C-c C-r") 'mymake-release)
 (global-set-key (kbd "C-c q") 'mymake-command)
 
+;; Customize how next-error behaves.
+(defun mymake-next-error ()
+  (interactive)
+  (let ((switch-to-buffer-obey-display-actions t)
+	(display-buffer-overriding-action '(mymake-display-error-code . ())))
+    (next-error)))
+
+(defun mymake-display-error-code (buffer alist)
+  (message "Custom code called!")
+  (let ((window (display-buffer-reuse-window buffer alist)))
+    (unless window
+      (setq window (display-buffer-same-window buffer '())))
+    window))
+
 ;; Error navigation.
-(global-set-key (kbd "M-n") 'next-error)
+(global-set-key (kbd "M-n") 'mymake-next-error)
 
 ;; Convenient delete/rename of files.
 (global-set-key (kbd "C-c C-f C-r") 'mymake-rename-file)
