@@ -56,7 +56,6 @@
     (next-error)))
 
 (defun mymake-display-error-code (buffer alist)
-  (message "Custom code called!")
   (let ((window (display-buffer-reuse-window buffer alist)))
     (unless window
       (setq window (display-buffer-same-window buffer '())))
