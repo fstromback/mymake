@@ -52,7 +52,8 @@
 (defun mymake-next-error ()
   (interactive)
   (let ((switch-to-buffer-obey-display-actions t)
-	(display-buffer-overriding-action '(mymake-display-error-code . ())))
+	(display-buffer-overriding-action '(mymake-display-error-code . ()))
+	(mymake-in-next-error t))
     (next-error)))
 
 (defun mymake-display-error-code (buffer alist)
@@ -60,6 +61,18 @@
     (unless window
       (setq window (display-buffer-same-window buffer '())))
     window))
+
+(when (string< emacs-version "28.0")
+  ;; On old versions of Emacs (fixed in emacs 28, error present in 25), the
+  ;; function compilation-goto-locus calls switch-to-buffer directly, which
+  ;; makes our override above not work properly. Instead, we advise the
+  ;; switch-to-buffer function accordingly.
+  (setq mymake-in-next-error nil)
+  (defun mymake-advice-switch-to-buffer (fn &rest args)
+    (if mymake-in-next-error
+	(select-window (display-buffer (first args)))
+      (apply fn args)))
+  (advice-add 'switch-to-buffer :around #'mymake-advice-switch-to-buffer))
 
 ;; Error navigation.
 (global-set-key (kbd "M-n") 'mymake-next-error)
