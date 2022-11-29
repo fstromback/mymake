@@ -56,10 +56,18 @@
     (next-error)))
 
 (defun mymake-display-error-code (buffer alist)
-  (let ((window (display-buffer-reuse-window buffer alist)))
-    (unless window
-      (setq window (display-buffer-same-window buffer '())))
-    window))
+  ;; If the current window is displaying the buffer, don't do anything.
+  ;; If we were to call display-buffer-reuse-window here, and multiple
+  ;; windows display the same buffer, we might switch buffers inadvertedly.
+  (if (eq buffer (window-buffer (selected-window)))
+      (selected-window)
+
+    ;; Check if there is some other window that already displays the buffer.
+    (let ((window (display-buffer-reuse-window buffer alist)))
+      ;; If not: use the current window.
+      (unless window
+	(setq window (display-buffer-same-window buffer '())))
+      window)))
 
 (when (< emacs-major-version 27)
   ;; The option "display-buffer-overriding-action" does not exist before emacs
