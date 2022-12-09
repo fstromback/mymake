@@ -18,12 +18,21 @@
 ;; All other lines are concatenated to form a command-line when running mymake.
 ;;
 ;; Directives are as follows:
-;; :template yes     - add a template to cpp/h-files:
-;; :pch foo.h        - include the precompiled header in cpp-files in templates
-;; :namespace yes    - add "namespace <x> { }" to files, where <x> is the subdirectory the
-;;                     current file is in with regards to the buildconfig file.
-;; :template-headers - regex matching headers to apply template to.
-;; :template-sources - regex matching source files to apply template to.
+;; :template yes          - add a template to cpp/h-files:
+;; :template-file yes     - use files <ext>.template instead of generating the template directly.
+;;                          Looks for the file in the same directory as the new file. The strings
+;;                          $header$ and $file$ are replaced with the name of the corresponding
+;;                          header file, and $file$ is replaced with the name of the file itself
+;;                          (without extension). Cursor will be placed at the location of $$ if it
+;;                          exists.
+;; :header-ext h          - set the extension to use for header files in template generation.
+;; :pch foo.h             - include the precompiled header in cpp-files in templates
+;; :namespace yes         - add "namespace <x> { }" to files, where <x> is the subdirectory the
+;;                          current file is in with regards to the buildconfig file.
+;; :namespace-map <a> <b> - map subdirectories (case insensitive) to namespace names. If <b> is
+;;                          missing or equal to -, then the namespace is omitted.
+;; :template-headers      - regex matching headers to apply template to.
+;; :template-sources      - regex matching source files to apply template to.
 
 (require 'cl)
 
@@ -256,13 +265,53 @@
   "Check to see if we want to add templates to a newly-created file."
   (if (file-exists-p buffer-file-name)
       'nil
-    (let ((config (mymake-load-config)))
-      (cond ((not (string= (mymake-assoc 'template config "no") "yes")) 'nil)
-	    ((string-match (mymake-assoc 'template-source config mymake-default-sources) buffer-file-name)
-	     (mymake-add-source-template config))
-	    ((string-match (mymake-assoc 'template-header config mymake-default-headers) buffer-file-name)
-	     (mymake-add-header-template config))
-	    (t 'nil)))))
+    (mymake-add-template)))
+
+(defun mymake-add-template ()
+  "Add a template to the current (presumably empty) file."
+  (let ((config (mymake-load-config))
+	(inserted 'nil))
+    (cond
+     ;; Only try to do something if templates are enables.
+     ((not (string= (mymake-assoc 'template config "no") "yes")) 'nil)
+     ;; Try to load a template file if enabled. Written as condition to fall back on default template mechanism.
+     ((and (string= (mymake-assoc 'template-file config "no") "yes")
+	   (mymake-insert-template-file config))
+      'nil)
+     ;; Source file?
+     ((string-match (mymake-assoc 'template-source config mymake-default-sources) buffer-file-name)
+      (mymake-add-source-template config))
+     ;; Header file?
+     ((string-match (mymake-assoc 'template-header config mymake-default-headers) buffer-file-name)
+      (mymake-add-header-template config))
+     ;; Nothing to do.
+     (t 'nil))))
+
+(defun mymake-insert-template-file (config)
+  (let* ((dir (file-name-directory (buffer-file-name)))
+	 (ext (file-name-extension (buffer-file-name)))
+	 (basename (file-name-nondirectory (buffer-file-name)))
+	 (template-name (concat dir ext ".template")))
+    (when (file-exists-p template-name)
+      (insert-file-contents template-name)
+
+      ;; Replace things:
+      (goto-char (point-min))
+      (while (re-search-forward "\\$header\\$" nil t)
+	;; Would be nice to find the header extension, rather than assuming it.
+	(replace-match (concat (file-name-sans-extension basename) "." (mymake-assoc 'header-ext config "h"))))
+
+      (goto-char (point-min))
+      (while (re-search-forward "\\$file\\$" nil t)
+	(replace-match (file-name-sans-extension basename)))
+
+      ;; Find $$ and put the cursor there.
+      (goto-char (point-min))
+      (when (re-search-forward "\\$\\$" nil t)
+	(replace-match "")
+	(indent-for-tab-command))
+
+      t)))
 
 (defun mymake-add-source-template (config)
   (let ((pch (mymake-assoc 'pch config 'nil)))
@@ -293,6 +342,12 @@
 		(indent-for-tab-command)))))))
 
 (defun mymake-target-name (config)
+  (let ((subdir-name (mymake-subdir-name config)))
+    ;; Look at any namespace-map elements.
+    (when subdir-name
+      (mymake-replace-namespace subdir-name config))))
+
+(defun mymake-subdir-name (config)
   (let* ((wd (downcase (mymake-assoc 'dir config)))
 	 (left (downcase (substring buffer-file-name 0 (length wd))))
 	 (right (downcase (substring buffer-file-name (length wd)))))
@@ -302,6 +357,18 @@
 	      (first parts)
 	    'nil))
       'nil)))
+
+(defun mymake-replace-namespace (subdir config)
+  (cond ((endp config) subdir)
+	((eq (car (first config)) 'namespace-map)
+	 (let ((item (split-string (cdr (first config)) " ")))
+	   (message "item: %S %S" item (string= (downcase (first item)) subdir))
+	   (if (and (> (length item) 0) (string= (downcase (first item)) subdir))
+	       (cond ((< (length item) 2) 'nil) ;; no second element, no namespace
+		     ((string= (second item) "-") 'nil) ;; dash is also no namespace
+		     (t (second item))) ;; otherwise, use the second part
+	     (mymake-replace-namespace subdir (rest config)))))
+	(t (mymake-replace-namespace subdir (rest config)))))
 
 
 ;; Compilation buffer management.
