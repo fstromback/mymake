@@ -34,7 +34,6 @@
 ;; :template-headers      - regex matching headers to apply template to.
 ;; :template-sources      - regex matching source files to apply template to.
 
-(require 'cl)
 
 ;; Configuration.
 (defvar mymake-command "mm" "Command-line used to run mymake.")
@@ -84,7 +83,7 @@
   (setq switch-to-buffer-obey-display-actions nil)
   (defun mymake-advice-switch-to-buffer (fn &rest args)
     (if switch-to-buffer-obey-display-actions
-	(select-window (display-buffer (first args)))
+	(select-window (display-buffer (car args)))
       (apply fn args)))
   (advice-add 'switch-to-buffer :around #'mymake-advice-switch-to-buffer))
 
@@ -174,16 +173,16 @@
 
 (defun mymake-remove-comments (lines)
   "Removes any lines starting with #, : or empty lines"
-  (remove-if (lambda (x)
-	       (or
-		(= (length x) 0)
-		(= (string-to-char x) ?:)
-		(= (string-to-char x) ?#)))
-	     lines))
+  (cl-remove-if (lambda (x)
+		  (or
+		   (= (length x) 0)
+		   (= (string-to-char x) ?:)
+		   (= (string-to-char x) ?#)))
+		lines))
 
 (defun mymake-list-to-str (lines)
   (cond ((stringp lines) lines)
-	((consp lines) (reduce (lambda (a b) (concat a " " b)) lines))
+	((consp lines) (cl-reduce (lambda (a b) (concat a " " b)) lines))
 	(t "")))
 
 (defun mymake-option (line)
@@ -193,25 +192,25 @@
 	(t
 	 (let ((parts (split-string (substring line 1))))
 	   (if (> (length parts) 1)
-	       (cons (intern (first parts))
-		     (mymake-list-to-str (rest parts)))
+	       (cons (intern (car parts))
+		     (mymake-list-to-str (cdr parts)))
 	     'nil)))))
 
 (defun mymake-assoc (value options &optional default)
   "Find a configuration option."
   (let ((r (assoc value options)))
-    (if (endp r)
+    (if (null r)
 	default
       (cdr r))))
 
 (defun mymake-options (lines)
   "Find options (starting with : )"
-  (if (endp lines)
+  (if (null lines)
       '()
-    (let ((opt (mymake-option (first lines))))
+    (let ((opt (mymake-option (car lines))))
       (if (eq nil opt)
-	  (mymake-options (rest lines))
-	(cons opt (mymake-options (rest lines)))))))
+	  (mymake-options (cdr lines))
+	(cons opt (mymake-options (cdr lines)))))))
 
 (defun mymake-load-config-file (file)
   "Returns an alist with the configuration"
@@ -354,21 +353,21 @@
     (if (string= left wd)
 	(let ((parts (split-string right "/")))
 	  (if (> (length parts) 1)
-	      (first parts)
+	      (car parts)
 	    'nil))
       'nil)))
 
 (defun mymake-replace-namespace (subdir config)
-  (cond ((endp config) subdir)
-	((eq (car (first config)) 'namespace-map)
-	 (let ((item (split-string (cdr (first config)) " ")))
-	   (message "item: %S %S" item (string= (downcase (first item)) subdir))
-	   (if (and (> (length item) 0) (string= (downcase (first item)) subdir))
+  (cond ((null config) subdir)
+	((eq (car (car config)) 'namespace-map)
+	 (let ((item (split-string (cdr (car config)) " ")))
+	   (message "item: %S %S" item (string= (downcase (car item)) subdir))
+	   (if (and (> (length item) 0) (string= (downcase (car item)) subdir))
 	       (cond ((< (length item) 2) 'nil) ;; no second element, no namespace
 		     ((string= (second item) "-") 'nil) ;; dash is also no namespace
 		     (t (second item))) ;; otherwise, use the second part
-	     (mymake-replace-namespace subdir (rest config)))))
-	(t (mymake-replace-namespace subdir (rest config)))))
+	     (mymake-replace-namespace subdir (cdr config)))))
+	(t (mymake-replace-namespace subdir (cdr config)))))
 
 
 ;; Compilation buffer management.
