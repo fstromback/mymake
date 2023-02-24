@@ -229,6 +229,13 @@ bool Process::spawn(bool manage, OutputState *state) {
 	if (!ok) {
 		WARNING("Failed to launch " << file);
 		process = invalidProc;
+
+		if (manage) {
+			CloseHandle(si.hStdError);
+			CloseHandle(si.hStdOutput);
+			OutputMgr::remove(errPipe);
+			OutputMgr::remove(outPipe);
+		}
 		return false;
 	}
 
@@ -276,8 +283,19 @@ static String getEnv(const char *name) {
 	return buf;
 }
 
+static Lock comSpecLock;
+static Path comSpecPath;
+static bool comSpecInitialized;
+
 Process *shellProcess(const String &command, const Path &cwd, const Env *env, nat skip) {
-	static String shell = getEnv("ComSpec");
+	// Note: It seems like initialization of static member variables is not atomic on VS2008...
+	{
+		Lock::Guard z(comSpecLock);
+		if (!comSpecInitialized) {
+			comSpecPath = Path(getEnv("ComSpec"));
+			comSpecInitialized = true;
+		}
+	}
 
 	vector<String> args(3);
 	args[0] = "/S";
@@ -286,7 +304,9 @@ Process *shellProcess(const String &command, const Path &cwd, const Env *env, na
 	args[2].reserve(command.size() + 2);
 	args[2] += command;
 	args[2].push_back('\"');
-	return new Process(Path(shell), args, cwd, env, skip);
+
+	// Safe to access comSpecPath here, we know it is initialized at this point.
+	return new Process(comSpecPath, args, cwd, env, skip);
 }
 
 // Event notified whenever we have a new process that we want to wait for. Used to cause the systemWaitProc to restart.
@@ -594,7 +614,10 @@ bool ProcGroup::spawn(Process *p) {
 	}
 
 	our.insert(p);
-	p->spawn(true, &state);
+	if (!p->spawn(true, &state)) {
+		our.erase(p);
+		return false;
+	}
 
 	// Make the output look more logical to the user when running on one thread.
 	if (limit == 1 || procLimit == 1) {
