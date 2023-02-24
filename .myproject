@@ -1,4 +1,5 @@
 #Configuration for compiling mymake.
+absolutePath=yes
 
 #Build mymake
 [project]

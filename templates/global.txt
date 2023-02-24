@@ -185,7 +185,7 @@ warnings=/W3
 linkFlags=/MANIFEST /NXCOMPAT
 manifestId=1
 
-pchFile=<pch|noExt>.pch
+pchFile=<noExt|pch>.pch
 usePch=/Yu
 namePch=/Fp<pchFile>
 
@@ -205,6 +205,10 @@ linkFlags+=/DEBUG /INCREMENTAL:NO /PDB:<path|execDir><titleNoExt|output>.pdb
 
 [windows,release]
 flags+=/MD /O2
+
+[windows,release,pdb]
+flags+=/DEBUG /Zi
+linkFlags+=/DEBUG /INCREMENTAL:NO /PDB:<path|execDir><titleNoExt|output>.pdb
 
 [windows,lib]
 execExt=lib

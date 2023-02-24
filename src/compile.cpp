@@ -577,7 +577,7 @@ namespace compile {
 			DEBUG("No match for " << file << " using " << variant, VERBOSE);
 		}
 
-		DEBUG("Failed to find a compilation fommand for " << file, NORMAL);
+		DEBUG("Failed to find a compilation command for " << file, NORMAL);
 		return "";
 	}
 
