@@ -98,7 +98,7 @@ libraryCl=-l
 localLibraryCl=
 defineCl=-D 
 
-flags=<useStandard*standard>
+flags=<useStandard*standard> -pipe
 warnings=-Wall -Wextra
 
 #standard=c++11

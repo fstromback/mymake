@@ -1,5 +1,9 @@
 * Things to do
 
+  Re-think the verbosity levels. Level 3 is the first one that includes command lines, but is far too
+  verbose for normal usage. There should probably be a new one here that includes warnings and compile
+  commands.
+
   Make sure we process all input from a process that has died. Currently, if a process prints
   lots of things to stdout and then crashes, sometimes we do not get all of it through mymake.
   This may be either because mymake exits, or because mymake decides the process is dead and do
