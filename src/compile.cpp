@@ -235,6 +235,9 @@ namespace compile {
 		Timestamp latestModified(0);
 		ostringstream intermediateFiles;
 
+		// Any source files compiled?
+		bool sourceCompiled = false;
+
 		for (nat i = 0; i < toCompile.size(); i++) {
 			const Compile &src = toCompile[i];
 			Path output = src.makeRelative(wd).makeAbsolute(buildDir);
@@ -316,6 +319,7 @@ namespace compile {
 				DEBUG("Skipping " << file << "...", VERBOSE);
 				DEBUG("Source modified: " << lastModified << ", output modified " << output.mTime(), DEBUG);
 			} else {
+				sourceCompiled = true;
 				DEBUG("Compiling " << file << "...", NORMAL);
 				DEBUG(cmd, COMMAND);
 				if (!group.spawn(saveShellProcess(file, cmd, wd, &env, skipLines)))
@@ -333,12 +337,12 @@ namespace compile {
 				latestModified = lastModified;
 			else
 				latestModified = max(latestModified, lastModified);
-
 		}
 
 		// Wait for compilation to terminate.
 		if (!group.wait())
 			return false;
+
 
 		vector<String> libs = config.getArray("localLibrary");
 		for (nat i = 0; i < libs.size(); i++) {
@@ -353,7 +357,7 @@ namespace compile {
 		}
 
 		// Link the output.
-		bool skipLink = !force && output.mTime() >= latestModified;
+		bool skipLink = !force && !sourceCompiled && output.mTime() >= latestModified;
 
 		String finalOutput = toS(output.makeRelative(wd));
 		data["files"] = intermediateFiles.str();
