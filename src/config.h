@@ -85,7 +85,7 @@ public:
 	void apply(set<String> config, Config &to) const;
 
 	// Get all known options.
-	set<String> options() const;
+	const set<String> &options() const;
 
 private:
 	// Mode for assignment.
@@ -117,6 +117,9 @@ private:
 
 	// All data.
 	vector<Section> sections;
+
+	// All options.
+	set<String> allOptions;
 
 	// Parse section.
 	void parseSection(String line);

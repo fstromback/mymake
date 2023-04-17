@@ -37,14 +37,8 @@ Path findConfig() {
 
 MakeConfig::MakeConfig() {}
 
-set<String> MakeConfig::options() const {
-	set<String> r;
-	for (nat i = 0; i < sections.size(); i++) {
-		const Section &s = sections[i];
-		r.insert(s.options.begin(), s.options.end());
-		r.insert(s.exclude.begin(), s.exclude.end());
-	}
-	return r;
+const set<String> &MakeConfig::options() const {
+	return allOptions;
 }
 
 bool MakeConfig::load(const Path &path) {
@@ -87,6 +81,9 @@ void MakeConfig::parseSection(String line) {
 			s.options << t;
 		}
 	}
+
+	allOptions.insert(s.options.begin(), s.options.end());
+	allOptions.insert(s.exclude.begin(), s.exclude.end());
 
 	sections << s;
 }

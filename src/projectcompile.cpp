@@ -52,9 +52,7 @@ namespace compile {
 		addTargets(config.getArray("input"), state);
 
 		TargetInfo *now;
-		while ((now = state.pop())) {
-			if (mainTarget.empty())
-				mainTarget = now->name;
+		while ((now = state.pop()) != null) {
 
 			if (now->status == TargetInfo::sError) {
 				DEBUG("Compilation of " << now->name << " failed!", NORMAL);
@@ -63,9 +61,20 @@ namespace compile {
 
 			Target *target = now->target;
 
-			// Some targets are ignored. Handle that.
-			if (!target)
+			// Some targets are ignored. If so, see if our config contains the option at all. If
+			// not, we need to warn about it.
+			if (!target) {
+				if (projectFile.options().count(now->name) == 0) {
+					WARNING("Ignoring the option " << now->name << " since it is neither the "
+							<< "name of a target, nor the name of a configuration option in the "
+							<< "project file.");
+				}
 				continue;
+			}
+
+			// Remember which target is the main one. Ignore non-targets.
+			if (mainTarget.empty())
+				mainTarget = now->name;
 
 			// Add any dependent projects.
 			if (implicitDependencies) {
@@ -156,6 +165,11 @@ namespace compile {
 	Target *Project::loadTarget(const String &name) const {
 		Path dir = wd + name;
 		dir.makeDir();
+
+		if (!dir.exists()) {
+			DEBUG(name << " is not a sub-project. The directory " << dir << " does not exist.", PEDANTIC);
+			return null;
+		}
 
 		vector<String> vOptions = buildConfig.getArray(name);
 		set<String> options(vOptions.begin(), vOptions.end());
@@ -254,7 +268,7 @@ namespace compile {
 
 	void Project::FindState::main() {
 		TargetInfo *info = null;
-		while (info = work.pop()) {
+		while ((info = work.pop()) != null) {
 			project->prepareTarget(info);
 		}
 	}
@@ -461,11 +475,22 @@ namespace compile {
 
 	int Project::execute(const vector<String> &params) {
 		if (mainTarget.empty()) {
-			PLN("Nothing to run!");
+			PLN("No default project specified, nothing to run!");
 			return 1;
 		}
 
-		return target[mainTarget]->target->execute(params);
+		map<String, TargetInfo *>::const_iterator i = target.find(mainTarget);
+		if (i == target.end()) {
+			PLN("The first parameter, " << mainTarget << ", does not denote a target. Nothing to run!");
+			return 1;
+		}
+
+		if (!i->second->target) {
+			PLN("The first parameter, " << mainTarget << ", does not denote a target. Nothing to run!");
+			return 1;
+		}
+
+		return i->second->target->execute(params);
 	}
 
 
