@@ -364,8 +364,8 @@
 	   (message "item: %S %S" item (string= (downcase (car item)) subdir))
 	   (if (and (> (length item) 0) (string= (downcase (car item)) subdir))
 	       (cond ((< (length item) 2) 'nil) ;; no second element, no namespace
-		     ((string= (second item) "-") 'nil) ;; dash is also no namespace
-		     (t (second item))) ;; otherwise, use the second part
+		     ((string= (car (cdr item)) "-") 'nil) ;; dash is also no namespace
+		     (t (car (cdr item)))) ;; otherwise, use the second part
 	     (mymake-replace-namespace subdir (cdr config)))))
 	(t (mymake-replace-namespace subdir (cdr config)))))
 
@@ -377,7 +377,7 @@
 
 (defun mymake-fix-pos (pos)
   (if (consp pos)
-      (second pos)
+      (car (cdr pos))
     pos))
 
 (defun mymake-create-compilation-frame ()
