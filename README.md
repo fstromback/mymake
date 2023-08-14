@@ -281,6 +281,7 @@ are:
 - `execpath`: make the element int a path inside the bin path.
 - `parent`: evaluates to the parent directory of the path. If no parent is given (eg. only a file-name), the element is removed from the array.
 - `if`: make all elements empty. This can be used to test if a variable contains a value and then include something.
+- `env`: get an environment variable (e.g. CFLAGS). The benefit of using `<env X>` is that it is portable, and that mymake can track changes to the contents of the environment variable (for re-compilation as needed).
 
 It is also possible to combine these two operations, like: `<prefix*path|files>`. Stars have
 priority over pipes, and expressions are evaluated left-to-right.

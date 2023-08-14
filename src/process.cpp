@@ -92,7 +92,7 @@ void waitFor(WaitCond &cond) {
 		waiters = &cond;
 	}
 
-	if (!cond.manager) {
+	if (!cond.manager) { // Valgrind indicates this might needs synchronization, is this true?
 		// Sleep until it is either our turn to become the manager, or until we're done.
 		cond.sema.down();
 	}
@@ -143,8 +143,8 @@ void waitFor(WaitCond &cond) {
 
 
 Process::Process(const Path &file, const vector<String> &args, const Path &cwd, const Env *env, nat skipLines) :
-	callback(null), file(file), args(args), cwd(cwd), env(env), skipLines(skipLines), process(invalidProc),
-	owner(null), outPipe(noPipe), errPipe(noPipe), result(0), finished(false) {}
+	callback(null), file(file), args(args), cwd(cwd), env(env ? env->data() : null), skipLines(skipLines),
+	process(invalidProc), owner(null), outPipe(noPipe), errPipe(noPipe), result(0), finished(false) {}
 
 int Process::wait() {
 	class Finished : public WaitCond {
@@ -221,7 +221,7 @@ bool Process::spawn(bool manage, OutputState *state) {
 							NULL,
 							TRUE,
 							CREATE_SUSPENDED,
-							env ? env->data() : NULL,
+							env,
 							toS(cwd).c_str(),
 							&si,
 							&pi);
@@ -450,7 +450,7 @@ bool Process::spawn(bool manage, OutputState *state) {
 		} while (signal != SIGCONT);
 
 		if (env) {
-			execve(argv[0], argv, (char **)env->data());
+			execve(argv[0], argv, (char **)env);
 		} else {
 			execv(argv[0], argv);
 		}

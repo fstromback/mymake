@@ -104,7 +104,7 @@ namespace compile {
 		// Append extension to the names of intermediate files.
 		bool appendExt;
 
-		// Absolute paths to the compiler.
+		// Absolute paths to the compiler?
 		bool absolutePath;
 
 		// Transform the path to absolute/relative as set up by the config.
@@ -116,10 +116,10 @@ namespace compile {
 		vector<Compile> toCompile;
 
 		// Create a shellProcess instance that saves the output to 'commands' whenever the command succeeds.
-		Process *saveShellProcess(const String &file, const String &command, const Path &cwd, const Env *env, nat skip);
+		Process *saveShellProcess(const String &file, const String &command, const Path &cwd, nat skip);
 
 		// Run steps.
-		bool runSteps(const String &key, ProcGroup &group, const Env &env, const map<String, String> &options);
+		bool runSteps(const String &key, ProcGroup &group, const map<String, String> &options);
 
 		// Add files to the queue of files to process.
 		void addFiles(CompileQueue &to, ExtCache &cache, const vector<String> &src);

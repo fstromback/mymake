@@ -193,6 +193,7 @@ namespace compile {
 		}
 
 		Config opt;
+
 		// Add output path from our config.
 		String execPath = this->config.getStr("execPath");
 		if (!execPath.empty()) {
@@ -216,6 +217,9 @@ namespace compile {
 		config.apply(options, opt);
 
 		DEBUG("Configuration for " << name << ": " << opt, VERBOSE);
+
+		opt.env = Env::update(this->config.env, opt);
+		DEBUG("Environment variables for " << name << ": " << opt.env, DEBUG);
 
 		return new Target(dir, opt);
 	}

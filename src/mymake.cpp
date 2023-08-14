@@ -36,6 +36,9 @@ int compileTarget(const Path &wd, const CmdLine &cmdline) {
 
 	DEBUG("Configuration options: " << params, VERBOSE);
 
+	params.env = Env::update(Env::current(), params);
+	DEBUG("Environment variables for compilation: " << params.env, DEBUG);
+
 	// Set max # threads.
 	ProcGroup::setLimit(to<nat>(params.getStr("maxThreads", "1")));
 
@@ -89,6 +92,7 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	config.load(projectFile);
 
 	Config params;
+	params.env = Env::current();
 	params.add("projectRoot", toS(wd));
 
 	set<String> opts = cmdline.names;

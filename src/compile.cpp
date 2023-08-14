@@ -198,8 +198,8 @@ namespace compile {
 		}
 	};
 
-	Process *Target::saveShellProcess(const String &file, const String &command, const Path &cwd, const Env *env, nat skip) {
-		Process *p = shellProcess(command, cwd, env, skip);
+	Process *Target::saveShellProcess(const String &file, const String &command, const Path &cwd, nat skip) {
+		Process *p = shellProcess(command, cwd, &config.env, skip);
 		p->callback = new SaveOnExit(&commands, file, command);
 		return p;
 	}
@@ -216,13 +216,11 @@ namespace compile {
 
 		DEBUG("Compiling target in " << wd, INFO);
 
-		Env env(config);
-
 		// Run pre-compile steps.
 		{
 			map<String, String> stepData;
 			stepData["output"] = toS(output.makeRelative(wd));
-			if (!runSteps("preBuild", group, env, stepData))
+			if (!runSteps("preBuild", group, stepData))
 				return false;
 		}
 
@@ -287,7 +285,7 @@ namespace compile {
 				} else {
 					DEBUG("Compiling header " << file << "...", NORMAL);
 					DEBUG(cmd, COMMAND);
-					if (!group.spawn(saveShellProcess(pchFile, cmd, wd, &env, skipLines))) {
+					if (!group.spawn(saveShellProcess(pchFile, cmd, wd, skipLines))) {
 						return false;
 					}
 
@@ -322,7 +320,7 @@ namespace compile {
 				sourceCompiled = true;
 				DEBUG("Compiling " << file << "...", NORMAL);
 				DEBUG(cmd, COMMAND);
-				if (!group.spawn(saveShellProcess(file, cmd, wd, &env, skipLines)))
+				if (!group.spawn(saveShellProcess(file, cmd, wd, skipLines)))
 					return false;
 
 				// If it is a pch, wait for it to finish.
@@ -386,7 +384,7 @@ namespace compile {
 			const String &cmd = linkCmds[i];
 			DEBUG(cmd, COMMAND);
 
-			if (!group.spawn(shellProcess(cmd, wd, &env, linkSkip[i])))
+			if (!group.spawn(shellProcess(cmd, wd, &config.env, linkSkip[i])))
 				return false;
 
 			if (!group.wait())
@@ -399,7 +397,7 @@ namespace compile {
 			// Run post-build steps.
 			map<String, String> stepData;
 			stepData["output"] = data["output"];
-			if (!runSteps("postBuild", group, env, stepData))
+			if (!runSteps("postBuild", group, stepData))
 				return false;
 		}
 
@@ -424,14 +422,14 @@ namespace compile {
 		return false;
 	}
 
-	bool Target::runSteps(const String &key, ProcGroup &group, const Env &env, const map<String, String> &options) {
+	bool Target::runSteps(const String &key, ProcGroup &group, const map<String, String> &options) {
 		vector<String> steps = config.getArray(key);
 
 		for (nat i = 0; i < steps.size(); i++) {
 			String expanded = config.expandVars(steps[i], options);
 			nat skip = extractSkip(expanded);
 			DEBUG(expanded, COMMAND);
-			if (!group.spawn(shellProcess(expanded, wd, &env, skip))) {
+			if (!group.spawn(shellProcess(expanded, wd, &config.env, skip))) {
 				PLN("Failed running " << key << ": " << expanded);
 				return false;
 			}
@@ -460,7 +458,7 @@ namespace compile {
 		}
 
 		DEBUG(output.makeRelative(execPath) << " " << join(params) << " in " << execPath, COMMAND);
-		return exec(output, params, execPath, null);
+		return exec(output, params, execPath, null); // TODO: Use env here?
 	}
 
 	void Target::addLib(const Path &p) {

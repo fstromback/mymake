@@ -195,7 +195,7 @@ ostream &operator <<(ostream &to, const MakeConfig &c) {
  * Config.
  */
 
-Config::Config() {
+Config::Config() : env(Env::empty()) {
 	data.insert(make_pair("library", Value()));
 }
 
@@ -242,11 +242,11 @@ bool Config::getBool(const String &k, bool def) const {
 	return r == "yes";
 }
 
-String Config::getVars(const String &key, const map<String, String> &special) const {
+String Config::getVars(const String &key, const SpecialMap &special) const {
 	return expandVars(getStr(key), special);
 }
 
-String Config::expandVars(const String &into, const map<String, String> &special) const {
+String Config::expandVars(const String &into, const SpecialMap &special) const {
 	std::ostringstream to;
 
 	nat start = String::npos;
@@ -273,7 +273,7 @@ String Config::expandVars(const String &into, const map<String, String> &special
 	return to.str();
 }
 
-vector<String> Config::replacement(String var, const map<String, String> &special) const {
+vector<String> Config::replacement(String var, const SpecialMap &special) const {
 	nat star = var.find('*');
 	if (star != String::npos) {
 		return addStr(join(replacement(var.substr(0, star), special), " "),
@@ -288,7 +288,7 @@ vector<String> Config::replacement(String var, const map<String, String> &specia
 	}
 
 	{
-		map<String, String>::const_iterator i = special.find(var);
+		SpecialMap::const_iterator i = special.find(var);
 		if (i != special.end()) {
 			pair<bool, String> r = applyFn(op, i->second);
 			if (r.first)
@@ -355,6 +355,10 @@ pair<bool, String> Config::applyFn(const String &op, const String &src) const {
 		return make_pair(true, toS(p));
 	} else if (op == "if") {
 		return make_pair(true, String());
+	} else if (op == "env") {
+		pair<bool, String> result(false, String());
+		result.first = env.get(src, result.second);
+		return result;
 	} else if (op.empty()) {
 		return make_pair(true, src);
 	} else {

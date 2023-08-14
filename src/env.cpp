@@ -1,24 +1,74 @@
 #include "std.h"
 #include "env.h"
 #include "system.h"
+#include "config.h"
 
-struct KeyFn {
-	bool operator () (const String &a, const String &b) const {
-		return envLess(a.c_str(), b.c_str());
+
+Env::Env() : osData(null) {}
+
+Env::Env(const Env &o) : vars(o.vars), osData(null) {}
+
+Env &Env::operator =(const Env &o) {
+	if (osData)
+		freeEnv(osData);
+	osData = null;
+
+	vars = o.vars;
+	return *this;
+}
+
+Env::~Env() {
+	if (osData)
+		freeEnv(osData);
+}
+
+Env Env::current() {
+	Env result;
+	result.osData = getEnv();
+	result.vars = toMap(result.osData);
+	// Note: 'osData' might be destroyed immediately here. That is fine, since we will generally
+	// modify the osData before we use it anyway, which requires a re-allocation anyway.
+	// Most likely RVO will handle this nicely, especially after C++11 or so.
+	return result;
+}
+
+Env Env::update(const Env &original, const Config &config) {
+	Env result(original);
+	// Note: copy ctor destroys contents on 'osData'. We don't have to invalidate anything in
+	// 'result' when modifying it!
+
+	vector<String> ops = config.getArray("env");
+	for (nat i = 0; i < ops.size(); i++) {
+		result.alter(ops[i]);
 	}
-};
 
-typedef map<String, String, KeyFn> EnvMap;
+	return result;
+}
 
-// Append mode.
-enum Mode {
-	replace,
-	prepend,
-	append,
-};
+bool Env::get(const String &key, String &out) const {
+	Map::const_iterator i = vars.find(key);
+	if (i == vars.end())
+		return false;
 
-// Alter one variable.
-static void alter(const String &key, const String &value, Mode mode, EnvMap &vars) {
+	out = i->second;
+	return true;
+}
+
+EnvData Env::data() const {
+	if (!osData)
+		osData = toData();
+	return osData;
+}
+
+/**
+ * Helpers
+ */
+
+bool Env::KeyCompare::operator () (const String &a, const String &b) const {
+	return envLess(a.c_str(), b.c_str());
+}
+
+void Env::alter(const String &key, const String &value, Mode mode) {
 	String &to = vars[key];
 
 	switch (mode) {
@@ -42,8 +92,7 @@ static void alter(const String &key, const String &value, Mode mode, EnvMap &var
 	}
 }
 
-// Alter one variable.
-static void alter(const String &str, EnvMap &vars) {
+void Env::alter(const String &str) {
 	nat eq = str.find('=');
 	if (eq == String::npos)
 		return;
@@ -60,12 +109,11 @@ static void alter(const String &str, EnvMap &vars) {
 		val = val.substr(1);
 	}
 
-	alter(key, val, mode, vars);
+	alter(key, val, mode);
 }
 
-// Convert EnvData to EnvMap.
-static EnvMap asMap(EnvData src) {
-	EnvMap result;
+Env::Map Env::toMap(EnvData src) {
+	Map result;
 	String entry;
 	nat pos = 0;
 	while (readEnv(src, pos, entry)) {
@@ -79,36 +127,25 @@ static EnvMap asMap(EnvData src) {
 	return result;
 }
 
-// Convert EnvMap to EnvData.
-static EnvData asData(const EnvMap &vars) {
+EnvData Env::toData() const {
 	nat totalLen = 0;
-	for (EnvMap::const_iterator i = vars.begin(), end = vars.end(); i != end; ++i) {
+	for (Map::const_iterator i = vars.begin(), end = vars.end(); i != end; ++i) {
 		totalLen += i->first.size() + i->second.size() + 1;
 	}
 
 	EnvData r = allocEnv(vars.size(), totalLen);
 
 	nat pos = 0;
-	for (EnvMap::const_iterator i = vars.begin(), end = vars.end(); i != end; ++i) {
+	for (Map::const_iterator i = vars.begin(), end = vars.end(); i != end; ++i) {
 		writeEnv(r, pos, i->first + "=" + i->second);
 	}
 
 	return r;
 }
 
-Env::Env(const Config &config) {
-	EnvData sys = getEnv();
-	EnvMap vars = asMap(sys);
-	freeEnv(sys);
-
-	vector<String> ops = config.getArray("env");
-	for (nat i = 0; i < ops.size(); i++) {
-		alter(ops[i], vars);
+ostream &operator <<(ostream &to, const Env &env) {
+	for (Env::Map::const_iterator i = env.vars.begin(); i != env.vars.end(); ++i) {
+		to << endl << i->first << "=" << i->second;
 	}
-
-	d = asData(vars);
-}
-
-Env::~Env() {
-	freeEnv(d);
+	return to;
 }

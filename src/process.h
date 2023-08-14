@@ -57,7 +57,7 @@ private:
 	Path file;
 	vector<String> args;
 	Path cwd;
-	const Env *env;
+	EnvData env; // might be null
 
 	// Lines in the output to skip.
 	nat skipLines;

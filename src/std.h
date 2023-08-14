@@ -1,4 +1,6 @@
-#pragma once
+// #pragma once // emits warning on GCC
+#ifndef MYMAKE_STD_H
+#define MYMAKE_STD_H
 
 #include "platform.h"
 
@@ -300,3 +302,5 @@ void zeroMem(T &v) {
 }
 
 #include "globals.h"
+
+#endif

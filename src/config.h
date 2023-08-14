@@ -1,5 +1,6 @@
 #pragma once
 #include "path.h"
+#include "env.h"
 
 /**
  * Configuration-file management.
@@ -20,6 +21,9 @@ class Config {
 public:
 	// Create. Add some dummy components.
 	Config();
+
+	// Environment block. Initially empty.
+	Env env;
 
 	// Set a variable.
 	void set(const String &key, const String &value);
@@ -44,11 +48,14 @@ public:
 	// Get as a boolean.
 	bool getBool(const String &key, bool def = false) const;
 
+	// Special variables:
+	typedef map<String, String> SpecialMap;
+
 	// Get with replaced variables.
-	String getVars(const String &key, const map<String, String> &special = map<String, String>()) const;
+	String getVars(const String &key, const SpecialMap &special = SpecialMap()) const;
 
 	// Insert variables into a string.
-	String expandVars(const String &into, const map<String, String> &special = map<String, String>()) const;
+	String expandVars(const String &into, const SpecialMap &special = SpecialMap()) const;
 
 	// Output.
 	friend ostream &operator <<(ostream &to, const Config &c);
@@ -59,7 +66,7 @@ private:
 	Data data;
 
 	// Get replacement for variable.
-	vector<String> replacement(String var, const map<String, String> &special) const;
+	vector<String> replacement(String var, const SpecialMap &special) const;
 
 	// Apply an operation to a string.
 	vector<String> applyFn(const String &op, const vector<String> &original) const;
