@@ -273,6 +273,16 @@ String Config::expandVars(const String &into, const SpecialMap &special) const {
 	return to.str();
 }
 
+static bool hasPrefix(const String &str, const char *prefix) {
+	for (nat i = 0; i < str.size(); i++) {
+		if (prefix[i] == 0)
+			return true;
+		if (prefix[i] != str[i])
+			return false;
+	}
+	return prefix[str.size()] == 0;
+}
+
 vector<String> Config::replacement(String var, const SpecialMap &special) const {
 	nat star = var.find('*');
 	if (star != String::npos) {
@@ -304,6 +314,12 @@ vector<String> Config::replacement(String var, const SpecialMap &special) const 
 	} else if (var == "libs") {
 		return addStr(getVars("localLibraryCl", special), replacement("path|localLibrary", special))
 			+ addStr(getVars("libraryCl", special), replacement("path|library", special));
+	} else if (hasPrefix(var, "env:")) {
+		// Special case for environment variables:
+		String result;
+		if (env.get(var.substr(4), result))
+			return vector<String>(1, result);
+		return vector<String>();
 	}
 
 	{
@@ -355,10 +371,6 @@ pair<bool, String> Config::applyFn(const String &op, const String &src) const {
 		return make_pair(true, toS(p));
 	} else if (op == "if") {
 		return make_pair(true, String());
-	} else if (op == "env") {
-		pair<bool, String> result(false, String());
-		result.first = env.get(src, result.second);
-		return result;
 	} else if (op.empty()) {
 		return make_pair(true, src);
 	} else {
