@@ -255,18 +255,26 @@ void readPipeSet(PipeSet *pipes, void *to, nat &written, Pipe &from) {
 #else
 
 #include <sys/select.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 const Pipe noPipe = -1;
 
-void createPipe(Pipe &read, Pipe &write, bool) {
+void createPipe(Pipe &read, Pipe &write, bool forChild) {
+	// Note: On UNIX, we use dup2() to duplicate the fds anyway, so we can ignore 'forChild'.
 	Pipe out[2];
-	if (pipe(out)) {
+	if (pipe2(out, O_CLOEXEC)) {
 		perror("Failed to create pipe: ");
 		exit(10);
 	}
 
 	read = out[0];
 	write = out[1];
+
+	if (forChild) {
+		// Disable O_CLOEXEC.
+		fcntl(write, F_SETFD, 0);
+	}
 }
 
 void closePipe(Pipe end) {

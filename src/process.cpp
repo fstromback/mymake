@@ -401,11 +401,13 @@ bool Process::spawn(bool manage, OutputState *state) {
 	Pipe writeStderr, writeStdout;
 	if (manage) {
 		Pipe readStderr, readStdout;
-		createPipe(readStderr, writeStderr, true);
+		// Don't create shareable handles, we dup2() them anyway:
+		createPipe(readStderr, writeStderr, false);
 		errPipe = readStderr;
 		OutputMgr::addError(readStderr, state);
 
-		createPipe(readStdout, writeStdout, true);
+		// Don't create shareable handles, we dup2() them anyway:
+		createPipe(readStdout, writeStdout, false);
 		outPipe = readStdout;
 		OutputMgr::add(readStdout, state);
 	}
