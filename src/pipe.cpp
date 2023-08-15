@@ -278,8 +278,15 @@ bool writePipe(Pipe to, const void *data, nat size) {
 	nat at = 0;
 	while (at < size) {
 		ssize_t s = write(to, d + at, size - at);
-		if (s < 0)
+		if (s < 0) {
+			if (errno == EINTR)
+				continue;
+			// Should not happen, but we guard against possible errors:
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				continue;
+			perror("Failed to write to pipe");
 			return false;
+		}
 
 		at += s;
 	}
