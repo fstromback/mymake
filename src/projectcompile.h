@@ -80,8 +80,8 @@ namespace compile {
 		// Information associated with a target.
 		class TargetInfo : NoCopy {
 		public:
-			TargetInfo(const String &name)
-				: name(name), order(0), status(sNotReady) {}
+			TargetInfo(const String &name, bool fromImplicitDep)
+				: name(name), fromImplicitDep(fromImplicitDep), order(0), status(sNotReady) {}
 
 			~TargetInfo() {
 				delete target;
@@ -89,6 +89,10 @@ namespace compile {
 
 			// Name of this target.
 			String name;
+
+			// Was this info created as a result of an implicit dependency? (Ignores some warnings,
+			// don't use to trigger options, etc.)
+			bool fromImplicitDep;
 
 			// The target itself, if loaded.
 			Target *target;
@@ -165,7 +169,7 @@ namespace compile {
 
 		// Add targets to an UniqueQueue.
 		void addTargets(const vector<String> &names, FindState &to);
-		void addTarget(const String &name, FindState &to);
+		void addTarget(const String &name, bool fromImplicitDep, FindState &to);
 
 		// Prepare a target - i.e. does all processing (loading, looking up dependencies) that can
 		// be done in parallel.

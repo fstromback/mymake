@@ -64,10 +64,13 @@ namespace compile {
 			// Some targets are ignored. If so, see if our config contains the option at all. If
 			// not, we need to warn about it.
 			if (!target) {
-				if (projectFile.options().count(now->name) == 0) {
-					WARNING("Ignoring the option " << now->name << " since it is neither the "
-							<< "name of a target, nor the name of a configuration option in the "
-							<< "project file.");
+				// Only warn for options in case it was from an implicit dependency.
+				if (!now->fromImplicitDep) {
+					if (projectFile.options().count(now->name) == 0) {
+						WARNING("Ignoring the option " << now->name << " since it is neither the "
+								<< "name of a target, nor the name of a configuration option in the "
+								<< "project file.");
+					}
 				}
 				continue;
 			}
@@ -79,7 +82,8 @@ namespace compile {
 			// Add any dependent projects.
 			if (implicitDependencies) {
 				for (set<String>::const_iterator i = target->dependsOn.begin(); i != target->dependsOn.end(); ++i) {
-					addTarget(*i, state);
+					// Check!
+					addTarget(*i, true, state);
 					now->depends << *i;
 				}
 			}
@@ -87,7 +91,7 @@ namespace compile {
 			// Add any explicit dependent projects.
 			vector<String> depends = depsConfig.getArray(now->name);
 			for (nat i = 0; i < depends.size(); i++) {
-				addTarget(depends[i], state);
+				addTarget(depends[i], false, state);
 				now->depends << depends[i];
 			}
 
@@ -142,10 +146,10 @@ namespace compile {
 
 	void Project::addTargets(const vector<String> &params, FindState &to) {
 		for (nat i = 0; i < params.size(); i++)
-			addTarget(params[i], to);
+			addTarget(params[i], false, to);
 	}
 
-	void Project::addTarget(const String &param, FindState &to) {
+	void Project::addTarget(const String &param, bool fromImplicitDep, FindState &to) {
 		Path rel = Path(param);
 		if (rel.isAbsolute())
 			rel = rel.makeRelative(wd);
@@ -157,7 +161,7 @@ namespace compile {
 		if (target.count(name))
 			return;
 
-		TargetInfo *info = new TargetInfo(name);
+		TargetInfo *info = new TargetInfo(name, fromImplicitDep);
 		target.insert(make_pair(name, info));
 		to.push(info);
 	}
