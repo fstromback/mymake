@@ -95,7 +95,7 @@ that shows all available options. At startup, mymake tries to find a `.mymake` o
 in the current directory or any parent directories (except for your home directory). If one is
 found, mymake uses that directory as the root directory when trying to compile.
 
-To pass parameters to the compiled program, use the `-a` parameter.
+To pass parameters to the compiled program, use `--` or the `-a` parameter.
 
 
 ## Parallel builds

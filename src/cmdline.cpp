@@ -13,6 +13,7 @@ static bool createGlobal(const String &param);
 static const pair<String, char> rawLongOptions[] = {
 	make_pair("output", 'o'),
 	make_pair("arguments", 'a'),
+	make_pair("", 'a'), // --
 	make_pair("debug", 'd'),
 	make_pair("force", 'f'),
 	make_pair("clean", 'c'),
@@ -51,7 +52,9 @@ static const char *helpStr =
 	"--help, -?      - show this help.\n"
 	"--force, -f     - always recompile everything.\n"
 	"--clean, -c     - clean the selected project/target. Deletes the entire execDir and buildDir!\n"
-	"--arguments, -a - arguments to the executed program. Must be last.\n"
+	"--arguments, -a - ends processing of arguments by Mymake, passes remaining arguments to\n"
+	"                  the started program. Must be the last command to appear.\n"
+	"--              - synonymous to -a or --arguments.\n"
 	"--execute, -e   - execute the resulting file.\n"
 	"--not, -n       - put in front of --execute (or use -ne) to not execute.\n"
 	"--project       - generate a sample .myproject in cwd.\n"
@@ -72,7 +75,6 @@ CmdLine::CmdLine(const vector<String> &params) :
 	threads(0),
 	createGlobal(false) {
 
-	bool noOptions = false;
 	state = sNone;
 
 	execName = params[0];
@@ -82,13 +84,11 @@ CmdLine::CmdLine(const vector<String> &params) :
 
 		if (optionParam(c)) {
 			// Nothing.
-		} else if (!noOptions && c.size() > 1 && c[0] == '-') {
+		} else if (c.size() > 1 && c[0] == '-') {
 			if (!parseOptions(c.substr(1))) {
 				errors = true;
 				break;
 			}
-		} else if (c == "--") {
-			noOptions = true;
 		} else {
 			addFile(c);
 		}
@@ -105,7 +105,7 @@ void CmdLine::printHelp() const {
 }
 
 bool CmdLine::parseOptions(const String &opts) {
-	if (opts.size() > 1 && opts[0] == '-') {
+	if (opts.size() >= 1 && opts[0] == '-') {
 		// Long option - only one.
 		map<String, char>::const_iterator i = longOptions.find(opts.substr(1));
 		if (i == longOptions.end())
