@@ -33,7 +33,8 @@
 ;;                          missing or equal to -, then the namespace is omitted.
 ;; :template-headers      - regex matching headers to apply template to.
 ;; :template-sources      - regex matching source files to apply template to.
-
+;; :executable            - override the default 'mymake-command' with another executable.
+;;                          Allows using the buildconfig file to run other build systems and/or tools.
 
 ;; Configuration.
 (defvar mymake-command "mm" "Command-line used to run mymake.")
@@ -251,9 +252,10 @@
   (let* ((config (mymake-load-config))
 	 (wd (mymake-assoc 'dir config))
 	 (default-directory wd)
-	 (args (mymake-args-str prepend replace (mymake-assoc 'cmdline config))))
+	 (args (mymake-args-str prepend replace (mymake-assoc 'cmdline config)))
+	 (executable (mymake-assoc 'executable config mymake-command)))
     (compile (concat
-	      mymake-command " "
+	      executable " "
 	      (if (eq nil force)
 		  args
 		(concat "-f " args))) t)))
