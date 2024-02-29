@@ -90,12 +90,14 @@ void waitFor(WaitCond &cond) {
 		cond.manager = waiters == null;
 		cond.next = waiters;
 		waiters = &cond;
+
+		// If we are the manager already, up our own semaphore so that we don't have to sleep.
+		if (cond.manager)
+			cond.sema.up();
 	}
 
-	if (!cond.manager) { // Valgrind indicates this might needs synchronization, is this true?
-		// Sleep until it is either our turn to become the manager, or until we're done.
-		cond.sema.down();
-	}
+	// Sleep until it is either our turn to become the manager, or until we're done.
+	cond.sema.down();
 
 	// Either, we were the manager from the start, or we have become the new manager.
 	if (cond.manager) {
@@ -551,10 +553,10 @@ static bool systemWaitProc(ProcId &proc, int &result) {
 #endif
 
 
-ProcGroup::ProcGroup(nat limit, OutputState &state) : state(state), limit(limit), failed(false) {
-	if (limit == 0)
-		limit = 1;
-}
+ProcGroup::ProcGroup(nat limit, OutputState &state)
+	: state(state),
+	  limit(limit == 0 ? 1 : limit),
+	  failed(false) {}
 
 ProcGroup::~ProcGroup() {
 
@@ -564,6 +566,7 @@ ProcGroup::~ProcGroup() {
 		ProcGroup *me;
 		Empty(ProcGroup *me) : me(me) {}
 		virtual bool done() {
+			Lock::Guard z(me->dataLock);
 			return me->our.empty();
 		}
 	};
@@ -574,6 +577,7 @@ ProcGroup::~ProcGroup() {
 
 	// Remove any remaining processes, in case someting went wrong.
 	Lock::Guard z(aliveLock);
+	Lock::Guard w(dataLock);
 	for (set<Process *>::iterator i = our.begin(), end = our.end(); i != end; ++i) {
 		alive.erase((*i)->process);
 		delete *i;
@@ -587,6 +591,7 @@ void ProcGroup::setLimit(nat l) {
 
 bool ProcGroup::canSpawn() {
 	Lock::Guard z(aliveLock);
+	Lock::Guard w(dataLock);
 	return alive.size() < procLimit && our.size() < limit;
 }
 
@@ -603,7 +608,13 @@ bool ProcGroup::spawn(Process *p) {
 		ProcGroup *me;
 		CanSpawn(ProcGroup *me) : me(me) {}
 		virtual bool done() {
-			return me->canSpawn() || me->failed;
+			{
+				// Note: "canSpawn" takes the same lock, but in a different order!
+				Lock::Guard z(me->dataLock);
+				if (me->failed)
+					return true;
+			}
+			return me->canSpawn();
 		}
 	};
 
@@ -615,8 +626,12 @@ bool ProcGroup::spawn(Process *p) {
 		return false;
 	}
 
-	our.insert(p);
+	{
+		Lock::Guard z(dataLock);
+		our.insert(p);
+	}
 	if (!p->spawn(true, &state)) {
+		Lock::Guard z(dataLock);
 		our.erase(p);
 		return false;
 	}
@@ -635,6 +650,7 @@ bool ProcGroup::wait() {
 		ProcGroup *me;
 		Failed(ProcGroup *me) : me(me) {}
 		virtual bool done() {
+			Lock::Guard z(me->dataLock);
 			return me->failed || me->our.empty();
 		}
 	};
@@ -642,13 +658,17 @@ bool ProcGroup::wait() {
 	Failed c(this);
 	waitFor(c);
 
+	Lock::Guard z(dataLock);
 	return !failed;
 }
 
 void ProcGroup::terminated(Process *p, int result) {
 	// Not our process?
-	if (our.erase(p) == 0)
-		return;
+	{
+		Lock::Guard z(dataLock);
+		if (our.erase(p) == 0)
+			return;
+	}
 
 	if (result != 0)
 		failed = true;

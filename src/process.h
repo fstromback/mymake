@@ -119,7 +119,10 @@ private:
 	OutputState &state;
 
 	// Our limit.
-	nat limit;
+	const nat limit;
+
+	// Lock for data in this group, i.e. 'failed' and 'our'.
+	Lock dataLock;
 
 	// Any failures so far?
 	bool failed;
