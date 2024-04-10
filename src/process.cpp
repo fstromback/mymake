@@ -411,7 +411,7 @@ bool Process::spawn(bool manage, OutputState *state) {
 		// Don't create shareable handles, we dup2() them anyway:
 		createPipe(readStdout, writeStdout, false);
 		outPipe = readStdout;
-		OutputMgr::add(readStdout, state);
+		OutputMgr::add(readStdout, state, skipLines);
 	}
 
 	// Prepare everything so we do not have to do potential mallocs in the child.
