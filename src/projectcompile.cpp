@@ -358,8 +358,8 @@ namespace compile {
 		String banner;
 		if (debugLevel >= dbg_NORMAL)
 			banner = "-- Target " + info.name + " --";
-		SetBanner w(banner.c_str());
-		SetPrefix z(prefix.c_str());
+
+		SetState z(banner, prefix);
 
 		Timestamp start;
 

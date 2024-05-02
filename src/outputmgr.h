@@ -39,7 +39,7 @@ private:
 		// Pipe.
 		Pipe pipe;
 
-		// Output state.
+		// Output state. Owns a reference.
 		OutputState *state;
 
 		// Lines to skip before outputting.

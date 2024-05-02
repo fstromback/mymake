@@ -45,22 +45,3 @@ String trim(const String &s) {
 		return "";
 	return s.substr(start, end - start + 1);
 }
-
-
-Lock outputLock;
-
-THREAD OutputState outputState;
-
-void OutputState::output(ostream &to) {
-	if (banner) {
-		if (prefix)
-			to << prefix;
-
-		to << banner << endl;
-		banner = null;
-	}
-
-	if (prefix) {
-		to << prefix;
-	}
-}

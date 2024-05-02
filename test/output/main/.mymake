@@ -1,4 +1,8 @@
 []
 input=main.cpp
+ext+=pre
+input+=dummy.pre
 pre=pre
 preBuild=<execpath|pre>
+compile+=*.pre:<execpath|pre> <input>
+

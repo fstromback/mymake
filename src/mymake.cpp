@@ -151,7 +151,7 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 }
 
 // Main entry-point for mymake.
-int main(int argc, const char *argv[]) {
+int real_main(int argc, const char *argv[]) {
 	CmdLine cmdline(vector<String>(argv, argv + argc));
 
 #ifdef WINDOWS
@@ -186,4 +186,16 @@ int main(int argc, const char *argv[]) {
 	} else {
 		return compileTarget(newPath, cmdline);
 	}
+}
+
+// Wrapper around main to simplify management of the output state for the initial thread.
+int main(int argc, const char *argv[]) {
+	// Set up the initial output state.
+	outputState = new OutputState();
+
+	int result = real_main(argc, argv);
+
+	outputState->unref();
+
+	return result;
 }

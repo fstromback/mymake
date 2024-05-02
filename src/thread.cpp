@@ -12,9 +12,13 @@ Thread::~Thread() {
 }
 
 static DWORD WINAPI threadMain(void *d) {
+	outputState = new OutputState();
+
 	Thread::Data *data = (Thread::Data *)d;
 	data->start();
 	delete data;
+
+	outputState->unref();
 
 	return 0;
 }
@@ -47,9 +51,13 @@ Thread::~Thread() {
 }
 
 static void *threadMain(void *d) {
+	outputState = new OutputState();
+
 	Thread::Data *data = (Thread::Data *)d;
 	data->start();
 	delete data;
+
+	outputState->unref();
 
 	return null;
 }

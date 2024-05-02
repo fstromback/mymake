@@ -553,8 +553,8 @@ static bool systemWaitProc(ProcId &proc, int &result) {
 #endif
 
 
-ProcGroup::ProcGroup(nat limit, OutputState &state)
-	: state(state),
+ProcGroup::ProcGroup(nat limit, OutputState *state)
+	: state(state->ref()),
 	  limit(limit == 0 ? 1 : limit),
 	  failed(false) {}
 
@@ -582,6 +582,8 @@ ProcGroup::~ProcGroup() {
 		alive.erase((*i)->process);
 		delete *i;
 	}
+
+	state->unref();
 }
 
 void ProcGroup::setLimit(nat l) {
@@ -630,7 +632,7 @@ bool ProcGroup::spawn(Process *p) {
 		Lock::Guard z(dataLock);
 		our.insert(p);
 	}
-	if (!p->spawn(true, &state)) {
+	if (!p->spawn(true, state)) {
 		Lock::Guard z(dataLock);
 		our.erase(p);
 		return false;

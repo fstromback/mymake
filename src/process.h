@@ -97,7 +97,7 @@ typedef map<ProcId, Process *> ProcMap;
 class ProcGroup : NoCopy {
 public:
 	// Create, set local limit.
-	ProcGroup(nat limit, OutputState &state);
+	ProcGroup(nat limit, OutputState *state);
 
 	// Destroy.
 	~ProcGroup();
@@ -115,8 +115,8 @@ public:
 	bool wait();
 
 private:
-	// Our output state.
-	OutputState &state;
+	// Our output state. Referenced.
+	OutputState *state;
 
 	// Our limit.
 	const nat limit;

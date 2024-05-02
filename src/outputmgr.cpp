@@ -156,13 +156,15 @@ void OutputMgr::threadMain() {
 }
 
 OutputMgr::PipeData::PipeData(Pipe pipe, OutputState *state, nat skip, bool errorStream) :
-	pipe(pipe), state(state), skipLines(skip), errorStream(errorStream), bufferCount(0) {}
+	pipe(pipe), state(state->ref()), skipLines(skip), errorStream(errorStream), bufferCount(0) {}
 
 OutputMgr::PipeData::~PipeData() {
 	closePipe(pipe);
 
 	if (bufferCount > 0)
 		flush();
+
+	state->unref();
 }
 
 void OutputMgr::PipeData::add(const char *src, nat size) {
@@ -197,9 +199,9 @@ void OutputMgr::PipeData::flush() {
 	buffer[bufferCount] = 0;
 	if (state) {
 		if (errorStream) {
-			PERROR_THREAD(*state, buffer);
+			PERROR_THREAD(state, buffer);
 		} else {
-			PLN_THREAD(*state, buffer);
+			PLN_THREAD(state, buffer);
 		}
 	} else {
 		if (errorStream) {
