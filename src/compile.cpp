@@ -175,6 +175,11 @@ namespace compile {
 		output = execDir + Path(outputName).titleNoExt();
 		output.makeExt(config.getStr("execExt"));
 
+		// Normalize order. The existence/non-existence of build files makes us behave differently,
+		// even if the path calls are consistent.
+		// Note: We don't re-sort the pch file!
+		std::sort(toCompile.begin() + (pchStr.empty() ? 0 : 1), toCompile.end());
+
 		return true;
 	}
 
