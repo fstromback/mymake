@@ -177,8 +177,16 @@ namespace compile {
 
 		// Normalize order. The existence/non-existence of build files makes us behave differently,
 		// even if the path calls are consistent.
-		// Note: We don't re-sort the pch file!
-		std::sort(toCompile.begin() + (pchStr.empty() ? 0 : 1), toCompile.end());
+
+		// Note: We don't re-sort the pch file and files specified as inputs. These will always be first.
+		vector<Compile>::iterator begin = toCompile.begin();
+		while (begin != toCompile.end()) {
+			if (begin->isPch || !begin->autoFound) {
+				begin++;
+			} else
+				break;
+		}
+		std::sort(begin, toCompile.end());
 
 		return true;
 	}
