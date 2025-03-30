@@ -116,6 +116,10 @@ pchCompileCombined=no
 #Compile a single file.
 compile=*:g++ <defines> <flags> <warnings> <usePch*if|pch> <file> -c <includes> -o <output>
 
+#Support C as well. Note that we don't support PCH for C compilation.
+cflags=-pipe
+compile+=*.c:gcc <defines> <cflags> <warnings> <file> -c <includes> -o <output>
+
 #Link all files
 link=g++ <files> <linkFlags> <libs> -o <output>
 
@@ -195,6 +199,9 @@ pchCompileCombined=yes
 compile=*:1!cl <defines> <file> <includes> <flags> <warnings> <usePch*title|pch> <namePch*if|pch> /c /Fo<output>
 link=link <linkFlags> <libs> <files> /nologo /OUT:<output>
 link+=mt -nologo -manifest <output>.manifest -outputresource:<output>;#<manifestId>
+
+cflags=/nologo /EHsc /FC
+compile+=*.c:1!cl <defines> <file> <includes> <cflags> <warnings> /c /Fo<output>
 
 [windows,64]
 linkFlags+=/MACHINE:X64
