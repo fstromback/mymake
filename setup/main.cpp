@@ -129,12 +129,18 @@ int main(int argc, const char *argv[]) {
 
 	cout << "Done!" << endl;
 
+	char tmp[MAX_PATH + 1];
+	_getcwd(tmp, MAX_PATH + 1);
+	string cwd = tmp;
+	if (cwd[cwd.size() - 1] != '\\')
+		cwd += "\\";
+
 	vector<string> paths = getPath();
 	cout << "Do you wish to add mm.exe to your path?" << endl;
 	cout << " 0> No, don't do anything." << endl;
-	cout << " 1> Create a new entry for this path." << endl;
+	cout << " 1> Create a new entry for the current location (" << cwd <<  "release)" << endl;
 	for (size_t i = 0; i < paths.size(); i++)
-		cout << setw(2) << (i + 2) << "> " << paths[i] << endl;
+		cout << setw(2) << (i + 2) << "> Copy mymake to: " << paths[i] << endl;
 
 	size_t id = 0;
 	while (true) {
@@ -163,12 +169,7 @@ int main(int argc, const char *argv[]) {
 			CreateDirectory("release", NULL);
 		moveFile("mm.exe", "release\\mm.exe");
 
-		char tmp[MAX_PATH + 1];
-		_getcwd(tmp, MAX_PATH + 1);
-		string cwd = tmp;
-		if (cwd[cwd.size() - 1] != '\\')
-			cwd += "\\";
-		addPath(cwd + "release\\mm.exe");
+		addPath(cwd + "release");
 	} else {
 		// Move the binary to the proper location.
 		moveFile("mm.exe", paths[id - 2] + "\\mm.exe");
