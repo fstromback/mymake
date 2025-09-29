@@ -3,7 +3,6 @@
 #include "system.h"
 #include "sync.h"
 #include "hash.h"
-#include <cstdlib>
 
 
 #ifdef WINDOWS
