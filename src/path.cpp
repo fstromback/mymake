@@ -3,6 +3,7 @@
 #include "system.h"
 #include "sync.h"
 #include "hash.h"
+#include <cstdlib>
 
 
 #ifdef WINDOWS
@@ -188,8 +189,19 @@ Path Path::cwd() {
 }
 
 Path Path::home() {
-	Path r(getenv("HOME"));
+	const char *tmp{getenv("XDG_CONFIG_HOME")};
+	String p{};
+
+	if (!tmp) {
+		p = getenv("HOME");
+		p.append("/.config");
+	} else {
+		p = tmp;
+	}
+
+	Path r(p + "/mymake");
 	r.makeDir();
+	r.createDir();
 	return r;
 }
 
