@@ -188,8 +188,8 @@ Path Path::cwd() {
 }
 
 Path Path::home() {
-	const char *tmp{getenv("XDG_CONFIG_HOME")};
-	String p{};
+	const char *tmp = getenv("XDG_CONFIG_HOME");
+	String p = "";
 
 	if (!tmp) {
 		p = getenv("HOME");
