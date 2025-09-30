@@ -71,7 +71,7 @@ If mymake fails to locate the installation, you can help it by providing a path 
 `vsvarsall.bat` and provde the path to that file.
 
 On Windows the global configuration file is located in
-`C:/Users/<username>/AppData/Roaming/mymake/mymake.conf`.
+`C:/Users/<username>/AppData/Local/mymake/mymake.conf`.
 
 
 ## Update

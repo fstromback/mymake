@@ -8,7 +8,7 @@ namespace templ {
 #include "../bin/templates.h"
 }
 
-static bool createGlobal(const Path &file, const String &param);
+static bool createGlobal(const Path &file, const String &param, nat configThreads);
 
 static const pair<String, char> rawLongOptions[] = {
 	make_pair("output", 'o'),
@@ -60,14 +60,15 @@ static const char *helpStr =
 	"--not, -n       - put in front of --execute (or use -ne) to not execute.\n"
 	"--project       - generate a sample .myproject in cwd.\n"
 	"--target        - generate a sample .mymake in cwd.\n"
-	"--config        - write global config file.\n"
+	"--config        - write global config file. If -j is specified, uses that value as the default\n"
+	"                - in the generated file. Otherwise, asks the user for the preferred default.\n"
 	"--threads, -j   - compile in parallel if possible, using this many threads.\n"
 	"--default-input - add this file as an input if no other is specified on command-line\n"
 	"                  or in configuration. Useful when integrating with text editors.\n"
 	"--time, -t      - output the time taken for various stages of mymake.\n"
 	"--global-config - specify the location of the global configuration file. Used to override\n"
 #ifdef WINDOWS
-	"                - the default value of C:/Users/<user>/AppData/Roaming/mymake/mymake.conf\n"
+	"                - the default value of C:/Users/<user>/AppData/Local/mymake/mymake.conf\n"
 #else
 	"                - the default value of ~/.config/mymake/mymake.conf\n"
 #endif
@@ -103,8 +104,11 @@ CmdLine::CmdLine(const vector<String> &params) :
 		}
 	}
 
-	if (createGlobal) {
-		if (!::createGlobal(globalConfig, configParam))
+	if (state != sNone && state != sArguments && state != sCreateGlobal) {
+		PLN("Missing parameter after: " << params[params.size() - 1]);
+		errors = true;
+	} else if (createGlobal) {
+		if (!::createGlobal(globalConfig, configParam, threads))
 			errors = true;
 	}
 }
@@ -157,7 +161,7 @@ static nat askThreads() {
 	}
 }
 
-static bool createGlobal(const Path &file, const String &param) {
+static bool createGlobal(const Path &file, const String &param, nat configThreads) {
 	if (!checkFile(file))
 		return false;
 
@@ -167,7 +171,9 @@ static bool createGlobal(const Path &file, const String &param) {
 	else
 		envinfo = setup::envinfo(&param);
 
-	nat defThreads = askThreads();
+	nat defThreads = configThreads;
+	if (defThreads < 1)
+		defThreads = askThreads();
 	if (defThreads < 1)
 		defThreads = 1;
 

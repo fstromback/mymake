@@ -80,7 +80,7 @@ Path Path::home() {
 
 Path Path::config() {
 	char tmp[MAX_PATH + 1] = { 0 };
-	SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, tmp);
+	SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, tmp);
 	Path r(tmp);
 	r += "mymake";
 	r.makeDir();
