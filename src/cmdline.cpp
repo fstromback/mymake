@@ -8,7 +8,7 @@ namespace templ {
 #include "../bin/templates.h"
 }
 
-static bool createGlobal(const String &param);
+static bool createGlobal(const Path &file, const String &param);
 
 static const pair<String, char> rawLongOptions[] = {
 	make_pair("output", 'o'),
@@ -27,6 +27,7 @@ static const pair<String, char> rawLongOptions[] = {
 	make_pair("help", '?'),
 	make_pair("threads", 'j'),
 	make_pair("time", 't'),
+	make_pair("global-config", '\5'),
 };
 static const map<String, char> longOptions(rawLongOptions, rawLongOptions + ARRAY_COUNT(rawLongOptions));
 
@@ -63,7 +64,14 @@ static const char *helpStr =
 	"--threads, -j   - compile in parallel if possible, using this many threads.\n"
 	"--default-input - add this file as an input if no other is specified on command-line\n"
 	"                  or in configuration. Useful when integrating with text editors.\n"
-	"--time, -t      - output the time taken for various stages of mymake.\n";
+	"--time, -t      - output the time taken for various stages of mymake.\n"
+	"--global-config - specify the location of the global configuration file. Used to override\n"
+#ifdef WINDOWS
+	"                - the default value of C:/Users/<user>/AppData/Roaming/mymake/mymake.conf\n"
+#else
+	"                - the default value of ~/.config/mymake/mymake.conf\n"
+#endif
+	"";
 
 CmdLine::CmdLine(const vector<String> &params) :
 	errors(false),
@@ -72,6 +80,7 @@ CmdLine::CmdLine(const vector<String> &params) :
 	showHelp(false),
 	clean(false),
 	times(false),
+	globalConfig(defaultGlobalConfig()),
 	threads(0),
 	createGlobal(false) {
 
@@ -95,7 +104,7 @@ CmdLine::CmdLine(const vector<String> &params) :
 	}
 
 	if (createGlobal) {
-		if (!::createGlobal(configParam))
+		if (!::createGlobal(globalConfig, configParam))
 			errors = true;
 	}
 }
@@ -148,8 +157,7 @@ static nat askThreads() {
 	}
 }
 
-static bool createGlobal(const String &param) {
-	Path file = Path::home() + localConfig;
+static bool createGlobal(const Path &file, const String &param) {
 	if (!checkFile(file))
 		return false;
 
@@ -162,6 +170,8 @@ static bool createGlobal(const String &param) {
 	nat defThreads = askThreads();
 	if (defThreads < 1)
 		defThreads = 1;
+
+	file.parent().createDir();
 
 	ofstream dest(toS(file).c_str());
 	if (!dest) {
@@ -278,6 +288,9 @@ bool CmdLine::parseOption(char opt) {
 	case '\4':
 		state = sDefaultInput;
 		break;
+	case '\5':
+		state = sGlobalConfig;
+		break;
 	default:
 		return false;
 	}
@@ -349,6 +362,9 @@ bool CmdLine::optionParam(const String &v) {
 		return true;
 	case sCreateGlobal:
 		configParam = v;
+		return true;
+	case sGlobalConfig:
+		globalConfig = Path(v).makeAbsolute();
 		return true;
 	default:
 		return false;

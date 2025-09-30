@@ -78,6 +78,15 @@ Path Path::home() {
 	return r;
 }
 
+Path Path::config() {
+	char tmp[MAX_PATH + 1] = { 0 };
+	SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, tmp);
+	Path r(tmp);
+	r += "mymake";
+	r.makeDir();
+	return r;
+}
+
 void Path::deleteFile() const {
 	DeleteFile(toS(*this).c_str());
 }
@@ -189,6 +198,20 @@ Path Path::cwd() {
 
 Path Path::home() {
 	Path r(getenv("HOME"));
+	r.makeDir();
+	return r;
+}
+
+Path Path::config() {
+	const char *xdgConfig = getenv("XDG_CONFIG_HOME");
+	Path r;
+	if (xdgConfig) {
+		r = Path(xdgConfig);
+	} else {
+		r = home();
+		r += ".config";
+	}
+	r += "mymake";
 	r.makeDir();
 	return r;
 }

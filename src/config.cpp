@@ -6,11 +6,11 @@ const String projectConfig = ".myproject";
 
 // Known bug: can not compile stuff in the root directory...
 Path findConfig() {
-	Path home = Path::home();
+	Path globalConfig = Path::config();
 
 	for (Path dir = Path::cwd(); !dir.isEmpty(); dir = dir.parent()) {
 		// Skip home directory, where the global configuration is located.
-		if (dir == home)
+		if (dir == globalConfig)
 			continue;
 
 		// Search for a configuration...
@@ -30,6 +30,9 @@ Path findConfig() {
 	return Path::cwd();
 }
 
+Path defaultGlobalConfig() {
+	return Path::config() + "mymake.conf";
+}
 
 /**
  * Make config.

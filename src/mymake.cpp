@@ -6,17 +6,24 @@
 #include "process.h"
 #include "outputmgr.h"
 
+// Load the global configuration file if it exists.
+void loadGlobalConfig(const CmdLine &cmdline, MakeConfig &config) {
+	Path globalFile(cmdline.globalConfig);
+	if (globalFile.exists()) {
+		DEBUG("Global configuration file found: " << globalFile, VERBOSE);
+		config.load(globalFile);
+	} else {
+		WARNING("No global configuration file (" << globalFile << "). Use the --config flag to generate it.");
+	}
+}
+
 // Compile a stand-alone .mymake-file.
 int compileTarget(const Path &wd, const CmdLine &cmdline) {
 	Timestamp start;
 	MakeConfig config;
 
 	// Load the system-global file.
-	Path globalFile(Path::home() + localConfig);
-	if (globalFile.exists()) {
-		DEBUG("Global file found: " << globalFile, VERBOSE);
-		config.load(globalFile);
-	}
+	loadGlobalConfig(cmdline, config);
 
 	Path localFile(wd + localConfig);
 	if (localFile.exists()) {
@@ -82,11 +89,7 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	Timestamp start;
 	MakeConfig config;
 
-	Path globalFile(Path::home() + localConfig);
-	if (globalFile.exists()) {
-		DEBUG("Global file found: " << globalFile, VERBOSE);
-		config.load(globalFile);
-	}
+	loadGlobalConfig(cmdline, config);
 
 	DEBUG("Project file found: " << projectFile, VERBOSE);
 	config.load(projectFile);

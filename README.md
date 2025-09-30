@@ -45,8 +45,9 @@ able to use mymake.
 
 If you do not want an alias, you can copy the binary `mymake` to somewhere in your path.
 
-After this, run `mm --config` to generate a global `.mymake`-file which contains your system
-specific compilation settings.
+After this, run `mm --config` to generate a global configuration file that contains your
+system-specific compilation settings. On Linux, it is located in `~/.config/mymake/mymake.conf` by
+default.
 
 ### Windows (using Visual Studio 2008 or later)
 
@@ -57,7 +58,7 @@ the time), and use it to compile mymake. After compilation, it will ask if you w
 `mm.exe` somewhere in your path (either an existing location, or modifying your path to point to the
 repository location).
 
-After installation succeeded, open a terminal and generate a global `.mymake`-file with the command
+After installation succeeded, open a terminal and generate a global configuration file with the command
 `mm --config`. This will once again locate the Visual Studio installation, identify the capabilities
 of the compiler and generate a proper configuration. This means that `mm` will work outside the
 Visual Studio Command Prompt.
@@ -68,6 +69,9 @@ not necessary to use the same compiler for compiling mymake and in the global co
 If mymake fails to locate the installation, you can help it by providing a path to the command
 (e.g. `setup.exe C:\Path\To\Vs` or `mm --config C:\Path\To\Vs`), and if that fails, locate the file
 `vsvarsall.bat` and provde the path to that file.
+
+On Windows the global configuration file is located in
+`C:/Users/<username>/AppData/Roaming/mymake/mymake.conf`.
 
 
 ## Update

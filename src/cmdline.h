@@ -53,6 +53,9 @@ public:
 	// Show times.
 	bool times;
 
+	// Location of the global configuration file.
+	Path globalConfig;
+
 	// Apply to Config object.
 	void apply(const set<String> &usedOptions, Config &config) const;
 
@@ -71,6 +74,7 @@ private:
 		sParallel,
 		sDefaultInput,
 		sCreateGlobal,
+		sGlobalConfig,
 	};
 
 	State state;

@@ -35,6 +35,9 @@ public:
 	// User's home directory.
 	static Path home();
 
+	// System-wide configuration file.
+	static Path config();
+
 	// Are the string equal regarding the current OS?
 	static bool equal(const String &a, const String &b);
 	static int compare(const String &a, const String &b);

@@ -13,6 +13,8 @@ extern const String projectConfig;
 // Find a directory containing a suitable configuration file so we can cd there later.
 Path findConfig();
 
+// Get a path to the global configuration.
+Path defaultGlobalConfig();
 
 /**
  * Merged configuration.
