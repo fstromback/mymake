@@ -88,7 +88,7 @@ namespace setup {
 			if (mtPdb)
 				flags << " /Zf";
 			if (mtFlag)
-				flags << " /FS" << endl;
+				flags << " /FS";
 			if (stdFlag)
 				flags << " <useStandard*standard>";
 
