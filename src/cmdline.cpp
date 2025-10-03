@@ -237,69 +237,82 @@ static bool createProject() {
 }
 
 bool CmdLine::parseOption(char opt) {
-	if (state != sNone && state != sNegate) {
+	if (state == sNone) {
+		switch (opt) {
+		case 'n':
+			state = sNegate;
+			break;
+		case 'o':
+			state = sOutput;
+			break;
+		case 'a':
+			state = sArguments;
+			execute = tYes;
+			break;
+		case 'e':
+			execute = tYes;
+			break;
+		case 'd':
+			state = sDebug;
+			break;
+		case 'c':
+			clean = true;
+			break;
+		case 'f':
+			force = true;
+			break;
+		case 'p':
+			state = sExecPath;
+			break;
+		case '?':
+			showHelp = true;
+			break;
+		case 'j':
+			state = sParallel;
+			break;
+		case 't':
+			times = true;
+			break;
+		case '\1':
+			createGlobal = true;
+			state = sCreateGlobal;
+			exit = true;
+			break;
+		case '\2':
+			if (!createTarget())
+				errors = true;
+			exit = true;
+			break;
+		case '\3':
+			if (!createProject())
+				errors = true;
+			exit = true;
+			break;
+		case '\4':
+			state = sDefaultInput;
+			break;
+		case '\5':
+			state = sGlobalConfig;
+			break;
+		default:
+			return false;
+		}
+		return true;
+	} else if (state == sNegate) {
+		switch (opt) {
+		case 'e':
+			execute = tNo;
+			break;
+		case 'f':
+			force = false;
+			break;
+		}
+		state = sNone;
+		return true;
+	} else {
 		return false;
 	}
 
-	switch (opt) {
-	case 'n':
-		state = sNegate;
-		break;
-	case 'o':
-		state = sOutput;
-		break;
-	case 'a':
-		state = sArguments;
-		execute = tYes;
-		break;
-	case 'e':
-		execute = (state == sNegate) ? tNo : tYes;
-		break;
-	case 'd':
-		state = sDebug;
-		break;
-	case 'c':
-		clean = true;
-		break;
-	case 'f':
-		force = (state != sNegate);
-		break;
-	case 'p':
-		state = sExecPath;
-		break;
-	case '?':
-		showHelp = true;
-		break;
-	case 'j':
-		state = sParallel;
-		break;
-	case 't':
-		times = true;
-		break;
-	case '\1':
-		createGlobal = true;
-		state = sCreateGlobal;
-		exit = true;
-		break;
-	case '\2':
-		if (!createTarget())
-			errors = true;
-		exit = true;
-		break;
-	case '\3':
-		if (!createProject())
-			errors = true;
-		exit = true;
-		break;
-	case '\4':
-		state = sDefaultInput;
-		break;
-	case '\5':
-		state = sGlobalConfig;
-		break;
-	default:
-		return false;
-	}
 
 	return true;
 }
