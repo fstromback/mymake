@@ -120,6 +120,12 @@ namespace compile {
 			target[order[i].name]->order = i;
 		}
 
+		// Take the opportunity to propagate library dependencies between them now that we don't run
+		// multiple threads concurrently anyway.
+		for (nat i = order.size(); i > 0; i--) {
+			propagateDependencies(order[i - 1].name);
+		}
+
 		return true;
 	}
 
@@ -281,22 +287,38 @@ namespace compile {
 		}
 	}
 
-	map<nat, Path> Project::dependencies(const String &root) const {
-		map<nat, Path> output;
+	void Project::propagateDependencies(const String &name) {
+		map<String, TargetInfo *>::const_iterator found = target.find(name);
+		if (found == target.end())
+			return; // Should not happen...
+
+		TargetInfo *t = found->second;
+
+		map<nat, LibDeps> d = dependencies(t);
+		for (map<nat, LibDeps>::reverse_iterator i = d.rbegin(), end = d.rend(); i != end; ++i) {
+			LibDeps &deps = i->second;
+
+			for (nat i = 0; i < deps.local.size(); i++)
+				t->target->addLocalLib(deps.local[i]);
+
+			for (nat i = 0; i < deps.external.size(); i++)
+				t->target->addExternalLib(deps.external[i]);
+		}
+
+	}
+
+	map<nat, Project::LibDeps> Project::dependencies(const TargetInfo *root) const {
+		map<nat, LibDeps> output;
 		vector<bool> visited(order.size(), false);
 
-		map<String, TargetInfo *>::const_iterator found = target.find(root);
-		if (found == target.end())
-			return output; // Should not happen...
+		visited[root->order] = true;
 
-		visited[found->second->order] = true;
-
-		dependencies(root, visited, output, found->second);
+		dependencies(root->name, visited, output, root);
 
 		return output;
 	}
 
-	void Project::dependencies(const String &root, vector<bool> &visited, map<nat, Path> &output, const TargetInfo *at) const {
+	void Project::dependencies(const String &root, vector<bool> &visited, map<nat, LibDeps> &output, const TargetInfo *at) const {
 		for (set<String>::const_iterator i = at->depends.begin(); i != at->depends.end(); ++i) {
 			const String &name = *i;
 
@@ -314,9 +336,23 @@ namespace compile {
 			if (!info->target)
 				continue;
 
+			LibDeps &deps = output[info->order];
+
+			if (info->target->forwardDeps) {
+				DEBUG(root << " includes libraries from " << info->target->output, INFO);
+
+				vector<Path> local = info->target->getLocalLibs();
+				for (nat i = 0; i < local.size(); i++)
+					deps.local.push_back(local[i]);
+
+				vector<String> ext = info->target->getExternalLibs();
+				for (nat i = 0; i < ext.size(); i++)
+					deps.external.push_back(ext[i]);
+			}
+
 			if (info->target->linkOutput) {
 				DEBUG(root << " includes dependent " << info->target->output, INFO);
-				output[info->order] = info->target->output;
+				deps.local.push_back(info->target->output);
 			}
 
 			if (info->target->forwardDeps) {
@@ -362,11 +398,6 @@ namespace compile {
 		SetState z(banner, prefix);
 
 		Timestamp start;
-
-		map<nat, Path> d = dependencies(info.name);
-		for (map<nat, Path>::reverse_iterator i = d.rbegin(), end = d.rend(); i != end; ++i) {
-			t->target->addLib(i->second);
-		}
 
 		bool ok = t->target->compile();
 		Timestamp end;

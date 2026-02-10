@@ -49,8 +49,17 @@ namespace compile {
 		// Link our dependencies to targets dependent on us.
 		bool forwardDeps;
 
-		// Add a library.
-		void addLib(const Path &path);
+		// Add a local library.
+		void addLocalLib(const Path &path);
+
+		// Get local libraries (as absolute paths).
+		vector<Path> getLocalLibs() const;
+
+		// Add an external library.
+		void addExternalLib(const String &lib);
+
+		// Get dynamic libraries.
+		vector<String> getExternalLibs() const;
 
 	private:
 		// Working directory.

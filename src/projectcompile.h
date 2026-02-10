@@ -123,6 +123,8 @@ namespace compile {
 			}
 		};
 
+		class TargetSort;
+
 		// Targets.
 		map<String, TargetInfo *> target;
 
@@ -178,9 +180,24 @@ namespace compile {
 		// Create a new target.
 		Target *loadTarget(const String &name) const;
 
+		// Propagate dependencies between targets. This is done right after we find the dependencies
+		// between all targets, while we are still running in a single thread. We also assume that
+		// the function is called in reverse compilation order (i.e. if X is visited first, we know
+		// that all dependencies of X have not yet been called). That way we avoid duplicates.
+		void propagateDependencies(const String &name);
+
+		// Information about dependencies from some target.
+		struct LibDeps {
+			// Local library itself.
+			vector<Path> local;
+
+			// Other libraries.
+			vector<String> external;
+		};
+
 		// Find dependencies to a target. Duplicates are removed. Returns order-id -> output file name.
-		map<nat, Path> dependencies(const String &root) const;
-		void dependencies(const String &root, vector<bool> &visited, map<nat, Path> &out, const TargetInfo *at) const;
+		map<nat, LibDeps> dependencies(const TargetInfo *info) const;
+		void dependencies(const String &root, vector<bool> &visited, map<nat, LibDeps> &out, const TargetInfo *at) const;
 
 		// Compile one target. This function may only _read_ from shared data.
 		bool compileOne(nat id, bool mt);

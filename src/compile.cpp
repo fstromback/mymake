@@ -474,12 +474,28 @@ namespace compile {
 		return exec(output, params, execPath, null); // TODO: Use env here?
 	}
 
-	void Target::addLib(const Path &p) {
+	void Target::addLocalLib(const Path &p) {
 		if (!absolutePath && p.isAbsolute()) {
 			config.add("localLibrary", toS(p.makeRelative(wd)));
 		} else {
 			config.add("localLibrary", toS(p));
 		}
+	}
+
+	vector<Path> Target::getLocalLibs() const {
+		vector<Path> out;
+		vector<String> items = config.getArray("localLibrary");
+		for (size_t i = 0; i < items.size(); i++)
+			out << Path(items[i]).makeAbsolute(wd);
+		return out;
+	}
+
+	void Target::addExternalLib(const String &s) {
+		config.add("library", s);
+	}
+
+	vector<String> Target::getExternalLibs() const {
+		return config.getArray("library");
 	}
 
 	vector<Path> Target::findExt(const Path &path, ExtCache &cache) {
