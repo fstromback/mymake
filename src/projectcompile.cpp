@@ -339,7 +339,7 @@ namespace compile {
 			LibDeps &deps = output[info->order];
 
 			if (info->target->forwardDeps) {
-				DEBUG(root << " includes libraries from " << info->target->name, INFO);
+				DEBUG(root << " includes libraries from " << info->name, INFO);
 
 				vector<Path> local = info->target->getLocalLibs();
 				for (nat i = 0; i < local.size(); i++)
