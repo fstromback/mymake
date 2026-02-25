@@ -61,8 +61,8 @@ namespace compile {
 		for (nat i = 0; i < ign.size(); i++)
 			ignore << Wildcard(ign[i]);
 
-		// Create build directory if it is not already created.
-		buildDir.createDir();
+		// Note: We don't create the build directory until we need it. This is to avoid creating it
+		// altogether in situations where there was nothing to do.
 
 		// Load cached data if possible.
 		includes.ignore(config.getArray("noIncludes"));
@@ -260,6 +260,7 @@ namespace compile {
 				output.makeExt(intermediateExt);
 			}
 
+			// Note: This creates the build directory (and any subdirectories) as needed.
 			output.parent().createDir();
 
 			String file = toS(src.makeRelative(wd));
@@ -438,6 +439,11 @@ namespace compile {
 	bool Target::runSteps(const String &key, ProcGroup &group, const map<String, String> &options) {
 		vector<String> steps = config.getArray(key);
 
+		if (!steps.empty()) {
+			// Make sure the build directory is created.
+			buildDir.createDir();
+		}
+
 		for (nat i = 0; i < steps.size(); i++) {
 			String expanded = config.expandVars(steps[i], options);
 			nat skip = extractSkip(expanded);
@@ -457,8 +463,12 @@ namespace compile {
 	}
 
 	void Target::save() const {
-		includes.save(buildDir + "includes");
-		commands.save(buildDir + "commands");
+		// Note: We only save output if the build directory was actually created. This means that in
+		// cases we did not do any compilation, we never create anything.
+		if (buildDir.exists()) {
+			includes.save(buildDir + "includes");
+			commands.save(buildDir + "commands");
+		}
 	}
 
 	int Target::execute(const vector<String> &params) const {
