@@ -72,7 +72,11 @@ Path Path::cwd() {
 
 const char *Path::chdir(const String &path) {
 	if (_chdir(path.c_str()) != 0) {
-		return _strerror(NULL);
+		// This function does not make too much sense to call from multiple threads anyway, so
+		// having a global here is not too bad.
+		static char buffer[128] = { 0 };
+		strerror_s(buffer, sizeof(buffer), errno);
+		return buffer;
 	} else {
 		return NULL;
 	}
