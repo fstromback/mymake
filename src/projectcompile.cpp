@@ -318,6 +318,27 @@ namespace compile {
 		return output;
 	}
 
+	static String libNames(const vector<Path> &local, const vector<String> &ext) {
+		std::ostringstream out;
+		bool first = true;
+
+		for (size_t i = 0; i < local.size(); i++) {
+			if (!first)
+				out << ", ";
+			first = false;
+			out << local[i];
+		}
+
+		for (size_t i = 0; i < ext.size(); i++) {
+			if (!first)
+				out << ", ";
+			first = false;
+			out << ext[i];
+		}
+
+		return out.str();
+	}
+
 	void Project::dependencies(const String &root, vector<bool> &visited, map<nat, LibDeps> &output, const TargetInfo *at) const {
 		for (set<String>::const_iterator i = at->depends.begin(); i != at->depends.end(); ++i) {
 			const String &name = *i;
@@ -339,8 +360,6 @@ namespace compile {
 			LibDeps &deps = output[info->order];
 
 			if (info->target->forwardDeps) {
-				DEBUG(root << " includes libraries from " << info->name, INFO);
-
 				vector<Path> local = info->target->getLocalLibs();
 				for (nat i = 0; i < local.size(); i++)
 					deps.local.push_back(local[i]);
@@ -348,10 +367,12 @@ namespace compile {
 				vector<String> ext = info->target->getExternalLibs();
 				for (nat i = 0; i < ext.size(); i++)
 					deps.external.push_back(ext[i]);
+
+				DEBUG(root << " includes libraries from " << info->name << ": " << libNames(local, ext), INFO);
 			}
 
 			if (info->target->linkOutput) {
-				DEBUG(root << " includes dependent " << info->target->output, INFO);
+				DEBUG(root << " treats output " << info->target->output << " as dependency.", INFO);
 				deps.local.push_back(info->target->output);
 			}
 
