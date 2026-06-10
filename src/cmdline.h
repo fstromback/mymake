@@ -75,6 +75,7 @@ private:
 		sDefaultInput,
 		sCreateGlobal,
 		sGlobalConfig,
+		sSetCWD,
 	};
 
 	State state;

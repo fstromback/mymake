@@ -70,6 +70,14 @@ Path Path::cwd() {
 	return r;
 }
 
+const char *Path::chdir(const String &path) {
+	if (_chdir(path.c_str()) != 0) {
+		return _strerror(NULL);
+	} else {
+		return NULL;
+	}
+}
+
 Path Path::home() {
 	char tmp[MAX_PATH + 1] = { 0 };
 	SHGetFolderPath(NULL, CSIDL_PROFILE, NULL, 0, tmp);
@@ -194,6 +202,14 @@ Path Path::cwd() {
 	Path r(tmp);
 	r.makeDir();
 	return r;
+}
+
+const char *Path::chdir(const String &path) {
+	if (::chdir(path.c_str()) != 0) {
+		return strerror(errno);
+	} else {
+		return null;
+	}
 }
 
 Path Path::home() {

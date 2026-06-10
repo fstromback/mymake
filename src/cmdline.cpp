@@ -20,6 +20,7 @@ static const pair<String, char> rawLongOptions[] = {
 	make_pair("execute", 'e'),
 	make_pair("not", 'n'),
 	make_pair("exec-path", 'p'),
+	make_pair("directory", 'C'),
 	make_pair("project", '\3'),
 	make_pair("target", '\2'),
 	make_pair("config", '\1'),
@@ -63,6 +64,9 @@ static const char *helpStr =
 	"--config        - write global config file. If -j is specified, uses that value as the default\n"
 	"                - in the generated file. Otherwise, asks the user for the preferred default.\n"
 	"--threads, -j   - compile in parallel if possible, using this many threads.\n"
+	"--directory, -C - change current working directory before doing anything. Note that this means\n"
+	"                - that any relative paths specified on the command line will be interpreted\n"
+	"                - relative to the new cwd rather than the original one.\n"
 	"--default-input - add this file as an input if no other is specified on command-line\n"
 	"                  or in configuration. Useful when integrating with text editors.\n"
 	"--time, -t      - output the time taken for various stages of mymake.\n"
@@ -273,6 +277,9 @@ bool CmdLine::parseOption(char opt) {
 		case 't':
 			times = true;
 			break;
+		case 'C':
+			state = sSetCWD;
+			break;
 		case '\1':
 			createGlobal = true;
 			state = sCreateGlobal;
@@ -384,6 +391,12 @@ bool CmdLine::optionParam(const String &v) {
 		return true;
 	case sGlobalConfig:
 		globalConfig = Path(v).makeAbsolute();
+		return true;
+	case sSetCWD:
+		if (const char *error = Path::chdir(v)) {
+			PLN("Failed to change directory to " << v << ": " << error);
+			errors = true;
+		}
 		return true;
 	default:
 		return false;

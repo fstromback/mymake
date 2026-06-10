@@ -32,6 +32,10 @@ public:
 	// Current working directory.
 	static Path cwd();
 
+	// Update the current working directory. Minimal abstraction since this is only used with paths
+	// directly from the command line.
+	static const char *chdir(const String &path);
+
 	// User's home directory.
 	static Path home();
 
