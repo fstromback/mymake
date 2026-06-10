@@ -32,16 +32,22 @@ Here, the terminology used in mymake is explained.
 - **project**: a directory containing a set of related *targets*. These *targets* can depend on each other.
 - **option**: a string (either specified on the command line or in a project) that modifies the behaviour of the build.
 
-Note: I am using the command `mm` to execute mymake through this document.
+Note: I am using the command `mm` to execute mymake through this document. Note that the
+Debian/Ubuntu packages install mymake under the name `mymake`.
 
 ## Installation
 
 ### Linux/Unix (or MinGW)
 
-The first time you install mymake, clone the repository somewhere and then run `install.sh`. This
-will compile mymake using `g++`, and then ask you if you want to set up an alias in your shell. If
-you set up an alias, you need to type `source ~/.bashrc` in your shell, or restart your shell, to be
-able to use mymake.
+If you are running a distribution derived from Debian, it is likely that Mymake is already
+available. Try `apt install mymake`. If this work, you can simply run `mymake --config` and you are
+done.
+
+
+If mymake is not already available, you need to compile it. Clone the repository somewhere and then
+run `install.sh`. This will compile mymake using `g++`, and then ask you if you want to set up an
+alias in your shell. If you set up an alias, you need to type `source ~/.bashrc` in your shell, or
+restart your shell, to be able to use mymake.
 
 If you do not want an alias, you can copy the binary `mymake` to somewhere in your path.
 
