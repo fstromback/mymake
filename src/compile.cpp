@@ -140,7 +140,7 @@ namespace compile {
 			}
 
 			for (IncludeInfo::PathSet::const_iterator i = info.includes.begin(); i != info.includes.end(); ++i) {
-				DEBUG(now << " depends on " << *i, VERBOSE);
+				DEBUG(now << " depends on " << *i, DEBUG);
 				addFile(q, cache, *i);
 
 				// Is this a reference to another sub-project?

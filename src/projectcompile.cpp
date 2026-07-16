@@ -201,7 +201,7 @@ namespace compile {
 			localConfig.create("self");
 
 			set<String> allOptions = options;
-			options.insert(cmdline.begin(), cmdline.end());
+			allOptions.insert(cmdline.begin(), cmdline.end());
 
 			config.applySubset(allOptions, unitSet("build"), localConfig);
 
@@ -209,7 +209,7 @@ namespace compile {
 			options.insert(vOptions.begin(), vOptions.end());
 		}
 
-		DEBUG("Options for " << name << ": " << join(options), VERBOSE);
+		DEBUG("Options for " << name << ": " << join(options), INFO);
 
 
 		Config opt;

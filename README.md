@@ -388,6 +388,8 @@ self+=Preprocessor
 
 After that, we can remove the `[deps]` section in the per-target `.mymake` file for `main`.
 
+Note: in contrast to other contexts, when Mymake looks for `build`, it provides all command-line
+options as options to the target.
 
 ## Skipping output
 
