@@ -12,14 +12,14 @@ namespace compile {
 		showTimes(showTimes) {
 
 		{
-			set<String> s = cmdline;
-			s.insert("deps");
-			projectFile.apply(s, depsConfig);
+			set<String> strict;
+			strict.insert("deps");
+			projectFile.applyStrict(cmdline, strict, depsConfig);
 		}
 		{
-			set<String> s = cmdline;
-			s.insert("build");
-			projectFile.apply(s, buildConfig);
+			set<String> strict;
+			strict.insert("build");
+			projectFile.applyStrict(cmdline, strict, buildConfig);
 		}
 		explicitTargets = config.getBool("explicitTargets", false);
 		implicitDependencies = config.getBool("implicitDeps", true);

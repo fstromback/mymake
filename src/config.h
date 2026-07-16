@@ -61,10 +61,11 @@ public:
 
 	// Output.
 	friend ostream &operator <<(ostream &to, const Config &c);
+
 private:
 	typedef vector<String> Value;
-
 	typedef map<String, Value> Data;
+
 	Data data;
 
 	// Get replacement for variable.
@@ -91,7 +92,10 @@ public:
 	bool load(const Path &file);
 
 	// Apply to a config.
-	void apply(set<String> config, Config &to) const;
+	void apply(const set<String> &config, Config &to) const;
+
+	// Apply to a config, strict version that only considers sections that explicitly mentions the 'strict' key.
+	void applyStrict(const set<String> &config, const set<String> &strict, Config &to) const;
 
 	// Get all known options.
 	const set<String> &options() const;

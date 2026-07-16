@@ -98,9 +98,11 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	params.env = Env::current();
 	params.add("projectRoot", toS(wd));
 
-	set<String> opts = cmdline.names;
-	opts.insert("project");
-	config.apply(opts, params);
+	{
+		set<String> strict;
+		strict.insert("project");
+		config.applyStrict(cmdline.names, strict, params);
+	}
 	cmdline.apply(config.options(), params);
 
 	DEBUG("Configuration options: " << params, VERBOSE);

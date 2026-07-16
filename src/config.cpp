@@ -133,20 +133,26 @@ static bool noneOf(const set<String> &of, const set<String> &in) {
 	return true;
 }
 
-void MakeConfig::apply(set<String> options, Config &to) const {
+void MakeConfig::applyStrict(const set<String> &options, const set<String> &strict, Config &to) const {
+	set<String> opts(options);
 
+	opts.insert(strict.begin(), strict.end());
 #ifdef WINDOWS
-	options.insert("windows");
+	opts.insert("windows");
 #else
-	options.insert("unix");
+	opts.insert("unix");
 #endif
 
 	for (nat i = 0; i < sections.size(); i++) {
 		const Section &s = sections[i];
 
-		if (!allOf(s.options, options))
+		if (!allOf(s.options, opts))
 			continue;
-		if (!noneOf(s.exclude, options))
+		if (!noneOf(s.exclude, opts))
+			continue;
+
+		// Make sure all of the strict ones are actually present!
+		if (!allOf(strict, s.options))
 			continue;
 
 		for (nat i = 0; i < s.assignments.size(); i++) {
@@ -165,6 +171,10 @@ void MakeConfig::apply(set<String> options, Config &to) const {
 			}
 		}
 	}
+}
+
+void MakeConfig::apply(const set<String> &options, Config &to) const {
+	applyStrict(options, set<String>(), to);
 }
 
 ostream &operator <<(ostream &to, const MakeConfig &c) {
