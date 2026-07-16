@@ -8,6 +8,13 @@ public:
 	// Create
 	Wildcard(const String &str);
 
+	// Compare.
+	inline bool operator ==(const Wildcard &o) const {
+		return pattern == o.pattern;
+	}
+	inline bool operator !=(const Wildcard &o) const {
+		return pattern != o.pattern;
+	}
 
 	// See if the wildcard pattern matches a string.
 	bool matches(const String &str) const;

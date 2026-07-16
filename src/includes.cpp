@@ -189,25 +189,37 @@ void Includes::load(const Path &from) {
 	if (!src)
 		return;
 
-	// Read and compare include paths.
+	// Read and compare include paths and patterns.
 	{
 		nat incId = 0;
+		nat patId = 0;
 		while (getline(src, line)) {
 			if (line.empty())
 				continue;
 
-			// End of includes?
-			if (line[0] != 'i')
+			if (line[0] == 'i') {
+				// Include!
+				if (incId >= includePaths.size())
+					return;
+
+				if (includePaths[incId++] != Path(line.substr(1)))
+					return;
+			} else if (line[0] == 'x') {
+				// Ignored pattern.
+				if (patId >= ignorePatterns.size())
+					return;
+
+				if (ignorePatterns[patId++] != Wildcard(line.substr(1)))
+					return;
+			} else {
+				// End of includes and patterns!
 				break;
-
-			if (incId >= includePaths.size())
-				return;
-
-			if (includePaths[incId++] != Path(line.substr(1)))
-				return;
+			}
 		}
 
 		if (incId != includePaths.size())
+			return;
+		if (patId != ignorePatterns.size())
 			return;
 	}
 
@@ -261,6 +273,11 @@ void Includes::save(const Path &to) const {
 	// Include paths, so that we can ignore loading if the include paths have changed.
 	for (nat i = 0; i < includePaths.size(); i++) {
 		dest << "i" << includePaths[i] << endl;
+	}
+
+	// Ignored patterns, so that we can ignore loading if the patterns have changed.
+	for (nat i = 0; i < ignorePatterns.size(); i++) {
+		dest << "x" << ignorePatterns[i] << endl;
 	}
 
 	// All data.

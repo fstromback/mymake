@@ -112,7 +112,7 @@ void OutputMgr::threadMain() {
 						// Close the pipe. Now it is safe!
 						PipeMap::iterator i = pipes.find(e.pipe);
 						if (i == pipes.end())
-							WARNING(L"The pipe " << e.pipe << L" was removed too early!");
+							WARNING("The pipe " << e.pipe << " was removed too early!");
 						delete i->second;
 						pipes.erase(i);
 					} else {
