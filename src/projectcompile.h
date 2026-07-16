@@ -38,16 +38,19 @@ namespace compile {
 		// Working directory for the project.
 		Path wd;
 
+		// Command-line options passed to us.
+		set<String> cmdline;
+
 		// Raw configuration data = contents of project file.
 		MakeConfig projectFile;
 
 		// Configuration (global, cmdline included).
 		Config config;
 
-		// Configuration (only build-section)
+		// Configuration (only build-sections)
 		Config buildConfig;
 
-		// Configuration (only deps-section)
+		// Configuration (only deps-sections)
 		Config depsConfig;
 
 		// Ignore sub-directories without a .mymake-file in them.
@@ -99,6 +102,10 @@ namespace compile {
 
 			// Dependencies of the target.
 			set<String> depends;
+
+			// Explicit dependencies of the target, from "self="-statements in either the .myproject
+			// or the local .mymake files.
+			vector<String> localDepends;
 
 			// Index in the computed compilation order (for convenient reverse lookups).
 			nat order;
@@ -177,8 +184,8 @@ namespace compile {
 		// be done in parallel.
 		void prepareTarget(TargetInfo *info) const;
 
-		// Create a new target.
-		Target *loadTarget(const String &name) const;
+		// Create a new target. 'extraDeps' will be filled with extra dependencies.
+		Target *loadTarget(const String &name, vector<String> &extraDeps) const;
 
 		// Propagate dependencies between targets. This is done right after we find the dependencies
 		// between all targets, while we are still running in a single thread. We also assume that

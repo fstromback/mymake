@@ -141,7 +141,7 @@ project file, or in your global `.mymake`-file.
 Configuration in mymake is done by assigning values to variables. Each variable is an array of
 strings.
 
-Mymake knows two different configuration files: `.mymake` and `.myproject`. Both follows the same
+Mymake knows two different configuration files: `.mymake` and `.myproject`. Both follow the same
 basic syntax. A configuration file contains a number of sections, each of which contains a number of
 assignments.
 
@@ -350,6 +350,44 @@ combined with other options as well:
 [build,windows]
 main+=foo
 ```
+
+### Per-project definition of dependencies and options
+
+The information from `build` and `deps` sections is computed by collecting the information from the
+project configuration once. However, sometimes it is more convenient to specify dependencies in the
+per-target `.mymake` file, or to let all projects that specify the option `preprocess` to depend on
+some `Preprocessor` target (that is not otherwise visible to Mymake), for example. Just one pass
+through the project file means that one needs to add both:
+
+```
+[build]
+main+=preprocess
+[deps]
+main+=Preprocessor
+```
+
+To avoid this, Mymake additionally looks in the per-target `.mymake` file for `build` and `deps`
+sections. In this case, only the special key `self` is examined. This means that we can replace the
+above from the `.myproject` file with the following in the `.mymake` file for the `main` project:
+
+```
+[build]
+self+=preprocess
+[deps]
+self+=Preprocessor
+```
+
+Additionally, Mymake scans the `.myproject` file for any assignments to `self` on a per-target
+basis, with the options used for that specific target. That means that we can add the following in
+the `.myproject` file to make all targets that has the option `preprocess` depend on `Preprocessor`.
+
+```
+[deps,preprocess]
+self+=Preprocessor
+```
+
+After that, we can remove the `[deps]` section in the per-target `.mymake` file for `main`.
+
 
 ## Skipping output
 

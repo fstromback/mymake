@@ -27,6 +27,9 @@ public:
 	// Environment block. Initially empty.
 	Env env;
 
+	// Create an (empty) variable. A no-op if the variable already exists.
+	void create(const String &key);
+
 	// Set a variable.
 	void set(const String &key, const String &value);
 
@@ -97,6 +100,10 @@ public:
 	// Apply to a config, strict version that only considers sections that explicitly mentions the 'strict' key.
 	void applyStrict(const set<String> &config, const set<String> &strict, Config &to) const;
 
+	// Apply to a config, but only extract a subset of of the keys. Will only produce the keys that
+	// are already present in 'to'.
+	void applySubset(const set<String> &config, const set<String> &strict, Config &to) const;
+
 	// Get all known options.
 	const set<String> &options() const;
 
@@ -139,6 +146,9 @@ private:
 
 	// Parse assignment.
 	void parseAssignment(String line, nat initialSize);
+
+	// Internal apply function.
+	void applyInternal(const set<String> &config, const set<String> &strict, Config &to, bool all) const;
 
 	// Output:
 	friend ostream &operator <<(ostream &to, const MakeConfig &c);

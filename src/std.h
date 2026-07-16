@@ -198,6 +198,20 @@ void zeroMem(T &v) {
 	memset(&v, 0, sizeof(T));
 }
 
+// Set with a single element.
+template <class T>
+set<T> unitSet(const T &x) {
+	set<T> s;
+	s << x;
+	return s;
+}
+
+inline set<String> unitSet(const char *x) {
+	set<String> s;
+	s << String(x);
+	return s;
+}
+
 #include "globals.h"
 
 #endif

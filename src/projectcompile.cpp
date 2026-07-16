@@ -7,20 +7,14 @@ namespace compile {
 
 	Project::Project(const Path &wd, const set<String> &cmdline, const MakeConfig &projectFile, const Config &config, bool showTimes) :
 		wd(wd),
+		cmdline(cmdline),
 		projectFile(projectFile),
 		config(config),
 		showTimes(showTimes) {
 
-		{
-			set<String> strict;
-			strict.insert("deps");
-			projectFile.applyStrict(cmdline, strict, depsConfig);
-		}
-		{
-			set<String> strict;
-			strict.insert("build");
-			projectFile.applyStrict(cmdline, strict, buildConfig);
-		}
+		projectFile.applyStrict(cmdline, unitSet("deps"), depsConfig);
+		projectFile.applyStrict(cmdline, unitSet("build"), buildConfig);
+
 		explicitTargets = config.getBool("explicitTargets", false);
 		implicitDependencies = config.getBool("implicitDeps", true);
 
@@ -90,6 +84,7 @@ namespace compile {
 
 			// Add any explicit dependent projects.
 			vector<String> depends = depsConfig.getArray(now->name);
+			depends.insert(depends.end(), now->localDepends.begin(), now->localDepends.end());
 			for (nat i = 0; i < depends.size(); i++) {
 				addTarget(depends[i], false, state);
 				now->depends << depends[i];
@@ -135,7 +130,7 @@ namespace compile {
 
 		DEBUG("Examining target " << info->name, INFO);
 
-		info->target = loadTarget(info->name);
+		info->target = loadTarget(info->name, info->localDepends);
 		if (info->target) {
 			if (info->target->find())
 				atomicWrite(info->status, TargetInfo::sOK);
@@ -172,7 +167,7 @@ namespace compile {
 		to.push(info);
 	}
 
-	Target *Project::loadTarget(const String &name) const {
+	Target *Project::loadTarget(const String &name, vector<String> &extraDeps) const {
 		Path dir = wd + name;
 		dir.makeDir();
 
@@ -180,14 +175,6 @@ namespace compile {
 			DEBUG(name << " is not a sub-project. The directory " << dir << " does not exist.", PEDANTIC);
 			return null;
 		}
-
-		vector<String> vOptions = buildConfig.getArray(name);
-		set<String> options(vOptions.begin(), vOptions.end());
-
-		vOptions = buildConfig.getArray("all");
-		options.insert(vOptions.begin(), vOptions.end());
-
-		DEBUG("Options for " << name << ": " << join(options), VERBOSE);
 
 		MakeConfig config;
 
@@ -201,6 +188,29 @@ namespace compile {
 		} else {
 			DEBUG("No config in " << dir << ", using it anyway since 'explicitTargets=0'.", PEDANTIC);
 		}
+
+		vector<String> vOptions = buildConfig.getArray(name);
+		set<String> options(vOptions.begin(), vOptions.end());
+
+		vOptions = buildConfig.getArray("all");
+		options.insert(vOptions.begin(), vOptions.end());
+
+		// Consider the options in the project's config as well!
+		{
+			Config localConfig;
+			localConfig.create("self");
+
+			set<String> allOptions = options;
+			options.insert(cmdline.begin(), cmdline.end());
+
+			config.applySubset(allOptions, unitSet("build"), localConfig);
+
+			vOptions = localConfig.getArray("self");
+			options.insert(vOptions.begin(), vOptions.end());
+		}
+
+		DEBUG("Options for " << name << ": " << join(options), VERBOSE);
+
 
 		Config opt;
 
@@ -231,6 +241,14 @@ namespace compile {
 		opt.env = Env::update(this->config.env, opt);
 		DEBUG("Environment variables for " << name << ": " << opt.env, DEBUG);
 
+		// Compute extra dependencies in light of the current options.
+		Config depConfig;
+		depConfig.create("self");
+
+		projectFile.applySubset(options, unitSet("deps"), depConfig);
+		config.applySubset(options, unitSet("deps"), depConfig);
+
+		extraDeps = depConfig.getArray("self");
 		return new Target(dir, opt);
 	}
 

@@ -134,6 +134,18 @@ static bool noneOf(const set<String> &of, const set<String> &in) {
 }
 
 void MakeConfig::applyStrict(const set<String> &options, const set<String> &strict, Config &to) const {
+	applyInternal(options, strict, to, true);
+}
+
+void MakeConfig::apply(const set<String> &options, Config &to) const {
+	applyInternal(options, set<String>(), to, true);
+}
+
+void MakeConfig::applySubset(const set<String> &options, const set<String> &strict, Config &to) const {
+	applyInternal(options, strict, to, false);
+}
+
+void MakeConfig::applyInternal(const set<String> &options, const set<String> &strict, Config &to, bool all) const {
 	set<String> opts(options);
 
 	opts.insert(strict.begin(), strict.end());
@@ -158,6 +170,10 @@ void MakeConfig::applyStrict(const set<String> &options, const set<String> &stri
 		for (nat i = 0; i < s.assignments.size(); i++) {
 			const Assignment &a = s.assignments[i];
 
+			// Should we skip it?
+			if (!all && !to.has(a.key))
+				continue;
+
 			switch (a.mode) {
 			case mAppend:
 				to.add(a.key, a.value);
@@ -171,10 +187,6 @@ void MakeConfig::applyStrict(const set<String> &options, const set<String> &stri
 			}
 		}
 	}
-}
-
-void MakeConfig::apply(const set<String> &options, Config &to) const {
-	applyStrict(options, set<String>(), to);
 }
 
 ostream &operator <<(ostream &to, const MakeConfig &c) {
@@ -210,6 +222,11 @@ ostream &operator <<(ostream &to, const MakeConfig &c) {
 
 Config::Config() : env(Env::empty()) {
 	data.insert(make_pair("library", Value()));
+}
+
+void Config::create(const String &k) {
+	// Does not overwrite!
+	data.insert(std::make_pair(k, vector<String>()));
 }
 
 void Config::set(const String &k, const String &v) {
