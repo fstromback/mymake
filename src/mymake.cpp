@@ -99,9 +99,10 @@ int compileProject(const Path &wd, const Path &projectFile, const CmdLine &cmdli
 	params.add("projectRoot", toS(wd));
 
 	{
-		set<String> strict;
-		strict.insert("project");
-		config.applyStrict(cmdline.names, strict, params);
+		// Note: We don't want 'strict' here since that would make 'maxThreads' not be visible.
+		set<String> all(cmdline.names);
+		all.insert("project");
+		config.apply(all, params);
 	}
 	cmdline.apply(config.options(), params);
 
