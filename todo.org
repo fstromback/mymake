@@ -1,10 +1,5 @@
 * Things to do
 
-  When resolving 'deps', exclude all headers that don't explicitly mention [deps]. Otherwise we run
-  into problems when we have targets that have the same name as other variables. Same thing with 'build'
-  I think. Perhaps also include things from the sub-projects there. That way we can let sub-projects
-  specify their own dependencies!
-
   Re-think the verbosity levels. Level 3 is the first one that includes command lines, but is far too
   verbose for normal usage. There should probably be a new one here that includes warnings and compile
   commands.
