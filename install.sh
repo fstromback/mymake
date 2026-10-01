@@ -45,6 +45,7 @@ do
     echo "Which shell should I add to?"
     echo "1: Bash"
     echo "2: csh"
+    echo "3: fish"
     read shell_type
 
     go_on=""
@@ -57,6 +58,10 @@ do
     then
 	echo "alias ${alias_name} \"$file\"" >> ~/.cshrc
 	echo "Done! Now do source ~/.cshrc"
+    elif [ $shell_type = 3 ]
+    then
+  echo -e "function ${alias_name}\n    $file\nend" >> ~/.config/fish/functions/${alias_name}.fish
+	echo "Done! It is now added as a fish function."
     else
 	echo "I do not know about that shell..."
 	go_on="yes"
