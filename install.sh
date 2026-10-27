@@ -60,7 +60,7 @@ do
 	echo "Done! Now do source ~/.cshrc"
     elif [ $shell_type = 3 ]
     then
-  echo -e "function ${alias_name}\n    $file\nend" >> ~/.config/fish/functions/${alias_name}.fish
+  echo -e "function ${alias_name}\n    $file \$argv\nend" >> ~/.config/fish/functions/${alias_name}.fish
 	echo "Done! It is now added as a fish function."
     else
 	echo "I do not know about that shell..."
